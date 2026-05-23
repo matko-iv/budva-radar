@@ -1,0 +1,93 @@
+* { box-sizing: border-box; }
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: #f7f7f8;
+  color: #222;
+  margin: 0 auto;
+  padding: 16px;
+  max-width: 1100px;
+}
+
+header h1 { margin: 0 0 4px; font-size: 22px; }
+header #generated { margin: 0 0 16px; color: #666; font-size: 13px; }
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+.alert.ok { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+.alert.warn { background: #fff3e0; color: #bf360c; border: 1px solid #ffab91; }
+
+section { margin-bottom: 24px; }
+section h2 { font-size: 16px; margin: 0 0 8px; }
+section .hint { font-size: 12px; color: #666; margin: 0 0 8px; }
+
+#summary-list {
+  margin: 0; padding-left: 20px; font-size: 14px;
+}
+#summary-list li { margin: 4px 0; }
+
+/* Radar image previews */
+#images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px;
+}
+.image-wrap h3 {
+  margin: 0 0 4px; font-size: 13px; color: #555; font-weight: 600;
+}
+.radar-canvas {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+}
+.radar-canvas img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.radar-canvas .overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+/* Per-source cards */
+#sources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 12px;
+}
+.source-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 12px;
+}
+.source-card h3 { margin: 0 0 6px; font-size: 14px; color: #555; }
+.source-card .ts { margin: 0 0 6px; font-size: 12px; color: #888; }
+.source-card .err { color: #c62828; }
+.source-card p { font-size: 13px; margin: 4px 0; }
+
+table {
+  width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 13px;
+}
+th, td {
+  text-align: left; padding: 4px 6px; border-bottom: 1px solid #eee;
+}
+th { background: #f5f5f5; font-weight: 600; }
+
+footer {
+  margin-top: 30px; padding-top: 12px; border-top: 1px solid #ddd;
+  font-size: 12px; color: #888;
+}
+footer a { color: #1565c0; text-decoration: none; }
+footer a:hover { text-decoration: underline; }

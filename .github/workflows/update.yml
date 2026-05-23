@@ -1,0 +1,54 @@
+name: Update Budva Radar Status
+
+on:
+  schedule:
+    # Every 15 min (GitHub cron is best-effort; usually delays ~5-10 min)
+    - cron: '*/15 * * * *'
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: write
+
+# Cancel any in-flight run if a new one starts (prevents stacking)
+concurrency:
+  group: radar-update
+  cancel-in-progress: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TZ: Europe/Podgorica
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Need full fetch to allow git pull --rebase to work
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run radar fetch + interpret
+        run: python run.py
+
+      - name: Commit and push updated radar status
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Stage outputs: GH Pages serves docs/; output/ kept for archival
+          git add docs/data.js docs/latest_dhmz.png docs/latest_opera.gif || true
+          git add docs/radar_status.json || true
+          git add output/status.json || true
+          # Keep recent cached frames in repo (small, ~16 files each)
+          git add data/frames/dhmz/*.png data/frames/opera/*.gif || true
+          git diff --staged --quiet || git commit -m "📡 Update radar $(date +'%Y-%m-%d %H:%M %Z')"
+          git pull --rebase || true
+          git push

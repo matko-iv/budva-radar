@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>budva-radar</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>budva-radar</h1>
+  <p id="generated">loading...</p>
+</header>
+
+<main>
+  <section id="alert" class="alert ok">
+    <p id="alert-text">loading...</p>
+  </section>
+
+  <section id="summary">
+    <h2>Summary</h2>
+    <ul id="summary-list"></ul>
+  </section>
+
+  <section id="radar-images">
+    <h2>Latest radar images</h2>
+    <p class="hint">Red dot = Budva. Concentric circles = sampling rings (10/25/50/100/150 km).</p>
+    <div id="images-grid"></div>
+  </section>
+
+  <section id="sources">
+    <h2>Per-source detail</h2>
+    <div id="sources-grid"></div>
+  </section>
+</main>
+
+<footer>
+  <p>Page auto-refreshes every 60 s. Source images update ~5 min (OPERA), ~10 min (DHMZ).</p>
+  <p>Sources:
+    <a href="https://vrijeme.hr/uljenje-stat.png" target="_blank">DHMZ MRC Uljenje</a> ·
+    <a href="https://www.eumetnet.eu/observations/opera-radar-animation/" target="_blank">OPERA Odyssey (FMI)</a>
+  </p>
+</footer>
+
+<script src="data.js"></script>
+<script>
+function load() {
+  if (window.RADAR_DATA) {
+    render(window.RADAR_DATA);
+  } else {
+    document.getElementById('alert-text').textContent =
+      'data.js not found — run run.py first';
+  }
+}
+
+function render(d) {
+  const gen = new Date(d.generated);
+  document.getElementById('generated').textContent =
+    'Generated: ' + gen.toLocaleString();
+
+  // Alert
+  const alert = document.getElementById('alert');
+  const alertText = document.getElementById('alert-text');
+  if (d.summary.rain_approaching) {
+    alert.className = 'alert warn';
+    alertText.textContent =
+      'RAIN APPROACHING — ETA ~' + d.summary.closest_eta_minutes + ' min';
+  } else {
+    alert.className = 'alert ok';
+    alertText.textContent = 'No precipitation heading toward Budva';
+  }
+
+  // Summary lines
+  const list = document.getElementById('summary-list');
+  list.innerHTML = '';
+  d.summary.lines.forEach(line => {
+    const li = document.createElement('li');
+    li.textContent = line;
+    list.appendChild(li);
+  });
+
+  // Radar image previews (latest_dhmz.png + latest_opera.gif) with Budva
+  // marker + concentric sampling-ring overlay rendered as inline SVG.
+  const imgGrid = document.getElementById('images-grid');
+  imgGrid.innerHTML = '';
+  const radii = d.radii_km || [10, 25, 50, 100, 150];
+  for (const [src, info] of Object.entries(d.sources)) {
+    if (!info.ok || !info.budva_pixel || !info.image_size) continue;
+    const fileName = src === 'dhmz' ? 'latest_dhmz.png' : 'latest_opera.gif';
+    const [imgW, imgH] = info.image_size;
+    const bx = info.budva_pixel.x, by = info.budva_pixel.y;
+    const pxPerKm = info.px_per_km || 1.0;
+
+    // SVG circles for each ring radius + a small Budva dot + ring labels
+    let svgInner = '';
+    radii.forEach(km => {
+      const r = km * pxPerKm;
+      svgInner += `<circle cx="${bx}" cy="${by}" r="${r}" fill="none" stroke="#ffffff" stroke-width="${Math.max(1, imgW/600)}" stroke-dasharray="6 4" opacity="0.55"/>`;
+      // Label at the top of each ring
+      const labelY = by - r - 2;
+      svgInner += `<text x="${bx}" y="${labelY}" fill="#ffffff" stroke="#000000" stroke-width="0.4" font-size="${Math.max(9, imgW/65)}" text-anchor="middle" font-family="sans-serif">${km}km</text>`;
+    });
+    // Tiny Budva dot last (so it's on top)
+    svgInner += `<circle cx="${bx}" cy="${by}" r="${Math.max(2.5, imgW/250)}" fill="#d32f2f" stroke="#ffffff" stroke-width="1"/>`;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'image-wrap';
+    wrap.innerHTML = `
+      <h3>${src.toUpperCase()} — ${info.frame_timestamp || ''}</h3>
+      <div class="radar-canvas">
+        <img src="${fileName}?t=${Date.now()}" alt="${src} radar">
+        <svg class="overlay" viewBox="0 0 ${imgW} ${imgH}" preserveAspectRatio="none">${svgInner}</svg>
+      </div>`;
+    imgGrid.appendChild(wrap);
+  }
+
+  // Per-source detailed table
+  const grid = document.getElementById('sources-grid');
+  grid.innerHTML = '';
+  for (const [src, info] of Object.entries(d.sources)) {
+    const div = document.createElement('div');
+    div.className = 'source-card';
+    let html = '<h3>' + src.toUpperCase() + '</h3>';
+    if (!info.ok) {
+      html += '<p class="err">Unavailable: ' + (info.reason || '?') + '</p>';
+      div.innerHTML = html;
+      grid.appendChild(div);
+      continue;
+    }
+    html += '<p class="ts">Frame: ' + (info.frame_timestamp || '?') + '</p>';
+    if (info.motion) {
+      const dir = info.motion.direction_cardinal || '?';
+      const spd = info.motion.speed_kmh != null ? info.motion.speed_kmh + ' km/h' : '?';
+      const conf = (info.motion.confidence || 0).toFixed(2);
+      html += '<p>Motion: ' + dir + ' @ ' + spd + ' (conf ' + conf + ')</p>';
+    }
+    html += '<table><thead><tr><th>R (km)</th><th>wet frac</th><th>max dBZ</th><th>bearing</th></tr></thead><tbody>';
+    info.rings.forEach(ring => {
+      html += '<tr>' +
+        '<td>' + ring.radius_km + '</td>' +
+        '<td>' + (ring.frac_wet || 0).toFixed(2) + '</td>' +
+        '<td>' + (ring.max_dbz != null ? ring.max_dbz : '–') + '</td>' +
+        '<td>' + (ring.strongest_bearing_cardinal || '–') + '</td>' +
+      '</tr>';
+    });
+    html += '</tbody></table>';
+    div.innerHTML = html;
+    grid.appendChild(div);
+  }
+}
+
+load();
+// Reload the whole page periodically so we pick up new data.js (file:// fetch
+// won't refresh cleanly across separate <script src> loads).
+setTimeout(() => location.reload(), 60000);
+</script>
+</body>
+</html>
