@@ -54,8 +54,11 @@ USER_AGENT = "budva-radar/0.1 (local precipitation analysis; non-commercial)"
 # ============================================================================
 # Interpretation
 # ============================================================================
-# Threshold for "rain detected" in dBZ
-RAIN_DBZ_THRESHOLD = 20.0   # ~ 0.5 mm/h (light rain)
+# Threshold for "rain detected" in dBZ.
+# 10 dBZ = light/visible echo. 20 dBZ = ~ 0.5 mm/h (light rain).
+# Using 10 means trace echoes within range are flagged, so the user is aware
+# something exists on the radar even if it's not yet actual rainfall.
+RAIN_DBZ_THRESHOLD = 10.0   # ~ visible echo on radar
 HEAVY_DBZ_THRESHOLD = 40.0  # ~ 12 mm/h (heavy rain)
 
 # Motion detection: minimum cross-correlation for a valid motion vector

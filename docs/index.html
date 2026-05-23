@@ -133,11 +133,13 @@ function render(d) {
       const conf = (info.motion.confidence || 0).toFixed(2);
       html += '<p>Motion: ' + dir + ' @ ' + spd + ' (conf ' + conf + ')</p>';
     }
-    html += '<table><thead><tr><th>R (km)</th><th>wet frac</th><th>max dBZ</th><th>bearing</th></tr></thead><tbody>';
+    html += '<table><thead><tr><th>R (km)</th><th>wet px</th><th>max dBZ</th><th>bearing</th></tr></thead><tbody>';
     info.rings.forEach(ring => {
-      html += '<tr>' +
+      const nWet = ring.n_wet || 0;
+      const hasRain = nWet > 0;
+      html += '<tr' + (hasRain ? ' style="background:#fff8e1"' : '') + '>' +
         '<td>' + ring.radius_km + '</td>' +
-        '<td>' + (ring.frac_wet || 0).toFixed(2) + '</td>' +
+        '<td>' + nWet + (ring.n_pixels_in_annulus ? ' / ' + ring.n_pixels_in_annulus : '') + '</td>' +
         '<td>' + (ring.max_dbz != null ? ring.max_dbz : '–') + '</td>' +
         '<td>' + (ring.strongest_bearing_cardinal || '–') + '</td>' +
       '</tr>';

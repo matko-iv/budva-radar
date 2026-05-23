@@ -92,7 +92,10 @@ def _is_approaching(rings, motion_info):
         return None
 
     # First check: is there any rain at all?
-    wet_rings = [r for r in rings if r.get("frac_wet", 0) > 0]
+    # We check n_wet > 0 (raw count) rather than frac_wet > 0, because frac_wet
+    # gets rounded to 3 decimals and a handful of rain pixels in a large annulus
+    # rounds down to 0.000 even though they are real.
+    wet_rings = [r for r in rings if r.get("n_wet", 0) > 0]
     if not wet_rings:
         return {"any_rain_within_radii": False}
 
