@@ -76,39 +76,8 @@ on GitHub's free-tier runner. It commits these outputs back to the repo:
 - `docs/latest_dhmz.png` and `docs/latest_opera.gif` (latest frames for the preview)
 - `data/frames/{dhmz,opera}/...` (full motion history, kept up to KEEP_FRAMES)
 
-### One-time setup
-
-1. **Create the GitHub repo (public)**
-   ```powershell
-   cd c:\Users\Matija\budva-radar
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git branch -M main
-   git remote add origin https://github.com/matko-iv/budva-radar.git
-   git push -u origin main
-   ```
-
-2. **Enable GitHub Pages**
-   - Repo → Settings → Pages
-   - Source: **Deploy from a branch**
-   - Branch: **main**, Folder: **/docs**
-   - Save. URL becomes `https://matko-iv.github.io/budva-radar/`
-
-3. **The workflow runs automatically** every ~15 minutes (cron) once the repo
+**The workflow runs automatically** every ~5 minutes (cron) once the repo
    is pushed. First run can be triggered manually under Actions tab.
-
-### Integration with weather-forecast
-
-The main XGBoost forecast page (`weather-forecast/docs/forecast.html`) fetches
-radar status from this repo's GitHub Pages URL with a local-file fallback:
-
-```javascript
-const RADAR_STATUS_URLS = [
-    'radar_status.json',                                    // local fallback
-    'https://matko-iv.github.io/budva-radar/radar_status.json',  // GH Pages
-];
-```
 
 GH Pages serves with `Access-Control-Allow-Origin: *`, so cross-origin fetch
 works without any extra configuration.
