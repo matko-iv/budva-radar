@@ -22,8 +22,6 @@ Pulls from two sources:
 7. Writes output:
    - `output/status.json` (for machines)
    - `docs/data.js` (inline for the local HTML preview)
-   - `c:/Users/Matija/weather-forecast/docs/radar_status.json` (consumed by the
-     main XGBoost forecast page in the "Trenutno stanje" card)
 
 ## Quickstart
 
