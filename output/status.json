@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-24T03:17:22",
+  "generated": "2026-05-24T04:06:33",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "/home/runner/work/budva-radar/budva-radar/data/frames/dhmz/20260524_031719_6b843dd388ed.png",
-      "frame_timestamp": "2026-05-24T03:17:19",
+      "frame_path": "/home/runner/work/budva-radar/budva-radar/data/frames/dhmz/20260524_040631_7c5b858618b5.png",
+      "frame_timestamp": "2026-05-24T04:06:31",
       "rings": [
         {
           "radius_km": 10,
@@ -1142,14 +1142,14 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 73160,
-          "n_valid_color": 8,
-          "n_wet": 8,
-          "frac_wet": 0.00011,
-          "max_dbz": 12.5,
-          "mean_dbz": 12.5,
-          "strongest_bearing": 324.7,
+          "n_valid_color": 3,
+          "n_wet": 3,
+          "frac_wet": 4e-05,
+          "max_dbz": 17.5,
+          "mean_dbz": 14.2,
+          "strongest_bearing": 325.0,
           "strongest_bearing_cardinal": "NW",
-          "strongest_dbz": 12.5,
+          "strongest_dbz": 17.5,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -1424,9 +1424,9 @@
       "approaching": {
         "any_rain_within_radii": true,
         "closest_rain_km": 150,
-        "closest_rain_bearing_deg": 324.7,
+        "closest_rain_bearing_deg": 325.0,
         "closest_rain_bearing_cardinal": "NW",
-        "closest_rain_intensity_dbz": 12.5,
+        "closest_rain_intensity_dbz": 17.5,
         "closest_rain_intensity_label": "trace",
         "is_approaching": false,
         "reason": "no_motion_data"
@@ -1444,8 +1444,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "/home/runner/work/budva-radar/budva-radar/data/frames/opera/20260524_031000.gif",
-      "frame_timestamp": "2026-05-24T03:10:00",
+      "frame_path": "/home/runner/work/budva-radar/budva-radar/data/frames/opera/20260524_035500.gif",
+      "frame_timestamp": "2026-05-24T03:55:00",
       "rings": [
         {
           "radius_km": 10,
@@ -2849,15 +2849,15 @@
         }
       ],
       "motion": {
-        "dx_px": -5,
-        "dy_px": 10,
-        "speed_px_per_frame": 11.18,
-        "confidence": 0.529,
-        "direction_deg": 206.6,
-        "direction_cardinal": "SW",
+        "dx_px": 1,
+        "dy_px": -12,
+        "speed_px_per_frame": 12.04,
+        "confidence": 0.426,
+        "direction_deg": 4.8,
+        "direction_cardinal": "N",
         "px_per_km": 0.237,
-        "dt_minutes": 75.0,
-        "speed_kmh": 37.7
+        "dt_minutes": 45.0,
+        "speed_kmh": 67.7
       },
       "approaching": {
         "any_rain_within_radii": false
