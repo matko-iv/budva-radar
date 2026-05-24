@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-24T06:51:12",
+  "generated": "2026-05-24T08:13:23",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "/home/runner/work/budva-radar/budva-radar/data/frames/dhmz/20260524_065110_fc766b16ef15.png",
-      "frame_timestamp": "2026-05-24T06:51:10",
+      "frame_path": "/home/runner/work/budva-radar/budva-radar/data/frames/dhmz/20260524_081322_1603c81c35b4.png",
+      "frame_timestamp": "2026-05-24T08:13:22",
       "rings": [
         {
           "radius_km": 10,
@@ -862,14 +862,14 @@
         {
           "radius_km": 100,
           "n_pixels_in_annulus": 43896,
-          "n_valid_color": 3,
-          "n_wet": 3,
-          "frac_wet": 7e-05,
-          "max_dbz": 12.5,
-          "mean_dbz": 12.5,
-          "strongest_bearing": 336.9,
-          "strongest_bearing_cardinal": "NW",
-          "strongest_dbz": 12.5,
+          "n_valid_color": 0,
+          "n_wet": 0,
+          "frac_wet": 0.0,
+          "max_dbz": null,
+          "mean_dbz": null,
+          "strongest_bearing": null,
+          "strongest_bearing_cardinal": null,
+          "strongest_dbz": null,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -1142,12 +1142,12 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 73160,
-          "n_valid_color": 5,
-          "n_wet": 5,
-          "frac_wet": 7e-05,
+          "n_valid_color": 10,
+          "n_wet": 10,
+          "frac_wet": 0.00014,
           "max_dbz": 17.5,
-          "mean_dbz": 14.5,
-          "strongest_bearing": 325.0,
+          "mean_dbz": 13.5,
+          "strongest_bearing": 324.5,
           "strongest_bearing_cardinal": "NW",
           "strongest_dbz": 17.5,
           "n_samples": 24,
@@ -1420,27 +1420,16 @@
           ]
         }
       ],
-      "motion": {
-        "dx_px": -40,
-        "dy_px": -40,
-        "speed_px_per_frame": 56.57,
-        "confidence": 0.0,
-        "direction_deg": 315.0,
-        "direction_cardinal": "NW",
-        "px_per_km": 1.365,
-        "dt_minutes": 89.0,
-        "speed_kmh": 28.0
-      },
+      "motion": null,
       "approaching": {
         "any_rain_within_radii": true,
-        "closest_rain_km": 100,
-        "closest_rain_bearing_deg": 336.9,
+        "closest_rain_km": 150,
+        "closest_rain_bearing_deg": 324.5,
         "closest_rain_bearing_cardinal": "NW",
-        "closest_rain_intensity_dbz": 12.5,
+        "closest_rain_intensity_dbz": 17.5,
         "closest_rain_intensity_label": "trace",
         "is_approaching": false,
-        "reason": "no_reliable_motion",
-        "motion_confidence": 0.0
+        "reason": "no_motion_data"
       },
       "budva_pixel": {
         "x": 485.0,
@@ -1455,8 +1444,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "/home/runner/work/budva-radar/budva-radar/data/frames/opera/20260524_064000.gif",
-      "frame_timestamp": "2026-05-24T06:40:00",
+      "frame_path": "/home/runner/work/budva-radar/budva-radar/data/frames/opera/20260524_080500.gif",
+      "frame_timestamp": "2026-05-24T08:05:00",
       "rings": [
         {
           "radius_km": 10,
@@ -2860,15 +2849,15 @@
         }
       ],
       "motion": {
-        "dx_px": 0,
-        "dy_px": 3,
-        "speed_px_per_frame": 3.0,
-        "confidence": 0.152,
-        "direction_deg": 180.0,
-        "direction_cardinal": "S",
+        "dx_px": 8,
+        "dy_px": 0,
+        "speed_px_per_frame": 8.0,
+        "confidence": 0.123,
+        "direction_deg": 90.0,
+        "direction_cardinal": "E",
         "px_per_km": 0.237,
-        "dt_minutes": 90.0,
-        "speed_kmh": 8.4
+        "dt_minutes": 85.0,
+        "speed_kmh": 23.8
       },
       "approaching": {
         "any_rain_within_radii": false
@@ -2888,7 +2877,7 @@
     "rain_approaching": false,
     "closest_eta_minutes": null,
     "lines": [
-      "[dhmz] precipitation present: trace at 100 km NW, but not heading toward us (motion: ?)",
+      "[dhmz] precipitation present: trace at 150 km NW, but not heading toward us (motion: ?)",
       "[opera] no precipitation within 150 km"
     ]
   }
