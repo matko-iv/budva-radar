@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-25T19:10:13",
+  "generated": "2026-05-25T19:15:13",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\dhmz\\20260525_191012_10755bb46f77.png",
-      "frame_timestamp": "2026-05-25T19:10:12",
+      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\dhmz\\20260525_191512_f66cc7301ca1.png",
+      "frame_timestamp": "2026-05-25T19:15:12",
       "rings": [
         {
           "radius_km": 10,
@@ -93,9 +93,9 @@
               "lat": 42.3096,
               "lon": 18.9575,
               "rgb": [
-                214,
-                206,
-                189
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -104,9 +104,9 @@
               "lat": 42.2863,
               "lon": 18.9616,
               "rgb": [
-                165,
-                165,
-                165
+                230,
+                222,
+                189
               ],
               "dbz": null
             },
@@ -862,12 +862,12 @@
         {
           "radius_km": 100,
           "n_pixels_in_annulus": 43896,
-          "n_valid_color": 100,
-          "n_wet": 100,
-          "frac_wet": 0.00228,
+          "n_valid_color": 14,
+          "n_wet": 14,
+          "frac_wet": 0.00032,
           "max_dbz": 12.5,
           "mean_dbz": 12.5,
-          "strongest_bearing": 100.0,
+          "strongest_bearing": 112.4,
           "strongest_bearing_cardinal": "E",
           "strongest_dbz": 12.5,
           "n_samples": 24,
@@ -1142,14 +1142,14 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 32,
-          "n_wet": 32,
-          "frac_wet": 0.00047,
-          "max_dbz": 17.5,
-          "mean_dbz": 13.0,
-          "strongest_bearing": 325.0,
+          "n_valid_color": 29,
+          "n_wet": 29,
+          "frac_wet": 0.00043,
+          "max_dbz": 27.5,
+          "mean_dbz": 17.0,
+          "strongest_bearing": 335.9,
           "strongest_bearing_cardinal": "NW",
-          "strongest_dbz": 17.5,
+          "strongest_dbz": 27.5,
           "n_samples": 24,
           "n_in_image": 19,
           "samples": [
@@ -1366,26 +1366,26 @@
         }
       ],
       "motion": {
-        "dx_px": 2,
-        "dy_px": 0,
-        "speed_px_per_frame": 2.0,
-        "confidence": 0.323,
-        "direction_deg": 90.0,
-        "direction_cardinal": "E",
+        "dx_px": 36,
+        "dy_px": 25,
+        "speed_px_per_frame": 43.83,
+        "confidence": 0.056,
+        "direction_deg": 124.8,
+        "direction_cardinal": "SE",
         "px_per_km": 1.365,
         "dt_minutes": 5.0,
-        "speed_kmh": 17.6
+        "speed_kmh": 385.3
       },
       "approaching": {
         "any_rain_within_radii": true,
         "closest_rain_km": 100,
-        "closest_rain_bearing_deg": 100.0,
+        "closest_rain_bearing_deg": 112.4,
         "closest_rain_bearing_cardinal": "E",
         "closest_rain_intensity_dbz": 12.5,
         "closest_rain_intensity_label": "trace",
         "is_approaching": false,
         "reason": "no_reliable_motion",
-        "motion_confidence": 0.323
+        "motion_confidence": 0.056
       },
       "budva_pixel": {
         "x": 485.0,
@@ -1400,8 +1400,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\opera\\20260525_190000.gif",
-      "frame_timestamp": "2026-05-25T19:00:00",
+      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\opera\\20260525_190500.gif",
+      "frame_timestamp": "2026-05-25T19:05:00",
       "rings": [
         {
           "radius_km": 10,
@@ -2526,11 +2526,11 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 2212,
-          "n_valid_color": 4,
+          "n_valid_color": 3,
           "n_wet": 1,
           "frac_wet": 0.00045,
           "max_dbz": 30.0,
-          "mean_dbz": 6.0,
+          "mean_dbz": 8.0,
           "strongest_bearing": 319.8,
           "strongest_bearing_cardinal": "NW",
           "strongest_dbz": 30.0,
