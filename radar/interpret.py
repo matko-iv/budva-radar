@@ -19,7 +19,6 @@ import numpy as np
 import config
 from radar import fetch, calibration, colormap, sampling, motion
 
-
 def _angular_diff(a, b):
     """Minimum angular distance between two angles in degrees (range [0, 180])."""
     if a is None or b is None:
@@ -92,7 +91,11 @@ def _is_approaching(rings, motion_info):
         return None
 
     # First check: is there any rain at all?
-    wet_rings = [r for r in rings if r.get("frac_wet", 0) > 0]
+    # Require a small cluster of wet pixels (not just one stray legend match)
+    # before reporting precipitation. sampling.MIN_WET_PIXELS_PER_ANNULUS sets
+    # the floor - tuned so real cells always pass and lone false positives don't.
+    min_wet = sampling.MIN_WET_PIXELS_PER_ANNULUS
+    wet_rings = [r for r in rings if r.get("n_wet", 0) >= min_wet]
     if not wet_rings:
         return {"any_rain_within_radii": False}
 
