@@ -91,11 +91,18 @@ def _is_approaching(rings, motion_info):
         return None
 
     # First check: is there any rain at all?
+<<<<<<< HEAD
     # Require a small cluster of wet pixels (not just one stray legend match)
     # before reporting precipitation. sampling.MIN_WET_PIXELS_PER_ANNULUS sets
     # the floor - tuned so real cells always pass and lone false positives don't.
     min_wet = sampling.MIN_WET_PIXELS_PER_ANNULUS
     wet_rings = [r for r in rings if r.get("n_wet", 0) >= min_wet]
+=======
+    # We check n_wet > 0 (raw count) rather than frac_wet > 0, because frac_wet
+    # gets rounded to 3 decimals and a handful of rain pixels in a large annulus
+    # rounds down to 0.000 even though they are real.
+    wet_rings = [r for r in rings if r.get("n_wet", 0) > 0]
+>>>>>>> 5d214bc7c210e0e4e4ca6b5cf35948ee9af7419b
     if not wet_rings:
         return {"any_rain_within_radii": False}
 
