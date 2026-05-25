@@ -61,8 +61,14 @@
       <svg id="overlay" viewBox="0 0 720 751" preserveAspectRatio="none"></svg>
     </div>
 
-    <h2 style="margin-top: 18px;">Interpretacija</h2>
-    <pre id="output" class="term">> waiting for location ...</pre>
+    <section id="alert" class="alert ok" style="margin-top: 18px;">
+      <p id="alert-text">Klikni mapu ili ukucaj grad da pokrenes interpretaciju.</p>
+    </section>
+
+    <section id="summary">
+      <h2>Summary</h2>
+      <ul id="summary-list"></ul>
+    </section>
   </section>
 
 </main>
@@ -71,6 +77,7 @@
   <p>SKALA - Sistem korigovane analogne leisure analize</p>
 </footer>
 
+<script src="data.js"></script>
 <script>
 // ---------------------------------------------------------------------------
 // BOOT SEQUENCE
@@ -106,9 +113,6 @@ function finishBoot() {
   document.getElementById('app').hidden = false;
   initApp();
 }
-bootEl.addEventListener('click', finishBoot);
-document.addEventListener('keydown', finishBoot);
-
 (function runBoot() {
   let t = 0;
   for (const [line, delay] of BOOT_LINES) {
@@ -317,27 +321,102 @@ function classifyIntensity(dbz) {
   return 'extreme';
 }
 
+// Approaching logic mirrors radar/interpret.py:_is_approaching.
+// Motion vector for the DHMZ field is global to the radar image, so we reuse
+// the value from data.js (computed against Budva, but applies to any observer).
+const MIN_WET_PIXELS = 5;          // matches sampling.MIN_WET_PIXELS_PER_ANNULUS
+const MIN_MOTION_CONFIDENCE = 0.4; // matches config.MOTION_MIN_CORRELATION
+const APPROACH_TOLERANCE_DEG = 45;
+
+function angularDiff(a, b) {
+  let d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+function assessApproaching(closestRing) {
+  const motion = (window.RADAR_DATA && window.RADAR_DATA.sources
+                  && window.RADAR_DATA.sources.dhmz
+                  && window.RADAR_DATA.sources.dhmz.motion) || null;
+  if (!motion || motion.direction_deg == null) {
+    return { approaching: false, reason: 'no_motion_data', motion };
+  }
+  if ((motion.confidence || 0) < MIN_MOTION_CONFIDENCE) {
+    return { approaching: false, reason: 'low_motion_confidence', motion };
+  }
+  if (closestRing.bearing == null) {
+    return { approaching: false, reason: 'no_bearing', motion };
+  }
+  const reverse = (closestRing.bearing + 180) % 360;
+  const diff = angularDiff(motion.direction_deg, reverse);
+  const approaching = diff < APPROACH_TOLERANCE_DEG;
+  let eta = null;
+  if (approaching && motion.speed_kmh != null && motion.speed_kmh > 1) {
+    eta = +(closestRing.r_km / motion.speed_kmh * 60).toFixed(1);
+  }
+  return { approaching, reason: approaching ? 'approaching' : 'not_aligned',
+           motion, eta, angular_diff: diff };
+}
+
 function renderOutput(label, cx, cy, result, ms) {
-  const out = document.getElementById('output');
-  const lines = [];
-  lines.push(`> SCAN ${label}  pixel=(${cx},${cy})  t=${ms}ms`);
-  if (result.closest) {
-    const c = result.closest;
-    lines.push(`> CLOSEST PRECIP : ${c.km.toFixed(1)} km @ ${bearingCardinal(c.bearing)} `
-             + `(${c.bearing.toFixed(0)}°)  ${c.dbz.toFixed(1)} dBZ  [${classifyIntensity(c.dbz)}]`);
+  const alertEl = document.getElementById('alert');
+  const alertText = document.getElementById('alert-text');
+  const list = document.getElementById('summary-list');
+  list.innerHTML = '';
+
+  // Closest ring with enough wet pixels to be called "rain" (Python parity).
+  const wetRings = result.rings.filter(r => (r.n_wet || 0) >= MIN_WET_PIXELS);
+  wetRings.sort((a, b) => a.r_km - b.r_km);
+  const nearest = wetRings[0] || null;
+
+  if (!nearest) {
+    alertEl.className = 'alert ok';
+    alertText.textContent = `No precipitation heading toward ${label}`;
+    addLine(list, `[dhmz] no precipitation within 150 km of ${label}`);
   } else {
-    lines.push(`> CLOSEST PRECIP : none within 150 km`);
+    const card = bearingCardinal(nearest.bearing);
+    const intensity = classifyIntensity(nearest.max_dbz);
+    const a = assessApproaching(nearest);
+    if (a.approaching) {
+      alertEl.className = 'alert warn';
+      const etaTxt = a.eta != null ? `~${a.eta} min` : 'unknown';
+      alertText.textContent = `RAIN APPROACHING ${label} IN ${etaTxt}`;
+      const spd = a.motion.speed_kmh != null ? a.motion.speed_kmh.toFixed(1) : '?';
+      addLine(list, `[dhmz] APPROACHING: ${intensity} at ${nearest.r_km} km ${card}, `
+                  + `moving toward ${label} at ${spd} km/h, ETA ${etaTxt}`);
+    } else {
+      alertEl.className = 'alert ok';
+      alertText.textContent = `No precipitation heading toward ${label}`;
+      const mcard = (a.motion && a.motion.direction_cardinal) || '?';
+      const why = a.reason === 'no_motion_data' ? 'no motion data'
+               : a.reason === 'low_motion_confidence' ? `low motion confidence (${(a.motion.confidence || 0).toFixed(2)})`
+               : `motion ${mcard} (${a.angular_diff != null ? a.angular_diff.toFixed(0) : '?'}° off)`;
+      addLine(list, `[dhmz] precipitation present: ${intensity} at ${nearest.r_km} km ${card}, `
+                  + `but not heading toward ${label} — ${why}`);
+    }
   }
-  lines.push('> RINGS:');
-  lines.push('   radius |   wet |   max dBZ | bearing');
-  lines.push('   -------+-------+-----------+--------');
-  for (const r of result.rings) {
-    const wet = String(r.n_wet).padStart(5);
-    const dbz = r.max_dbz == null ? '     -' : r.max_dbz.toFixed(1).padStart(9);
-    const brg = r.bearing == null ? ' - ' : bearingCardinal(r.bearing);
-    lines.push(`   ${String(r.r_km).padStart(3)} km |${wet} | ${dbz} | ${brg}`);
+
+  // Closest pixel-level precip (informational; weaker than the ring threshold).
+  if (result.closest && (!nearest || result.closest.km < nearest.r_km)) {
+    const c = result.closest;
+    addLine(list, `closest echo: ${c.km.toFixed(1)} km @ ${bearingCardinal(c.bearing)} `
+                + `(${c.dbz.toFixed(1)} dBZ — ${classifyIntensity(c.dbz)})`);
   }
-  out.textContent = lines.join('\n');
+
+  // Per-ring breakdown
+  const ringSummary = result.rings.map(r => {
+    const dbz = r.max_dbz == null ? '–' : r.max_dbz.toFixed(1);
+    const brg = r.bearing == null ? '–' : bearingCardinal(r.bearing);
+    return `${r.r_km} km: wet ${r.n_wet}, max ${dbz} dBZ ${brg}`;
+  }).join(' · ');
+  addLine(list, ringSummary);
+
+  addLine(list, `Scan ${label} at pixel (${cx}, ${cy}) — ${ms} ms`);
+}
+
+function addLine(list, text) {
+  const li = document.createElement('li');
+  li.textContent = text;
+  list.appendChild(li);
 }
 </script>
 </body>
