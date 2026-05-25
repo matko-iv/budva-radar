@@ -37,7 +37,7 @@
 
 <header>
   <h1>matkov-SKALA-sistem</h1>
-  <p style="font-size: 13px; margin: 0 0 6px;">&laquo; <a href="index.html">nazad na pregled</a></p>
+  <p style="font-size: 13px; margin: 0 0 6px;"><a href="index.html">nazad na pregled</a></p>
   <p style="font-size: 12px; color: #666; margin: 0 0 8px;">Interaktivna radarska mapa &mdash; DHMZ MRC Uljenje.</p>
 </header>
 
@@ -45,7 +45,7 @@
 
   <section id="boot-section">
     <h2>boot</h2>
-    <pre id="boot" class="term"><span class="hint">[ klikni bilo gdje za skip ]</span>
+    <pre id="boot" class="term"><span class="hint">[ molim sačekajte... ]</span>
 </pre>
   </section>
 
@@ -68,7 +68,7 @@
 </main>
 
 <footer>
-  <p>Klijent-strana interpretacija &mdash; ista logika kao za Budvu (radar/sampling.py + radar/colormap.py).</p>
+  <p>SKALA - Sistem korigovane analogne leisure analize</p>
 </footer>
 
 <script>
@@ -76,11 +76,11 @@
 // BOOT SEQUENCE
 // ---------------------------------------------------------------------------
 const BOOT_LINES = [
-  ["AMIBIOS(C) 2024 American Megatrends Inc.", 30],
-  ["SKALA Interpreter v2.6.1 / Matko Interactive Software", 30],
+  ["SKALA(C) 2026 Matko Interactive Software", 800],
+  ["SKALA Interpreter v0.0.1 / Matko Interactive Software", 30],
   ["", 80],
-  ["CPU      : SKALA Radar Interpreter @ 4.20 GHz", 60],
-  ["Memory   : Testing system memory ........ 65536K OK", 200],
+  ["Image      : Already propagated", 60],
+  ["Interpret   : Testing validity ........ 65536K OK", 200],
   ["", 80],
   ["Detecting Primary Master   ... DHMZ-MRC-ULJENJE-720x751", 180],
   ["Detecting Primary Slave    ... OPERA-ODYSSEY-950x1100", 180],
@@ -92,7 +92,6 @@ const BOOT_LINES = [
   ["Loading latest_dhmz.png        [ \x1bOK\x1b ]", 180],
   ["Initializing radar grid        [ \x1bOK\x1b ]", 120],
   ["", 80],
-  ["Press DEL to enter SETUP, F1 for HELP", 60],
   ["Booting from RADAR-MAP ...", 400],
   ["", 0]
 ];
@@ -126,9 +125,7 @@ document.addEventListener('keydown', finishBoot);
   setTimeout(finishBoot, t + 200);
 })();
 
-// ---------------------------------------------------------------------------
-// RADAR INTERPRETATION (mirrors radar/colormap.py + radar/sampling.py)
-// ---------------------------------------------------------------------------
+
 const IMG_W = 720, IMG_H = 751;
 const VALID = { x0: 3, y0: 96, x1: 657, y1: 716 };
 const PX_PER_KM = 1.3648;
@@ -236,9 +233,7 @@ function interpretAt(cx, cy, pixels) {
   return { rings, closest, max_dbz: globalMaxDbz === -Infinity ? null : globalMaxDbz };
 }
 
-// ---------------------------------------------------------------------------
-// APP INIT
-// ---------------------------------------------------------------------------
+
 let pixelCache = null;
 
 function initApp() {
