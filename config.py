@@ -23,12 +23,16 @@ SOURCES = {
     "dhmz": {
         "name": "DHMZ MRC Uljenje",
         "url": "https://vrijeme.hr/uljenje-stat.png",
-        "format": "png_static",   # Single static PNG (overwritten on update)
+        "format": "png_static",
         "expected_size": (720, 751),
         "coverage": "Adriatic Sea region (Croatia + Montenegro + parts of Italy/BiH)",
-        # Valid radar area (excludes legend bar at bottom + text in upper-left).
-        # Format: (x_min, y_min, x_max, y_max). Pixels outside this box are ignored.
-        "valid_area": (15, 15, 705, 700),
+        # Tight bounding box of the actual radar map. The corners I measured are
+        # (3, 84), (657, 96), (657, 716), (2, 716) - the top edge is slanted by
+        # ~12 px so the box isn't exactly axis-aligned. I take the strict
+        # inner rectangle so nothing outside the slanted top sneaks in.
+        # Cuts the noisy top strip and the dBZ scale column on the right.
+        # Format: (x_min, y_min, x_max, y_max).
+        "valid_area": (3, 96, 657, 716),
         "calibration": None,
     },
     "opera": {
@@ -54,8 +58,11 @@ USER_AGENT = "budva-radar/0.1 (local precipitation analysis; non-commercial)"
 # ============================================================================
 # Interpretation
 # ============================================================================
-# Threshold for "rain detected" in dBZ
-RAIN_DBZ_THRESHOLD = 20.0   # ~ 0.5 mm/h (light rain)
+# Threshold for "rain detected" in dBZ.
+# 10 dBZ = light/visible echo. 20 dBZ = ~ 0.5 mm/h (light rain).
+# Using 10 means trace echoes within range are flagged, so the user is aware
+# something exists on the radar even if it's not yet actual rainfall.
+RAIN_DBZ_THRESHOLD = 10.0   # ~ visible echo on radar
 HEAVY_DBZ_THRESHOLD = 40.0  # ~ 12 mm/h (heavy rain)
 
 # Motion detection: minimum cross-correlation for a valid motion vector
