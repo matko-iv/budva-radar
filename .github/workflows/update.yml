@@ -1,9 +1,11 @@
 name: Update Budva Radar Status
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'  
-  workflow_dispatch:  # Manual trigger
+  # Cron schedule disabled - lokalni loop.py je primarni izvor (GH Actions je presporo).
+  # Ostavljen samo manual trigger preko UI-a.
+  # schedule:
+  #   - cron: '*/5 * * * *'
+  workflow_dispatch:  # Manual trigger only
 
 permissions:
   contents: write

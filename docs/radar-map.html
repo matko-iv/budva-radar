@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>skala-sistem</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  pre.term {
+    background: #fff; border: 1px solid #ddd; border-radius: 6px;
+    padding: 12px; font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+    font-size: 13px; line-height: 1.4; white-space: pre; color: #222;
+    overflow-x: auto; margin: 0;
+  }
+  pre.term .hint { color: #888; font-size: 11px; }
+  pre.term .ok   { color: #1b5e20; font-weight: 600; }
+  #controls { display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+              margin: 0 0 10px; font-size: 13px; }
+  #controls input, #controls button {
+    font-family: inherit; font-size: 13px; padding: 4px 8px;
+    border: 1px solid #ccc; border-radius: 4px; background: #fff;
+  }
+  #controls button { cursor: pointer; }
+  #controls button:hover { background: #f0f0f0; }
+  #controls .dim  { color: #888; }
+  #controls .ok   { color: #1b5e20; }
+  #controls .warn { color: #bf360c; }
+  #controls .err  { color: #c62828; }
+  #map-wrap { position: relative; display: inline-block; max-width: 100%; }
+  #canvas { display: block; max-width: 100%; height: auto;
+            border: 1px solid #ddd; border-radius: 4px; cursor: crosshair;
+            background: #fff; }
+  #overlay { position: absolute; top: 0; left: 0;
+             width: 100%; height: 100%; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>matkov-SKALA-sistem</h1>
+  <p style="font-size: 13px; margin: 0 0 6px;">&laquo; <a href="index.html">nazad na pregled</a></p>
+  <p style="font-size: 12px; color: #666; margin: 0 0 8px;">Interaktivna radarska mapa &mdash; DHMZ MRC Uljenje.</p>
+</header>
+
+<main>
+
+  <section id="boot-section">
+    <h2>boot</h2>
+    <pre id="boot" class="term"><span class="hint">[ klikni bilo gdje za skip ]</span>
+</pre>
+  </section>
+
+  <section id="app" hidden>
+    <h2>Lokacija</h2>
+    <div id="controls">
+      <input id="city-input" placeholder="ime grada (Budva, Petrovac) ili klikni mapu" autocomplete="off">
+      <button id="city-btn">setuj</button>
+      <span class="dim" id="status">mapa se ucitava ...</span>
+    </div>
+    <div id="map-wrap">
+      <canvas id="canvas" width="720" height="751"></canvas>
+      <svg id="overlay" viewBox="0 0 720 751" preserveAspectRatio="none"></svg>
+    </div>
+
+    <h2 style="margin-top: 18px;">Interpretacija</h2>
+    <pre id="output" class="term">> waiting for location ...</pre>
+  </section>
+
+</main>
+
+<footer>
+  <p>Klijent-strana interpretacija &mdash; ista logika kao za Budvu (radar/sampling.py + radar/colormap.py).</p>
+</footer>
+
+<script>
+// ---------------------------------------------------------------------------
+// BOOT SEQUENCE
+// ---------------------------------------------------------------------------
+const BOOT_LINES = [
+  ["AMIBIOS(C) 2024 American Megatrends Inc.", 30],
+  ["SKALA Interpreter v2.6.1 / Matko Interactive Software", 30],
+  ["", 80],
+  ["CPU      : SKALA Radar Interpreter @ 4.20 GHz", 60],
+  ["Memory   : Testing system memory ........ 65536K OK", 200],
+  ["", 80],
+  ["Detecting Primary Master   ... DHMZ-MRC-ULJENJE-720x751", 180],
+  ["Detecting Primary Slave    ... OPERA-ODYSSEY-950x1100", 180],
+  ["Detecting Secondary Master ... none", 40],
+  ["Detecting Secondary Slave  ... none", 40],
+  ["", 80],
+  ["Loading colormap.cmap          [ \x1bOK\x1b ]", 120],
+  ["Loading calibration.cal        [ \x1bOK\x1b ]", 120],
+  ["Loading latest_dhmz.png        [ \x1bOK\x1b ]", 180],
+  ["Initializing radar grid        [ \x1bOK\x1b ]", 120],
+  ["", 80],
+  ["Press DEL to enter SETUP, F1 for HELP", 60],
+  ["Booting from RADAR-MAP ...", 400],
+  ["", 0]
+];
+
+const bootEl = document.getElementById('boot');
+const bootSection = document.getElementById('boot-section');
+let bootDone = false;
+function finishBoot() {
+  if (bootDone) return;
+  bootDone = true;
+  bootSection.hidden = true;
+  document.getElementById('app').hidden = false;
+  initApp();
+}
+bootEl.addEventListener('click', finishBoot);
+document.addEventListener('keydown', finishBoot);
+
+(function runBoot() {
+  let t = 0;
+  for (const [line, delay] of BOOT_LINES) {
+    t += delay;
+    setTimeout(() => {
+      if (bootDone) return;
+      const safe = line
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/\x1bOK\x1b/g, '<span class="ok">  OK  </span>');
+      bootEl.insertAdjacentHTML('beforeend', safe + '\n');
+    }, t);
+  }
+  setTimeout(finishBoot, t + 200);
+})();
+
+// ---------------------------------------------------------------------------
+// RADAR INTERPRETATION (mirrors radar/colormap.py + radar/sampling.py)
+// ---------------------------------------------------------------------------
+const IMG_W = 720, IMG_H = 751;
+const VALID = { x0: 3, y0: 96, x1: 657, y1: 716 };
+const PX_PER_KM = 1.3648;
+const RADII_KM = [10, 25, 50, 100, 150];
+const RAIN_DBZ = 10.0;
+const NO_MATCH = 35;
+
+const DHMZ_LEGEND = [
+  [  0, 150, 219, 12.5],
+  [  0,  85, 190, 17.5],
+  [  0,  78, 128, 22.5],
+  [  0, 150,  10, 27.5],
+  [  0, 192,  39, 32.5],
+  [  0, 232,  10, 37.5],
+  [255, 255,   0, 42.5],
+  [255, 187,   0, 47.5],
+  [255, 131,   0, 52.5],
+  [255,   0,   0, 57.5],
+  [161,   0,   0, 62.5],
+  [115,   0, 112, 67.5]
+];
+
+const BG_TONES = [
+  [  0,  60, 112], [  0,  75, 140], [ 65,  91, 138], [110, 140, 170],
+  [ 64, 104,  40], [ 80, 130,  51], [130, 160, 130], [180, 200, 180],
+  [192, 192, 192], [220, 215, 200], [200, 200, 195],
+  [189, 189, 255], [230, 222, 189], [239, 214, 189], [247, 230, 189],
+  [212, 155,  95], [190, 140,  85], [170, 130,  90], [155, 120,  85], [140, 105,  70],
+  [255, 255, 255], [  0,   0,   0], [240, 240, 240], [165, 165, 165]
+];
+
+const CITIES = {
+  budva:    { x: 485, y: 480, label: "Budva" },
+  petrovac: { x: 498, y: 490, label: "Petrovac" }
+};
+
+function classifyDbz(r, g, b) {
+  let bestLeg = Infinity, bestLegIdx = -1;
+  for (let i = 0; i < DHMZ_LEGEND.length; i++) {
+    const L = DHMZ_LEGEND[i];
+    const dr = r - L[0], dg = g - L[1], db = b - L[2];
+    const d = dr*dr + dg*dg + db*db;
+    if (d < bestLeg) { bestLeg = d; bestLegIdx = i; }
+  }
+  let bestBg = Infinity;
+  for (const B of BG_TONES) {
+    const dr = r - B[0], dg = g - B[1], db = b - B[2];
+    const d = dr*dr + dg*dg + db*db;
+    if (d < bestBg) bestBg = d;
+  }
+  const T2 = NO_MATCH * NO_MATCH;
+  if (bestLeg < T2 && bestLeg < bestBg) return DHMZ_LEGEND[bestLegIdx][3];
+  return NaN;
+}
+
+function bearingCardinal(b) {
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE',
+                'S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return dirs[Math.round(b / 22.5) % 16];
+}
+
+function interpretAt(cx, cy, pixels) {
+  const rings = [];
+  let prevR = 0;
+  let closest = null;
+  let globalMaxDbz = -Infinity;
+  for (const rKm of RADII_KM) {
+    const rMaxPx = rKm * PX_PER_KM;
+    const rMinPx = prevR * PX_PER_KM;
+    const xMin = Math.max(VALID.x0, Math.floor(cx - rMaxPx));
+    const xMax = Math.min(VALID.x1, Math.ceil(cx + rMaxPx));
+    const yMin = Math.max(VALID.y0, Math.floor(cy - rMaxPx));
+    const yMax = Math.min(VALID.y1, Math.ceil(cy + rMaxPx));
+    let nPix = 0, nWet = 0, maxDbz = -Infinity, strongestBrg = null;
+    const rMaxPx2 = rMaxPx * rMaxPx, rMinPx2 = rMinPx * rMinPx;
+    for (let y = yMin; y < yMax; y++) {
+      for (let x = xMin; x < xMax; x++) {
+        const dx = x - cx, dy = y - cy;
+        const distPx2 = dx*dx + dy*dy;
+        if (distPx2 > rMaxPx2 || distPx2 <= rMinPx2) continue;
+        nPix++;
+        const idx = (y * IMG_W + x) * 4;
+        const dbz = classifyDbz(pixels[idx], pixels[idx+1], pixels[idx+2]);
+        if (isNaN(dbz)) continue;
+        const distPx = Math.sqrt(distPx2);
+        const brg = (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360;
+        if (dbz >= RAIN_DBZ) {
+          nWet++;
+          const distKm = distPx / PX_PER_KM;
+          if (closest === null || distKm < closest.km) {
+            closest = { km: distKm, bearing: brg, dbz: dbz };
+          }
+        }
+        if (dbz > maxDbz) { maxDbz = dbz; strongestBrg = brg; }
+        if (dbz > globalMaxDbz) globalMaxDbz = dbz;
+      }
+    }
+    rings.push({
+      r_km: rKm, n_pix: nPix, n_wet: nWet,
+      max_dbz: maxDbz === -Infinity ? null : maxDbz,
+      bearing: strongestBrg
+    });
+    prevR = rKm;
+  }
+  return { rings, closest, max_dbz: globalMaxDbz === -Infinity ? null : globalMaxDbz };
+}
+
+// ---------------------------------------------------------------------------
+// APP INIT
+// ---------------------------------------------------------------------------
+let pixelCache = null;
+
+function initApp() {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    ctx.drawImage(img, 0, 0);
+    try {
+      pixelCache = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      setStatus('mapa ucitana &mdash; klikni ili ukucaj grad', 'ok');
+    } catch (e) {
+      setStatus('greska pri citanju pixela (CORS / file://): ' + e.message, 'err');
+    }
+  };
+  img.onerror = () => setStatus('greska: latest_dhmz.png nije nadjen', 'err');
+  img.src = 'latest_dhmz.png?t=' + Date.now();
+
+  canvas.addEventListener('click', (ev) => {
+    const rect = canvas.getBoundingClientRect();
+    const sx = canvas.width / rect.width;
+    const sy = canvas.height / rect.height;
+    const cx = Math.round((ev.clientX - rect.left) * sx);
+    const cy = Math.round((ev.clientY - rect.top) * sy);
+    setLocation(cx, cy, `(${cx}, ${cy})`);
+  });
+
+  document.getElementById('city-btn').addEventListener('click', handleCityInput);
+  document.getElementById('city-input').addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') handleCityInput();
+  });
+}
+
+function handleCityInput() {
+  const name = document.getElementById('city-input').value.trim().toLowerCase();
+  if (!name) return;
+  const c = CITIES[name];
+  if (!c) { setStatus(`grad "${name}" nije u bazi (Budva, Petrovac)`, 'warn'); return; }
+  setLocation(c.x, c.y, c.label);
+}
+
+function setStatus(html, cls) {
+  const el = document.getElementById('status');
+  el.innerHTML = html;
+  el.className = cls || 'dim';
+}
+
+function setLocation(cx, cy, label) {
+  if (!pixelCache) { setStatus('mapa jos nije ucitana', 'warn'); return; }
+  drawOverlay(cx, cy);
+  setStatus(`scanning ${label} ...`);
+  setTimeout(() => {
+    const t0 = performance.now();
+    const result = interpretAt(cx, cy, pixelCache);
+    const ms = (performance.now() - t0).toFixed(0);
+    renderOutput(label, cx, cy, result, ms);
+    setStatus(`gotovo (${ms} ms)`, 'ok');
+  }, 10);
+}
+
+function drawOverlay(cx, cy) {
+  const svg = document.getElementById('overlay');
+  let s = '';
+  for (const r of RADII_KM) {
+    const rPx = r * PX_PER_KM;
+    s += `<circle cx="${cx}" cy="${cy}" r="${rPx}" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="6 4" opacity="0.65"/>`;
+    s += `<text x="${cx}" y="${cy - rPx - 2}" fill="#fff" stroke="#000" stroke-width="0.4" font-size="11" text-anchor="middle">${r}km</text>`;
+  }
+  s += `<circle cx="${cx}" cy="${cy}" r="4" fill="#d32f2f" stroke="#fff" stroke-width="1"/>`;
+  svg.innerHTML = s;
+}
+
+function classifyIntensity(dbz) {
+  if (dbz == null || isNaN(dbz)) return 'no precip';
+  if (dbz < 20) return 'trace';
+  if (dbz < 30) return 'light rain';
+  if (dbz < 40) return 'moderate rain';
+  if (dbz < 50) return 'heavy rain';
+  return 'extreme';
+}
+
+function renderOutput(label, cx, cy, result, ms) {
+  const out = document.getElementById('output');
+  const lines = [];
+  lines.push(`> SCAN ${label}  pixel=(${cx},${cy})  t=${ms}ms`);
+  if (result.closest) {
+    const c = result.closest;
+    lines.push(`> CLOSEST PRECIP : ${c.km.toFixed(1)} km @ ${bearingCardinal(c.bearing)} `
+             + `(${c.bearing.toFixed(0)}°)  ${c.dbz.toFixed(1)} dBZ  [${classifyIntensity(c.dbz)}]`);
+  } else {
+    lines.push(`> CLOSEST PRECIP : none within 150 km`);
+  }
+  lines.push('> RINGS:');
+  lines.push('   radius |   wet |   max dBZ | bearing');
+  lines.push('   -------+-------+-----------+--------');
+  for (const r of result.rings) {
+    const wet = String(r.n_wet).padStart(5);
+    const dbz = r.max_dbz == null ? '     -' : r.max_dbz.toFixed(1).padStart(9);
+    const brg = r.bearing == null ? ' - ' : bearingCardinal(r.bearing);
+    lines.push(`   ${String(r.r_km).padStart(3)} km |${wet} | ${dbz} | ${brg}`);
+  }
+  out.textContent = lines.join('\n');
+}
+</script>
+</body>
+</html>
