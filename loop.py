@@ -26,7 +26,14 @@ def push_docs():
     our push, we retry pull --rebase + push up to 3 times before giving up.
     """
     try:
+        # Stage everything the GH Actions workflow stages, so locally produced
+        # frames + status files don't pile up as untracked changes.
         subprocess.run(["git", "add", "docs/"], cwd=BASE_DIR,
+                       check=False, capture_output=True, timeout=15)
+        subprocess.run(["git", "add", "output/status.json"], cwd=BASE_DIR,
+                       check=False, capture_output=True, timeout=15)
+        # Use -A so frame rotations (additions AND deletions) are both tracked.
+        subprocess.run(["git", "add", "-A", "data/frames/"], cwd=BASE_DIR,
                        check=False, capture_output=True, timeout=15)
         msg = f"radar update {datetime.now():%Y-%m-%d %H:%M:%S}"
         subprocess.run([
