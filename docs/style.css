@@ -30,7 +30,6 @@ section .hint { font-size: 12px; color: #666; margin: 0 0 8px; }
 }
 #summary-list li { margin: 4px 0; }
 
-/* Radar image previews */
 #images-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
@@ -60,7 +59,6 @@ section .hint { font-size: 12px; color: #666; margin: 0 0 8px; }
   pointer-events: none;
 }
 
-/* Per-source cards */
 #sources-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));

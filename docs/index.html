@@ -2,12 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>budva-radar</title>
+<title>skala-sistem</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-  <h1>budva-radar</h1>
+  <h1>matkov-SKALA-sistem</h1>
+    <p style="font-size: 12px; color: #666; margin: 0 0 8px;">Modul za interpretaciju radarskih mjerenja.</p>
+    <p style="font-size: 10px; color: #666; margin: 0 0 8px;">Kliknite <a href="https://github.com/matko-iv/budva-radar">ovđe</a> za dokumentaciju.</p>
   <p id="generated">loading...</p>
 </header>
 
@@ -23,7 +25,6 @@
 
   <section id="radar-images">
     <h2>Latest radar images</h2>
-    <p class="hint">Red dot = Budva. Concentric circles = sampling rings (10/25/50/100/150 km).</p>
     <div id="images-grid"></div>
   </section>
 
@@ -63,7 +64,7 @@ function render(d) {
   if (d.summary.rain_approaching) {
     alert.className = 'alert warn';
     alertText.textContent =
-      'RAIN APPROACHING — ETA ~' + d.summary.closest_eta_minutes + ' min';
+      'RAIN APPROACHING IN ~' + d.summary.closest_eta_minutes + ' min';
   } else {
     alert.className = 'alert ok';
     alertText.textContent = 'No precipitation heading toward Budva';
@@ -133,11 +134,13 @@ function render(d) {
       const conf = (info.motion.confidence || 0).toFixed(2);
       html += '<p>Motion: ' + dir + ' @ ' + spd + ' (conf ' + conf + ')</p>';
     }
-    html += '<table><thead><tr><th>R (km)</th><th>wet frac</th><th>max dBZ</th><th>bearing</th></tr></thead><tbody>';
+    html += '<table><thead><tr><th>R (km)</th><th>wet px</th><th>max dBZ</th><th>bearing</th></tr></thead><tbody>';
     info.rings.forEach(ring => {
-      html += '<tr>' +
+      const nWet = ring.n_wet || 0;
+      const hasRain = nWet > 0;
+      html += '<tr' + (hasRain ? ' style="background:#fff8e1"' : '') + '>' +
         '<td>' + ring.radius_km + '</td>' +
-        '<td>' + (ring.frac_wet || 0).toFixed(2) + '</td>' +
+        '<td>' + nWet + (ring.n_pixels_in_annulus ? ' / ' + ring.n_pixels_in_annulus : '') + '</td>' +
         '<td>' + (ring.max_dbz != null ? ring.max_dbz : '–') + '</td>' +
         '<td>' + (ring.strongest_bearing_cardinal || '–') + '</td>' +
       '</tr>';

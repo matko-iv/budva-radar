@@ -1,18 +1,18 @@
 """Detect cloud motion between two frames via cross-correlation.
 
-Approach: take a region of interest (ROI) around the location from 2 frames
-and find the shift (dx, dy) that maximizes the cross-correlation. This gives
-the average motion vector in pixels/frame, then converts it to km/h using
-the calibration.
+Take a region of interest around Budva from 2 frames and find the (dx, dy)
+shift that maximizes cross-correlation. That's the motion vector in
+pixels/frame, converted to km/h via the calibration.
 
-This is simpler than full optical flow (Lucas-Kanade) but is sufficient for
-synoptic-scale rain band motion.
+Simpler than Lucas-Kanade optical flow but good enough for synoptic rain
+band motion.
 """
 
 import datetime
 import numpy as np
 from scipy.signal import correlate2d
 
+import config
 from radar import calibration, colormap
 
 
@@ -24,13 +24,20 @@ def _frame_timestamp(path) -> datetime.datetime:
 
 
 def _to_intensity_grid(rgb_array, source) -> np.ndarray:
-    """Convert an RGB image to a 2D intensity grid (mm/h).
-    This gives us an 'image' that motion detection can cross-correlate."""
+    """RGB image -> 2D intensity grid (mm/h). Pixels outside the source's
+    valid_area are forced to zero so timestamp/legend noise can't drive the
+    cross-correlation."""
     H, W = rgb_array.shape[:2]
     flat = rgb_array.reshape(-1, 3)
     dbz = colormap.pixels_to_dbz(flat, source)
-    mmh = colormap.dbz_to_mmh(dbz)
-    return mmh.reshape(H, W)
+    mmh = colormap.dbz_to_mmh(dbz).reshape(H, W)
+    va = config.SOURCES.get(source, {}).get("valid_area")
+    if va is not None:
+        vx0, vy0, vx1, vy1 = va
+        mask = np.zeros_like(mmh, dtype=bool)
+        mask[vy0:vy1, vx0:vx1] = True
+        mmh = np.where(mask, mmh, 0.0)
+    return mmh
 
 
 def _crop_around_pixel(grid, px, py, half_size):

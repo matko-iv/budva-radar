@@ -23,67 +23,90 @@ from PIL import Image
 # ----------------------------------------------------------------------------
 
 # DHMZ Uljenje legend (RGB, dBZ equivalent)
-# From legend in the image corner (visual inspection):
-# dark blue -> light blue -> cyan -> green -> yellow -> orange -> red -> magenta
+# Sampled directly from the legend bar at the bottom of the actual image
+# (y=722). Labels on the bar mark RANGES (not point values):
+#   2-10, 10-15, 15-20, 20-25, ..., 65-70 dBZ.
+# We assign each color the MIDPOINT of its range — better for max_dbz reports
+# and for the Marshall-Palmer Z->R conversion than using the lower bound.
+#
+# The (165, 165, 165) gray "2-10 dBZ" band is excluded: it is essentially
+# radar noise and overlaps with basemap text/city tones, so it lives in
+# BACKGROUND_RGB_TONES instead.
 DHMZ_LEGEND = [
-    # (R, G, B, dBZ)
-    ( 96,  96, 160,  10),  # dark blue - trace
-    (128, 128, 192,  15),
-    ( 64,  64, 255,  20),  # blue - very light
-    ( 64, 192, 255,  25),  # light blue
-    ( 64, 255, 192,  30),  # turquoise
-    ( 64, 255,  64,  35),  # green
-    (192, 255,  64,  40),  # yellow-green
-    (255, 192,  64,  45),  # orange-yellow
-    (255, 128,  64,  50),  # orange
-    (255,  64,  64,  55),  # red
-    (255,  64, 192,  60),  # magenta - extreme
+    # (R, G, B, dBZ at range midpoint)
+    (  0, 150, 219,  12.5),  # 10-15 light blue
+    (  0,  85, 190,  17.5),  # 15-20 medium blue
+    (  0,  78, 128,  22.5),  # 20-25 dark blue
+    (  0, 150,  10,  27.5),  # 25-30 dark green
+    (  0, 192,  39,  32.5),  # 30-35 green
+    (  0, 232,  10,  37.5),  # 35-40 bright green
+    (255, 255,   0,  42.5),  # 40-45 yellow
+    (255, 187,   0,  47.5),  # 45-50 amber
+    (255, 131,   0,  52.5),  # 50-55 orange
+    (255,   0,   0,  57.5),  # 55-60 red
+    (161,   0,   0,  62.5),  # 60-65 dark red
+    (115,   0, 112,  67.5),  # 65-70 purple - extreme
 ]
 
 # OPERA Odyssey legend (RGB, dBZ)
-# Very similar to DHMZ, small variation in shades
+# Sampled directly from the vertical legend bar in the top-right of the
+# actual OPERA composite image (x=880, scan y=20..330).
+# Labels are at POINT VALUES (irregular spacing: 50, 45, 40, 34, 30, 24, 18,
+# 12, 8, 0, -6), so each color = exact dBZ, not a range midpoint.
 OPERA_LEGEND = [
-    ( 80,  80, 144,  10),
-    (112, 112, 192,  15),
-    ( 64,  64, 224,  20),
-    ( 64, 176, 240,  25),
-    ( 64, 240, 176,  30),
-    ( 64, 224,  64,  35),
-    (192, 240,  64,  40),
-    (240, 192,  64,  45),
-    (240, 128,  64,  50),
-    (240,  64,  64,  55),
-    (240,  64, 176,  60),
+    (190, 255, 255,  50),  # very pale cyan - max
+    (250, 120, 255,  45),  # pink/magenta
+    (255,  80,  60,  40),  # red
+    (255, 150,  50,  34),  # orange
+    (255, 205,  20,  30),  # amber
+    (240, 240,  20,  24),  # yellow
+    (140, 230,  20,  18),  # yellow-green
+    (  5, 205, 170,  12),  # teal
+    ( 10, 185, 175,   8),  # cyan
+    ( 10, 155, 180,   0),  # light blue
+    ( 10, 130, 200,  -6),  # blue - below detection
 ]
 
 # Basemap tones (sea, land, terrain, text) should be treated as "no precip".
 # Pixels close to any of these are mapped to NaN dBZ.
 BACKGROUND_RGB_TONES = [
-    # Sea / water
+    # Sea / water (OPERA dark sea)
+    (  0,  60, 112),    # OPERA dark sea
+    (  0,  75, 140),    # OPERA medium sea
     ( 65,  91, 138),    # blue sea
     (110, 140, 170),
-    # Forests / vegetation greens
+    # Forests / vegetation greens (OPERA land)
+    ( 64, 104,  40),    # OPERA dark green land
+    ( 80, 130,  51),    # OPERA medium green land
     (130, 160, 130),
     (180, 200, 180),
     # Pale neutrals (basemap land)
     (192, 192, 192),
     (220, 215, 200),
     (200, 200, 195),
+    # DHMZ basemap shaded relief (terrain visible through transparent radar layer)
+    (189, 189, 255),    # lavender "no echo" overlay over coverage area
+    (230, 222, 189),    # tan terrain
+    (239, 214, 189),
+    (247, 230, 189),
     # Terrain / relief shading (DHMZ uses tan/brown shaded relief for hills)
-    (212, 155,  95),    # one of the false-positive tones we hit
+    (212, 155,  95),
     (190, 140,  85),
     (170, 130,  90),
     (155, 120,  85),
     (140, 105,  70),
-    # White / black (text, borders, lines)
+    # White / black (text, borders, lines, city dots)
     (255, 255, 255),
     (  0,   0,   0),
     (240, 240, 240),
+    (165, 165, 165),    # DHMZ "2 dBZ" gray = also basemap text/city tone
 ]
 
 LEGENDS = {
-    "dhmz": np.array(DHMZ_LEGEND, dtype=np.int32),
-    "opera": np.array(OPERA_LEGEND, dtype=np.int32),
+    # float dtype so fractional dBZ values (DHMZ midpoints: 12.5, 17.5, ...) survive.
+    # RGB columns are still integer-valued, just stored as float.
+    "dhmz": np.array(DHMZ_LEGEND, dtype=np.float64),
+    "opera": np.array(OPERA_LEGEND, dtype=np.float64),
 }
 BACKGROUND_ARRAY = np.array(BACKGROUND_RGB_TONES, dtype=np.int32)
 
