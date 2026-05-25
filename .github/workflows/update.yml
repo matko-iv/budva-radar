@@ -2,8 +2,7 @@ name: Update Budva Radar Status
 
 on:
   schedule:
-    # Every 15 min (GitHub cron is best-effort; usually delays ~5-10 min)
-    - cron: '*/15 * * * *'
+    - cron: '*/5 * * * *'  
   workflow_dispatch:  # Manual trigger
 
 permissions:
@@ -17,7 +16,7 @@ concurrency:
 jobs:
   radar:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 2
     env:
       TZ: Europe/Podgorica
     steps:
