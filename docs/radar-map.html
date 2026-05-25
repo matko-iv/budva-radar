@@ -38,7 +38,6 @@
 <header>
   <h1>matkov-SKALA-sistem</h1>
   <p style="font-size: 13px; margin: 0 0 6px;"><a href="index.html">nazad na pregled</a></p>
-  <p style="font-size: 12px; color: #666; margin: 0 0 8px;">Interaktivna radarska mapa &mdash; DHMZ MRC Uljenje.</p>
 </header>
 
 <main>
@@ -250,7 +249,7 @@ function initApp() {
     ctx.drawImage(img, 0, 0);
     try {
       pixelCache = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      setStatus('mapa ucitana &mdash; klikni ili ukucaj grad', 'ok');
+      setStatus('', 'ok');
     } catch (e) {
       setStatus('greska pri citanju pixela (CORS / file://): ' + e.message, 'err');
     }
