@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-26T18:26:58",
+  "generated": "2026-05-26T18:28:10",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -1428,8 +1428,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260526_181500.gif",
-      "frame_timestamp": "2026-05-26T18:15:00",
+      "frame_path": "data/frames/opera/20260526_182000.gif",
+      "frame_timestamp": "2026-05-26T18:20:00",
       "center_dbz": null,
       "rings": [
         {
@@ -1719,11 +1719,11 @@
         {
           "radius_km": 25,
           "n_pixels_in_annulus": 88,
-          "n_valid_color": 2,
-          "n_wet": 1,
-          "frac_wet": 0.01136,
+          "n_valid_color": 5,
+          "n_wet": 3,
+          "frac_wet": 0.03409,
           "max_dbz": 18.0,
-          "mean_dbz": 9.0,
+          "mean_dbz": 7.2,
           "strongest_bearing": 0.0,
           "strongest_bearing_cardinal": "N",
           "strongest_dbz": 18.0,
@@ -1739,11 +1739,11 @@
               "lat": 42.5112,
               "lon": 18.84,
               "rgb": [
-                240,
-                240,
-                20
+                5,
+                205,
+                170
               ],
-              "dbz": 24.0
+              "dbz": 12.0
             },
             {
               "bearing": 15.0,
@@ -1751,10 +1751,10 @@
               "lon": 18.9189,
               "rgb": [
                 255,
-                205,
-                20
+                150,
+                50
               ],
-              "dbz": 30.0
+              "dbz": 34.0
             },
             {
               "bearing": 30.0,
@@ -2003,18 +2003,18 @@
         {
           "radius_km": 50,
           "n_pixels_in_annulus": 328,
-          "n_valid_color": 17,
-          "n_wet": 12,
-          "frac_wet": 0.03659,
-          "max_dbz": 40.0,
-          "mean_dbz": 22.9,
-          "strongest_bearing": 15.9,
+          "n_valid_color": 18,
+          "n_wet": 13,
+          "frac_wet": 0.03963,
+          "max_dbz": 45.0,
+          "mean_dbz": 22.2,
+          "strongest_bearing": 8.1,
           "strongest_bearing_cardinal": "N",
-          "strongest_dbz": 40.0,
+          "strongest_dbz": 45.0,
           "closest_wet_km": 25.35,
           "closest_wet_bearing": 0.0,
           "closest_wet_bearing_cardinal": "N",
-          "closest_wet_dbz": 24.0,
+          "closest_wet_dbz": 12.0,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -2287,16 +2287,16 @@
         {
           "radius_km": 100,
           "n_pixels_in_annulus": 1320,
-          "n_valid_color": 44,
-          "n_wet": 32,
-          "frac_wet": 0.02424,
+          "n_valid_color": 48,
+          "n_wet": 30,
+          "frac_wet": 0.02273,
           "max_dbz": 34.0,
-          "mean_dbz": 13.1,
+          "mean_dbz": 11.9,
           "strongest_bearing": 59.0,
           "strongest_bearing_cardinal": "NE",
           "strongest_dbz": 34.0,
-          "closest_wet_km": 76.16,
-          "closest_wet_bearing": 109.4,
+          "closest_wet_km": 76.51,
+          "closest_wet_bearing": 83.7,
           "closest_wet_bearing_cardinal": "E",
           "closest_wet_dbz": 12.0,
           "n_samples": 24,
@@ -2571,18 +2571,18 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 2212,
-          "n_valid_color": 13,
-          "n_wet": 12,
-          "frac_wet": 0.00542,
-          "max_dbz": 30.0,
-          "mean_dbz": 20.5,
-          "strongest_bearing": 51.3,
+          "n_valid_color": 10,
+          "n_wet": 10,
+          "frac_wet": 0.00452,
+          "max_dbz": 34.0,
+          "mean_dbz": 23.0,
+          "strongest_bearing": 56.3,
           "strongest_bearing_cardinal": "NE",
-          "strongest_dbz": 30.0,
+          "strongest_dbz": 34.0,
           "closest_wet_km": 100.14,
           "closest_wet_bearing": 62.4,
           "closest_wet_bearing_cardinal": "NE",
-          "closest_wet_dbz": 24.0,
+          "closest_wet_dbz": 12.0,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -2857,7 +2857,7 @@
         "dx_px": 0,
         "dy_px": 0,
         "speed_px_per_frame": 0.0,
-        "confidence": 0.879,
+        "confidence": 0.612,
         "direction_deg": null,
         "direction_cardinal": null,
         "px_per_km": 0.237,
