@@ -328,9 +328,10 @@ def interpret_all() -> dict:
             # or cell is too far to be a reliable predictor (reason == 'aligned_but_too_far').
             any_in_vicinity = True
             reason = appr.get("reason", "")
-            why = ("aligned but too far at {km} km — likely to dissipate"
-                   if reason == "aligned_but_too_far"
-                   else f"not heading toward us (motion: {appr.get('motion_direction_cardinal','?')})")
+            if reason == "aligned_but_too_far":
+                why = f"aligned but too far ({km} km > {APPROACHING_MAX_KM:.0f} km — likely to dissipate)"
+            else:
+                why = f"not heading toward us (motion: {appr.get('motion_direction_cardinal','?')})"
             summary_lines.append(
                 f"[{src_id}] precipitation present: {intensity} at {km} km {card}, "
                 f"{why}"
