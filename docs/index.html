@@ -59,16 +59,30 @@ function render(d) {
   document.getElementById('generated').textContent =
     'Generated: ' + gen.toLocaleString();
 
-  // Alert
+  // Alert: rain-at-location > approaching > clear
   const alert = document.getElementById('alert');
   const alertText = document.getElementById('alert-text');
-  if (d.summary.rain_approaching) {
+  const locName = (d.location && d.location.name) || 'lokaciji';
+  if (d.summary.rain_at_location) {
+    alert.className = 'alert warn';
+    // Pull intensity from whichever source first reported rain at location.
+    let intensity = '';
+    for (const info of Object.values(d.sources || {})) {
+      const a = info && info.approaching;
+      if (a && a.rain_at_location) {
+        intensity = a.closest_rain_intensity_label || '';
+        break;
+      }
+    }
+    alertText.textContent = 'KIŠA PADA U ' + locName.toUpperCase()
+                          + (intensity ? ' — ' + intensity : '');
+  } else if (d.summary.rain_approaching) {
     alert.className = 'alert warn';
     alertText.textContent =
       'RAIN APPROACHING IN ~' + d.summary.closest_eta_minutes + ' min';
   } else {
     alert.className = 'alert ok';
-    alertText.textContent = 'No precipitation heading toward Budva';
+    alertText.textContent = 'No precipitation heading toward ' + locName;
   }
 
   // Summary lines
