@@ -87,10 +87,19 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
 
     approaching = _is_approaching(rings, motion_info, center_dbz)
 
+    # Store the path RELATIVE to the repo root so the JSON is reproducible
+    # across machines. Previously this was an absolute Windows path and
+    # caused diff churn whenever a different clone pushed.
+    try:
+        _repo_root = Path(__file__).resolve().parent.parent
+        frame_path_rel = str(latest_path.resolve().relative_to(_repo_root))
+    except (ValueError, OSError):
+        frame_path_rel = str(latest_path.name)
+
     return {
         "source": source_id,
         "ok": True,
-        "frame_path": str(latest_path),
+        "frame_path": frame_path_rel.replace("\\", "/"),
         "frame_timestamp": motion._frame_timestamp(latest_path).isoformat()
             if "_" in latest_path.stem else None,
         "center_dbz": round(center_dbz, 1) if center_dbz is not None else None,
