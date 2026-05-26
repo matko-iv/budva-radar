@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-26T09:46:12",
+  "generated": "2026-05-26T09:51:12",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\dhmz\\20260526_094611_c286757fd16b.png",
-      "frame_timestamp": "2026-05-26T09:46:11",
+      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\dhmz\\20260526_095110_56fcb8f9604d.png",
+      "frame_timestamp": "2026-05-26T09:51:10",
       "rings": [
         {
           "radius_km": 10,
@@ -395,9 +395,9 @@
               "lat": 42.2278,
               "lon": 19.1333,
               "rgb": [
-                165,
-                165,
-                165
+                214,
+                230,
+                181
               ],
               "dbz": null
             },
@@ -582,14 +582,14 @@
         {
           "radius_km": 50,
           "n_pixels_in_annulus": 10968,
-          "n_valid_color": 8,
-          "n_wet": 8,
-          "frac_wet": 0.00073,
-          "max_dbz": 17.5,
-          "mean_dbz": 13.8,
-          "strongest_bearing": 318.7,
-          "strongest_bearing_cardinal": "NW",
-          "strongest_dbz": 17.5,
+          "n_valid_color": 0,
+          "n_wet": 0,
+          "frac_wet": 0.0,
+          "max_dbz": null,
+          "mean_dbz": null,
+          "strongest_bearing": null,
+          "strongest_bearing_cardinal": null,
+          "strongest_dbz": null,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -1142,11 +1142,11 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 5,
-          "n_wet": 5,
-          "frac_wet": 7e-05,
+          "n_valid_color": 9,
+          "n_wet": 9,
+          "frac_wet": 0.00013,
           "max_dbz": 17.5,
-          "mean_dbz": 13.5,
+          "mean_dbz": 13.1,
           "strongest_bearing": 325.0,
           "strongest_bearing_cardinal": "NW",
           "strongest_dbz": 17.5,
@@ -1365,16 +1365,27 @@
           ]
         }
       ],
-      "motion": null,
+      "motion": {
+        "dx_px": -40,
+        "dy_px": -40,
+        "speed_px_per_frame": 56.57,
+        "confidence": 0.0,
+        "direction_deg": 315.0,
+        "direction_cardinal": "NW",
+        "px_per_km": 1.365,
+        "dt_minutes": 5.0,
+        "speed_kmh": 499.0
+      },
       "approaching": {
         "any_rain_within_radii": true,
-        "closest_rain_km": 50,
-        "closest_rain_bearing_deg": 318.7,
+        "closest_rain_km": 150,
+        "closest_rain_bearing_deg": 325.0,
         "closest_rain_bearing_cardinal": "NW",
         "closest_rain_intensity_dbz": 17.5,
         "closest_rain_intensity_label": "trace",
         "is_approaching": false,
-        "reason": "no_motion_data"
+        "reason": "no_reliable_motion",
+        "motion_confidence": 0.0
       },
       "budva_pixel": {
         "x": 485.0,
@@ -1389,8 +1400,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\opera\\20260526_093500.gif",
-      "frame_timestamp": "2026-05-26T09:35:00",
+      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\opera\\20260526_094000.gif",
+      "frame_timestamp": "2026-05-26T09:40:00",
       "rings": [
         {
           "radius_km": 10,
@@ -2812,7 +2823,7 @@
     "rain_approaching": false,
     "closest_eta_minutes": null,
     "lines": [
-      "[dhmz] precipitation present: trace at 50 km NW, but not heading toward us (motion: ?)",
+      "[dhmz] precipitation present: trace at 150 km NW, but not heading toward us (motion: ?)",
       "[opera] no precipitation within 150 km"
     ]
   }
