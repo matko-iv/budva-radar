@@ -191,6 +191,15 @@ function bearingCardinal(b) {
 }
 
 function interpretAt(cx, cy, pixels) {
+  // Center-pixel dBZ: strictest "rain at location" signal — only true if
+  // the literal pixel under the marker is a rain colour on the radar.
+  let centerDbz = null;
+  if (cx >= 0 && cx < IMG_W && cy >= 0 && cy < IMG_H) {
+    const cIdx = (cy * IMG_W + cx) * 4;
+    const d = classifyDbz(pixels[cIdx], pixels[cIdx+1], pixels[cIdx+2]);
+    if (!isNaN(d)) centerDbz = d;
+  }
+
   const rings = [];
   let prevR = 0;
   let closest = null;
@@ -233,7 +242,8 @@ function interpretAt(cx, cy, pixels) {
     });
     prevR = rKm;
   }
-  return { rings, closest, max_dbz: globalMaxDbz === -Infinity ? null : globalMaxDbz };
+  return { rings, closest, max_dbz: globalMaxDbz === -Infinity ? null : globalMaxDbz,
+           center_dbz: centerDbz };
 }
 
 
@@ -356,6 +366,13 @@ function assessApproaching(closestRing) {
            motion, eta, angular_diff: diff };
 }
 
+function formatKm(km) {
+  // Sub-km values get more precision so "0.7 km" is visible instead of "1 km".
+  if (km < 1) return km.toFixed(2);
+  if (km < 10) return km.toFixed(1);
+  return km.toFixed(0);
+}
+
 function renderOutput(label, cx, cy, result, ms) {
   const alertEl = document.getElementById('alert');
   const alertText = document.getElementById('alert-text');
@@ -367,38 +384,45 @@ function renderOutput(label, cx, cy, result, ms) {
   wetRings.sort((a, b) => a.r_km - b.r_km);
   const nearest = wetRings[0] || null;
 
+  // Exact closest wet pixel — this is what we report instead of ring radius.
+  const exact = result.closest;  // {km, bearing, dbz} or null
+
+  // "Kisa pada" SAMO ako tačno taj pixel pod marker-om ima padavinu — user
+  // explicitly wanted strict per-pixel detection, not a radius threshold.
+  const rainAtLoc = result.center_dbz != null && result.center_dbz >= RAIN_DBZ;
+
   if (!nearest) {
     alertEl.className = 'alert ok';
-    alertText.textContent = `No precipitation heading toward ${label}`;
-    addLine(list, `[dhmz] no precipitation within 150 km of ${label}`);
+    alertText.textContent = `Nema padavina koje se primicu ka ${label}`;
+    addLine(list, `[dhmz] nema padavina u krugu 150 km od ${label}`);
+  } else if (rainAtLoc) {
+    alertEl.className = 'alert warn';
+    const intensity = classifyIntensity(result.center_dbz);
+    alertText.textContent = `KIŠA PADA U ${label.toUpperCase()} — ${intensity}`;
+    addLine(list, `[dhmz] kiša tačno na lokaciji: ${intensity} `
+                + `(${result.center_dbz.toFixed(1)} dBZ na pixelu pod marker-om)`);
   } else {
-    const card = bearingCardinal(nearest.bearing);
-    const intensity = classifyIntensity(nearest.max_dbz);
+    const exactKm = exact ? formatKm(exact.km) : formatKm(nearest.r_km);
+    const exactBrg = exact ? bearingCardinal(exact.bearing) : bearingCardinal(nearest.bearing);
+    const intensity = classifyIntensity(exact ? exact.dbz : nearest.max_dbz);
     const a = assessApproaching(nearest);
     if (a.approaching) {
       alertEl.className = 'alert warn';
-      const etaTxt = a.eta != null ? `~${a.eta} min` : 'unknown';
-      alertText.textContent = `RAIN APPROACHING ${label} IN ${etaTxt}`;
+      const etaTxt = a.eta != null ? `~${a.eta} min` : 'nepoznato';
+      alertText.textContent = `Kiša se primice ka ${label} — ETA ${etaTxt}`;
       const spd = a.motion.speed_kmh != null ? a.motion.speed_kmh.toFixed(1) : '?';
-      addLine(list, `[dhmz] APPROACHING: ${intensity} at ${nearest.r_km} km ${card}, `
-                  + `moving toward ${label} at ${spd} km/h, ETA ${etaTxt}`);
+      addLine(list, `[dhmz] PRIMICE SE: ${intensity} na ${exactKm} km ${exactBrg}, `
+                  + `kreće se ka ${label} brzinom ${spd} km/h, ETA ${etaTxt}`);
     } else {
       alertEl.className = 'alert ok';
-      alertText.textContent = `No precipitation heading toward ${label}`;
+      alertText.textContent = `Nema padavina koje se primicu ka ${label}`;
       const mcard = (a.motion && a.motion.direction_cardinal) || '?';
-      const why = a.reason === 'no_motion_data' ? 'no motion data'
-               : a.reason === 'low_motion_confidence' ? `low motion confidence (${(a.motion.confidence || 0).toFixed(2)})`
-               : `motion ${mcard} (${a.angular_diff != null ? a.angular_diff.toFixed(0) : '?'}° off)`;
-      addLine(list, `[dhmz] precipitation present: ${intensity} at ${nearest.r_km} km ${card}, `
-                  + `but not heading toward ${label} — ${why}`);
+      const why = a.reason === 'no_motion_data' ? 'nema motion podataka'
+               : a.reason === 'low_motion_confidence' ? `slab motion signal (${(a.motion.confidence || 0).toFixed(2)})`
+               : `motion ${mcard} (${a.angular_diff != null ? a.angular_diff.toFixed(0) : '?'}° van putanje)`;
+      addLine(list, `[dhmz] padavine prisutne: ${intensity} na ${exactKm} km ${exactBrg}, `
+                  + `ali ne ide ka ${label} — ${why}`);
     }
-  }
-
-  // Closest pixel-level precip (informational; weaker than the ring threshold).
-  if (result.closest && (!nearest || result.closest.km < nearest.r_km)) {
-    const c = result.closest;
-    addLine(list, `closest echo: ${c.km.toFixed(1)} km @ ${bearingCardinal(c.bearing)} `
-                + `(${c.dbz.toFixed(1)} dBZ — ${classifyIntensity(c.dbz)})`);
   }
 
   // Per-ring breakdown
@@ -409,7 +433,7 @@ function renderOutput(label, cx, cy, result, ms) {
   }).join(' · ');
   addLine(list, ringSummary);
 
-  addLine(list, `Scan ${label} at pixel (${cx}, ${cy}) — ${ms} ms`);
+  addLine(list, `Scan ${label} na pixelu (${cx}, ${cy}) — ${ms} ms`);
 }
 
 function addLine(list, text) {
@@ -417,6 +441,10 @@ function addLine(list, text) {
   li.textContent = text;
   list.appendChild(li);
 }
+
+// Auto-refresh every 60s so we pick up newly published latest_dhmz.png +
+// data.js. Full reload mirrors index.html's behavior — simple and reliable.
+setTimeout(() => location.reload(), 60000);
 </script>
 </body>
 </html>

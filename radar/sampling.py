@@ -116,9 +116,11 @@ def sample_concentric(rgb_array, source, lat_c, lon_c, radii_km, n_per_ring=24):
             continue
         ann_dbz = area_dbz[annulus_mask]
         ann_brg = BRG[annulus_mask]
+        ann_dist = DIST_KM[annulus_mask]
         valid_ann = ~np.isnan(ann_dbz)
         n_valid_ann = int(valid_ann.sum())
-        n_wet_ann = int((valid_ann & (ann_dbz >= config.RAIN_DBZ_THRESHOLD)).sum())
+        wet_mask = valid_ann & (ann_dbz >= config.RAIN_DBZ_THRESHOLD)
+        n_wet_ann = int(wet_mask.sum())
         if n_valid_ann > 0:
             max_dbz = float(np.nanmax(ann_dbz))
             mean_dbz = float(np.nanmean(ann_dbz))
@@ -131,6 +133,21 @@ def sample_concentric(rgb_array, source, lat_c, lon_c, radii_km, n_per_ring=24):
             mean_dbz = float("nan")
             strongest_bearing = None
             strongest_dbz = float("nan")
+        # Exact distance + bearing of the CLOSEST wet pixel inside this annulus.
+        # Lets downstream consumers report "rain is at the location" when the
+        # nearest echo is sub-kilometre, instead of the coarse ring radius.
+        if n_wet_ann > 0:
+            wet_dists = ann_dist[wet_mask]
+            wet_brgs = ann_brg[wet_mask]
+            wet_dbzs = ann_dbz[wet_mask]
+            closest_local = int(np.argmin(wet_dists))
+            closest_wet_km = float(wet_dists[closest_local])
+            closest_wet_bearing = float(wet_brgs[closest_local])
+            closest_wet_dbz = float(wet_dbzs[closest_local])
+        else:
+            closest_wet_km = None
+            closest_wet_bearing = None
+            closest_wet_dbz = None
         # frac_wet = fraction of the annulus area that has rain
         # (relative to all in-image pixels in the annulus, not just valid ones)
         frac_wet = n_wet_ann / max(n_pixels_in_annulus, 1)
@@ -171,6 +188,14 @@ def sample_concentric(rgb_array, source, lat_c, lon_c, radii_km, n_per_ring=24):
                 if strongest_bearing is not None else None
             ),
             "strongest_dbz": None if np.isnan(strongest_dbz) else round(strongest_dbz, 1),
+            # Closest wet-pixel exact distance + bearing within this annulus.
+            "closest_wet_km": round(closest_wet_km, 2) if closest_wet_km is not None else None,
+            "closest_wet_bearing": round(closest_wet_bearing, 1) if closest_wet_bearing is not None else None,
+            "closest_wet_bearing_cardinal": (
+                calibration.bearing_to_cardinal(closest_wet_bearing)
+                if closest_wet_bearing is not None else None
+            ),
+            "closest_wet_dbz": round(closest_wet_dbz, 1) if closest_wet_dbz is not None else None,
             # 24-point circle (kept for the preview / for backwards compatibility)
             "n_samples": n_per_ring,
             "n_in_image": len(in_bounds_idx),

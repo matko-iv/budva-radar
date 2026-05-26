@@ -112,7 +112,9 @@ def main():
     for line in status["summary"]["lines"]:
         print(f"  {line}")
 
-    if status["summary"]["rain_approaching"]:
+    if status["summary"].get("rain_at_location"):
+        print("\n  ALERT! Kisa pada na lokaciji")
+    elif status["summary"]["rain_approaching"]:
         eta = status["summary"]["closest_eta_minutes"]
         print(f"\n  ALERT! Rain approaching — ETA ~{eta} min")
     else:
