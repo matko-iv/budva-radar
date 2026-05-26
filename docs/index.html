@@ -59,13 +59,13 @@ function render(d) {
   document.getElementById('generated').textContent =
     'Generated: ' + gen.toLocaleString();
 
-  // Alert: rain-at-location > approaching > clear
+  // Alert states (priority): rain-at-location > approaching (≤20km only) >
+  // rain in vicinity (anywhere else) > clear.
   const alert = document.getElementById('alert');
   const alertText = document.getElementById('alert-text');
   const locName = (d.location && d.location.name) || 'lokaciji';
   if (d.summary.rain_at_location) {
     alert.className = 'alert warn';
-    // Pull intensity from whichever source first reported rain at location.
     let intensity = '';
     for (const info of Object.values(d.sources || {})) {
       const a = info && info.approaching;
@@ -79,10 +79,27 @@ function render(d) {
   } else if (d.summary.rain_approaching) {
     alert.className = 'alert warn';
     alertText.textContent =
-      'RAIN APPROACHING IN ~' + d.summary.closest_eta_minutes + ' min';
+      'KIŠA SE PRIMIČE — ETA ~' + d.summary.closest_eta_minutes + ' min';
+  } else if (d.summary.rain_in_vicinity) {
+    // Rain detected somewhere on the radar, but either motion is not aligned
+    // or the cell is too far away to be a reliable arrival prediction.
+    alert.className = 'alert warn';
+    // Surface the nearest rain's distance/cardinal for context.
+    let near = null;
+    for (const info of Object.values(d.sources || {})) {
+      const a = info && info.approaching;
+      if (!a || !a.any_rain_within_radii) continue;
+      if (!near || (a.closest_rain_km || 0) < (near.closest_rain_km || 0)) near = a;
+    }
+    const km = near ? (near.closest_rain_km || '?') : '?';
+    const card = near ? (near.closest_rain_bearing_cardinal || '') : '';
+    const label = near ? (near.closest_rain_intensity_label || '') : '';
+    alertText.textContent = 'POSTOJI KIŠA U OKOLINI — ' + label
+                          + ' na ' + km + ' km ' + card
+                          + ' (ne stiže do nas)';
   } else {
     alert.className = 'alert ok';
-    alertText.textContent = 'No precipitation heading toward ' + locName;
+    alertText.textContent = 'Nema padavina u okolini ' + locName;
   }
 
   // Summary lines
