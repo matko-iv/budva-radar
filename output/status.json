@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-26T09:01:12",
+  "generated": "2026-05-26T09:06:12",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\dhmz\\20260526_090110_a83ad00f46f1.png",
-      "frame_timestamp": "2026-05-26T09:01:10",
+      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\dhmz\\20260526_090611_54fb4359091f.png",
+      "frame_timestamp": "2026-05-26T09:06:11",
       "rings": [
         {
           "radius_km": 10,
@@ -1142,14 +1142,14 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 19,
-          "n_wet": 19,
-          "frac_wet": 0.00028,
-          "max_dbz": 22.5,
-          "mean_dbz": 15.7,
-          "strongest_bearing": 260.7,
-          "strongest_bearing_cardinal": "W",
-          "strongest_dbz": 22.5,
+          "n_valid_color": 4,
+          "n_wet": 4,
+          "frac_wet": 6e-05,
+          "max_dbz": 17.5,
+          "mean_dbz": 13.8,
+          "strongest_bearing": 325.0,
+          "strongest_bearing_cardinal": "NW",
+          "strongest_dbz": 17.5,
           "n_samples": 24,
           "n_in_image": 19,
           "samples": [
@@ -1367,14 +1367,7 @@
       ],
       "motion": null,
       "approaching": {
-        "any_rain_within_radii": true,
-        "closest_rain_km": 150,
-        "closest_rain_bearing_deg": 260.7,
-        "closest_rain_bearing_cardinal": "W",
-        "closest_rain_intensity_dbz": 22.5,
-        "closest_rain_intensity_label": "light rain",
-        "is_approaching": false,
-        "reason": "no_motion_data"
+        "any_rain_within_radii": false
       },
       "budva_pixel": {
         "x": 485.0,
@@ -1389,8 +1382,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\opera\\20260526_085000.gif",
-      "frame_timestamp": "2026-05-26T08:50:00",
+      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\opera\\20260526_085500.gif",
+      "frame_timestamp": "2026-05-26T08:55:00",
       "rings": [
         {
           "radius_km": 10,
@@ -2812,7 +2805,7 @@
     "rain_approaching": false,
     "closest_eta_minutes": null,
     "lines": [
-      "[dhmz] precipitation present: light rain at 150 km W, but not heading toward us (motion: ?)",
+      "[dhmz] no precipitation within 150 km",
       "[opera] no precipitation within 150 km"
     ]
   }
