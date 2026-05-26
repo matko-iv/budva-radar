@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-26T15:07:01",
+  "generated": "2026-05-26T15:08:12",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -1427,8 +1427,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260526_145500.gif",
-      "frame_timestamp": "2026-05-26T14:55:00",
+      "frame_path": "data/frames/opera/20260526_150000.gif",
+      "frame_timestamp": "2026-05-26T15:00:00",
       "center_dbz": null,
       "rings": [
         {
@@ -2286,14 +2286,14 @@
         {
           "radius_km": 100,
           "n_pixels_in_annulus": 1320,
-          "n_valid_color": 0,
+          "n_valid_color": 2,
           "n_wet": 0,
           "frac_wet": 0.0,
-          "max_dbz": null,
-          "mean_dbz": null,
-          "strongest_bearing": null,
-          "strongest_bearing_cardinal": null,
-          "strongest_dbz": null,
+          "max_dbz": 0.0,
+          "mean_dbz": 0.0,
+          "strongest_bearing": 72.3,
+          "strongest_bearing_cardinal": "E",
+          "strongest_dbz": 0.0,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -2570,18 +2570,18 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 2212,
-          "n_valid_color": 3,
-          "n_wet": 0,
-          "frac_wet": 0.0,
-          "max_dbz": 8.0,
-          "mean_dbz": 5.3,
-          "strongest_bearing": 73.1,
-          "strongest_bearing_cardinal": "E",
-          "strongest_dbz": 8.0,
-          "closest_wet_km": null,
-          "closest_wet_bearing": null,
-          "closest_wet_bearing_cardinal": null,
-          "closest_wet_dbz": null,
+          "n_valid_color": 13,
+          "n_wet": 7,
+          "frac_wet": 0.00316,
+          "max_dbz": 24.0,
+          "mean_dbz": 13.4,
+          "strongest_bearing": 36.9,
+          "strongest_bearing_cardinal": "NE",
+          "strongest_dbz": 24.0,
+          "closest_wet_km": 105.95,
+          "closest_wet_bearing": 66.5,
+          "closest_wet_bearing_cardinal": "NE",
+          "closest_wet_dbz": 24.0,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -2854,9 +2854,16 @@
       ],
       "motion": null,
       "approaching": {
-        "any_rain_within_radii": false,
+        "any_rain_within_radii": true,
         "rain_at_location": false,
-        "center_dbz": null
+        "closest_rain_km": 105.95,
+        "closest_rain_ring_km": 150,
+        "closest_rain_bearing_deg": 66.5,
+        "closest_rain_bearing_cardinal": "NE",
+        "closest_rain_intensity_dbz": 24.0,
+        "closest_rain_intensity_label": "light rain",
+        "is_approaching": false,
+        "reason": "no_motion_data"
       },
       "budva_pixel": {
         "x": 669.0,
@@ -2875,7 +2882,7 @@
     "closest_eta_minutes": 126.3,
     "lines": [
       "[dhmz] APPROACHING: trace at 58.51 km N, moving toward us at 27.8 km/h, ETA ~126.3 min",
-      "[opera] no precipitation within 150 km"
+      "[opera] precipitation present: light rain at 105.95 km NE, but not heading toward us (motion: ?)"
     ]
   }
 }
