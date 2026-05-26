@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-26T15:52:00",
+  "generated": "2026-05-26T15:53:14",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -1415,8 +1415,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260526_154000.gif",
-      "frame_timestamp": "2026-05-26T15:40:00",
+      "frame_path": "data/frames/opera/20260526_154500.gif",
+      "frame_timestamp": "2026-05-26T15:45:00",
       "center_dbz": null,
       "rings": [
         {
@@ -2274,18 +2274,18 @@
         {
           "radius_km": 100,
           "n_pixels_in_annulus": 1320,
-          "n_valid_color": 1,
-          "n_wet": 0,
-          "frac_wet": 0.0,
-          "max_dbz": 0.0,
-          "mean_dbz": 0.0,
-          "strongest_bearing": 72.3,
-          "strongest_bearing_cardinal": "E",
-          "strongest_dbz": 0.0,
-          "closest_wet_km": null,
-          "closest_wet_bearing": null,
-          "closest_wet_bearing_cardinal": null,
-          "closest_wet_dbz": null,
+          "n_valid_color": 23,
+          "n_wet": 4,
+          "frac_wet": 0.00303,
+          "max_dbz": 24.0,
+          "mean_dbz": 4.3,
+          "strongest_bearing": 340.3,
+          "strongest_bearing_cardinal": "N",
+          "strongest_dbz": 24.0,
+          "closest_wet_km": 58.84,
+          "closest_wet_bearing": 339.0,
+          "closest_wet_bearing_cardinal": "N",
+          "closest_wet_dbz": 18.0,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -2338,11 +2338,11 @@
               "lat": 42.7312,
               "lon": 19.9003,
               "rgb": [
-                10,
-                185,
-                175
+                240,
+                240,
+                20
               ],
-              "dbz": 8.0
+              "dbz": 24.0
             },
             {
               "bearing": 75.0,
@@ -2558,12 +2558,12 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 2212,
-          "n_valid_color": 17,
-          "n_wet": 10,
-          "frac_wet": 0.00452,
+          "n_valid_color": 15,
+          "n_wet": 12,
+          "frac_wet": 0.00542,
           "max_dbz": 34.0,
-          "mean_dbz": 14.1,
-          "strongest_bearing": 65.1,
+          "mean_dbz": 18.1,
+          "strongest_bearing": 62.4,
           "strongest_bearing_cardinal": "NE",
           "strongest_dbz": 34.0,
           "closest_wet_km": 101.74,
@@ -2841,15 +2841,15 @@
         }
       ],
       "motion": {
-        "dx_px": 0,
-        "dy_px": 1,
-        "speed_px_per_frame": 1.0,
-        "confidence": 0.057,
-        "direction_deg": 180.0,
-        "direction_cardinal": "S",
+        "dx_px": -5,
+        "dy_px": 2,
+        "speed_px_per_frame": 5.39,
+        "confidence": 0.732,
+        "direction_deg": 248.2,
+        "direction_cardinal": "W",
         "px_per_km": 0.237,
         "dt_minutes": 5.0,
-        "speed_kmh": 50.6
+        "speed_kmh": 272.9
       },
       "approaching": {
         "any_rain_within_radii": false,
