@@ -120,6 +120,13 @@ FAR_MIN_WET_PIXELS = 700   # Farther than DISTANCE_HARD_KM, require dense cluste
 # Large organized systems will be inside this radius soon enough.
 APPROACHING_MAX_KM = 15.0
 
+# Maximum angular deviation between the radar motion vector and the
+# reverse-bearing toward the cell before we still call it "approaching".
+# Previously ±45° (too loose — cells passing tangentially fired alarms);
+# now ±15° so the cell must be heading more-or-less straight at us.
+# At our 15 km max distance, ±15° = ~4 km of lateral spread.
+APPROACH_TOLERANCE_DEG = 15.0
+
 
 def _min_wet_for_ring(radius_km):
     """Threshold for treating a ring as containing actionable rain.
@@ -243,7 +250,7 @@ def _is_approaching(rings, motion_info, center_dbz=None):
     # if approaching).
     reverse = (bearing_to_rain + 180) % 360
     diff = _angular_diff(motion_dir, reverse)
-    direction_aligned = diff is not None and diff < 45  # +/- 45 deg tolerance
+    direction_aligned = diff is not None and diff < APPROACH_TOLERANCE_DEG
 
     # Distance gate: "primice se" only fires when the nearest wet pixel is
     # inside APPROACHING_MAX_KM. Beyond that, we keep is_approaching=False and
