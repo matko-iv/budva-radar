@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-26T15:13:13",
+  "generated": "2026-05-26T15:14:21",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -2864,21 +2864,9 @@
         "speed_kmh": 50.6
       },
       "approaching": {
-        "any_rain_within_radii": true,
+        "any_rain_within_radii": false,
         "rain_at_location": false,
-        "closest_rain_km": 100.14,
-        "closest_rain_ring_km": 150,
-        "closest_rain_bearing_deg": 62.4,
-        "closest_rain_bearing_cardinal": "NE",
-        "closest_rain_intensity_dbz": 24.0,
-        "closest_rain_intensity_label": "light rain",
-        "motion_direction_deg": 180.0,
-        "motion_direction_cardinal": "S",
-        "motion_speed_kmh": 50.6,
-        "motion_confidence": 0.55,
-        "is_approaching": true,
-        "eta_minutes": 118.7,
-        "angular_alignment_deg": 38.0
+        "center_dbz": null
       },
       "budva_pixel": {
         "x": 669.0,
@@ -2897,7 +2885,7 @@
     "closest_eta_minutes": 86.2,
     "lines": [
       "[dhmz] APPROACHING: trace at 56.48 km NE, moving toward us at 39.3 km/h, ETA ~86.2 min",
-      "[opera] APPROACHING: light rain at 100.14 km NE, moving toward us at 50.6 km/h, ETA ~118.7 min"
+      "[opera] no precipitation within 150 km"
     ]
   }
 }

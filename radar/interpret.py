@@ -109,6 +109,23 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
     }
 
 
+DISTANCE_HARD_KM = 25.0    # Closer than this, a few stray wet pixels still count.
+FAR_MIN_WET_PIXELS = 100   # Farther than DISTANCE_HARD_KM, require dense cluster.
+
+
+def _min_wet_for_ring(radius_km):
+    """Threshold for treating a ring as containing actionable rain.
+
+    Distant small convective cells often dissipate before reaching us, so a
+    handful of pixels at 50-150 km are unreliable predictors. Beyond 25 km
+    we require a substantially larger, denser cluster (>= 100 wet pixels)
+    before we even consider that ring as "rain".
+    """
+    if radius_km is None or radius_km <= DISTANCE_HARD_KM:
+        return sampling.MIN_WET_PIXELS_PER_ANNULUS  # 5 — close cells matter
+    return FAR_MIN_WET_PIXELS
+
+
 def _is_approaching(rings, motion_info, center_dbz=None):
     """Heuristic: rain is approaching if:
       (a) there is a 'wet' sector within 100 km,
@@ -129,12 +146,12 @@ def _is_approaching(rings, motion_info, center_dbz=None):
     rain_at_location = (center_dbz is not None
                         and center_dbz >= config.RAIN_DBZ_THRESHOLD)
 
-    # First check: is there any rain at all?
-    # Require a small cluster of wet pixels (not just one stray legend match)
-    # before reporting precipitation. sampling.MIN_WET_PIXELS_PER_ANNULUS sets
-    # the floor - tuned so real cells always pass and lone false positives don't.
-    min_wet = sampling.MIN_WET_PIXELS_PER_ANNULUS
-    wet_rings = [r for r in rings if r.get("n_wet", 0) >= min_wet]
+    # First check: is there any rain at all? Threshold scales with distance:
+    # close rings keep the low 5-pixel floor (small cells matter when near),
+    # but rings > 25 km need >= 100 wet pixels — a small distant convective
+    # cell isn't a reliable predictor that rain will reach us.
+    wet_rings = [r for r in rings
+                 if r.get("n_wet", 0) >= _min_wet_for_ring(r.get("radius_km"))]
     if not wet_rings:
         return {"any_rain_within_radii": False,
                 "rain_at_location": rain_at_location,
