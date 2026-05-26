@@ -338,6 +338,7 @@ const MIN_WET_PIXELS = 5;          // matches sampling.MIN_WET_PIXELS_PER_ANNULU
 const MIN_MOTION_CONFIDENCE = 0.4; // matches config.MOTION_MIN_CORRELATION
 const APPROACH_TOLERANCE_DEG = 10.0; // matches interpret.APPROACH_TOLERANCE_DEG
 const APPROACHING_MAX_KM = 15.0;   // matches interpret.APPROACHING_MAX_KM
+const VICINITY_MAX_KM = 15.0;      // suppress "postoji kisa" beyond this
 
 function angularDiff(a, b) {
   let d = Math.abs(a - b) % 360;
@@ -424,10 +425,20 @@ function renderOutput(label, cx, cy, result, ms) {
                   + `kreće se ka ${label} brzinom ${spd} km/h, ETA ${etaTxt}`);
     } else {
       // Rain exists somewhere — either too far for an arrival prediction
-      // or motion not aligned. Either way, surface it as "postoji kisa".
-      alertEl.className = 'alert warn';
-      alertText.textContent = `POSTOJI KIŠA U OKOLINI ${label.toUpperCase()} `
-                            + `— ${intensity} na ${exactKm} km ${exactBrg}`;
+      // or motion not aligned. "POSTOJI KIŠA U OKOLINI" only fires if the
+      // echo is inside VICINITY_MAX_KM; beyond that we treat it as a
+      // distant non-event to avoid alarming the user about cells that
+      // realistically won't reach the marker.
+      const distKm = exact ? exact.km : (nearest ? nearest.r_km : null);
+      const inVicinity = distKm != null && distKm <= VICINITY_MAX_KM;
+      if (inVicinity) {
+        alertEl.className = 'alert warn';
+        alertText.textContent = `POSTOJI KIŠA U OKOLINI ${label.toUpperCase()} `
+                              + `— ${intensity} na ${exactKm} km ${exactBrg}`;
+      } else {
+        alertEl.className = 'alert ok';
+        alertText.textContent = `Nema padavina koje se primicu ka ${label}`;
+      }
       let why;
       if (a.reason === 'aligned_but_too_far') {
         why = `motion ka nama, ali predaleko (${exactKm} km > 15 km — vjerovatno ce se rasuti)`;
@@ -439,7 +450,8 @@ function renderOutput(label, cx, cy, result, ms) {
         const mcard = (a.motion && a.motion.direction_cardinal) || '?';
         why = `motion ${mcard} (${a.angular_diff != null ? a.angular_diff.toFixed(0) : '?'}° van putanje)`;
       }
-      addLine(list, `[dhmz] padavine prisutne: ${intensity} na ${exactKm} km ${exactBrg} — ${why}`);
+      const lbl = inVicinity ? 'padavine prisutne' : 'daleke padavine (>15 km — ignorisemo)';
+      addLine(list, `[dhmz] ${lbl}: ${intensity} na ${exactKm} km ${exactBrg} — ${why}`);
     }
   }
 
