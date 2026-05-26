@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-26T19:51:58",
+  "generated": "2026-05-26T19:53:10",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -1415,8 +1415,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260526_194000.gif",
-      "frame_timestamp": "2026-05-26T19:40:00",
+      "frame_path": "data/frames/opera/20260526_194500.gif",
+      "frame_timestamp": "2026-05-26T19:45:00",
       "center_dbz": null,
       "rings": [
         {
@@ -2274,16 +2274,16 @@
         {
           "radius_km": 100,
           "n_pixels_in_annulus": 1320,
-          "n_valid_color": 10,
-          "n_wet": 1,
-          "frac_wet": 0.00076,
+          "n_valid_color": 5,
+          "n_wet": 2,
+          "frac_wet": 0.00152,
           "max_dbz": 12.0,
-          "mean_dbz": 6.0,
+          "mean_dbz": 6.4,
           "strongest_bearing": 63.4,
           "strongest_bearing_cardinal": "NE",
           "strongest_dbz": 12.0,
-          "closest_wet_km": 75.57,
-          "closest_wet_bearing": 63.4,
+          "closest_wet_km": 73.77,
+          "closest_wet_bearing": 66.4,
           "closest_wet_bearing_cardinal": "NE",
           "closest_wet_dbz": 12.0,
           "n_samples": 24,
@@ -2558,18 +2558,18 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 2212,
-          "n_valid_color": 22,
+          "n_valid_color": 21,
           "n_wet": 20,
           "frac_wet": 0.00904,
           "max_dbz": 40.0,
-          "mean_dbz": 21.1,
-          "strongest_bearing": 79.5,
+          "mean_dbz": 22.8,
+          "strongest_bearing": 76.5,
           "strongest_bearing_cardinal": "E",
           "strongest_dbz": 40.0,
           "closest_wet_km": 108.61,
           "closest_wet_bearing": 76.5,
           "closest_wet_bearing_cardinal": "E",
-          "closest_wet_dbz": 30.0,
+          "closest_wet_dbz": 40.0,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -2844,7 +2844,7 @@
         "dx_px": 0,
         "dy_px": 0,
         "speed_px_per_frame": 0.0,
-        "confidence": 0.375,
+        "confidence": 0.423,
         "direction_deg": null,
         "direction_cardinal": null,
         "px_per_km": 0.237,
@@ -2874,7 +2874,7 @@
     "closest_eta_minutes": null,
     "lines": [
       "[dhmz] nearest echo (ignored — sub-threshold or > 15 km): trace at 62.56 km E",
-      "[opera] nearest echo (ignored — sub-threshold or > 15 km): trace at 75.57 km NE"
+      "[opera] nearest echo (ignored — sub-threshold or > 15 km): trace at 73.77 km NE"
     ]
   }
 }
