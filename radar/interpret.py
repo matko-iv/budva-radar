@@ -125,7 +125,7 @@ APPROACHING_MAX_KM = 15.0
 # Previously ±45° (too loose — cells passing tangentially fired alarms);
 # now ±15° so the cell must be heading more-or-less straight at us.
 # At our 15 km max distance, ±15° = ~4 km of lateral spread.
-APPROACH_TOLERANCE_DEG = 15.0
+APPROACH_TOLERANCE_DEG = 10.0
 
 
 def _min_wet_for_ring(radius_km):
