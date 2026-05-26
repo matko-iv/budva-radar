@@ -116,9 +116,9 @@ FAR_MIN_WET_PIXELS = 700   # Farther than DISTANCE_HARD_KM, require dense cluste
 # Anything farther only fires "kisa postoji u okolini", even when motion is
 # aligned with us. Rationale: small isolated pulse storms live 20-30 min and
 # travel 10-25 km/h (research doc 2026-05) so realistic range is ~10 km; a
-# cell at 30+ km that "points at us" almost always dissipates before arrival.
+# cell at 15+ km that "points at us" often dissipates before arrival.
 # Large organized systems will be inside this radius soon enough.
-APPROACHING_MAX_KM = 20.0
+APPROACHING_MAX_KM = 15.0
 
 
 def _min_wet_for_ring(radius_km):
