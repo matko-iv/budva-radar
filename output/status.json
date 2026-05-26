@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-26T21:56:58",
+  "generated": "2026-05-26T21:58:10",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -1415,8 +1415,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260526_214500.gif",
-      "frame_timestamp": "2026-05-26T21:45:00",
+      "frame_path": "data/frames/opera/20260526_215000.gif",
+      "frame_timestamp": "2026-05-26T21:50:00",
       "center_dbz": null,
       "rings": [
         {
@@ -2840,7 +2840,17 @@
           ]
         }
       ],
-      "motion": null,
+      "motion": {
+        "dx_px": 11,
+        "dy_px": 5,
+        "speed_px_per_frame": 12.08,
+        "confidence": 0.73,
+        "direction_deg": 114.4,
+        "direction_cardinal": "SE",
+        "px_per_km": 0.237,
+        "dt_minutes": 5.0,
+        "speed_kmh": 611.6
+      },
       "approaching": {
         "any_rain_within_radii": false,
         "rain_at_location": false,
