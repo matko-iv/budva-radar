@@ -109,7 +109,7 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
     }
 
 
-DISTANCE_HARD_KM = 25.0    # Closer than this, a few stray wet pixels still count.
+DISTANCE_HARD_KM = 20.0    # Closer than this, a few stray wet pixels still count.
 FAR_MIN_WET_PIXELS = 700   # Farther than DISTANCE_HARD_KM, require dense cluster.
 
 # Max distance at which we will say "kisa se primice" (is_approaching=True).
@@ -332,15 +332,22 @@ def interpret_all() -> dict:
                 closest_eta = eta
         else:
             # Rain is present but not "approaching" — either motion not aligned,
-            # or cell is too far to be a reliable predictor (reason == 'aligned_but_too_far').
-            any_in_vicinity = True
+            # or cell is too far to be a reliable predictor.
+            # "rain_in_vicinity" only fires for echoes inside APPROACHING_MAX_KM
+            # — beyond that we don't bother the user (consistent with the
+            # approaching gate, both at 15 km).
+            in_vicinity = (isinstance(km, (int, float))
+                           and km <= APPROACHING_MAX_KM)
+            if in_vicinity:
+                any_in_vicinity = True
             reason = appr.get("reason", "")
             if reason == "aligned_but_too_far":
                 why = f"aligned but too far ({km} km > {APPROACHING_MAX_KM:.0f} km — likely to dissipate)"
             else:
                 why = f"not heading toward us (motion: {appr.get('motion_direction_cardinal','?')})"
+            label = "precipitation present" if in_vicinity else "distant precipitation (>15 km, ignored)"
             summary_lines.append(
-                f"[{src_id}] precipitation present: {intensity} at {km} km {card}, "
+                f"[{src_id}] {label}: {intensity} at {km} km {card}, "
                 f"{why}"
             )
 
