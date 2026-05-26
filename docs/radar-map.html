@@ -336,13 +336,14 @@ function classifyIntensity(dbz) {
 const MIN_WET_PIXELS = 5;          // matches sampling.MIN_WET_PIXELS_PER_ANNULUS
 const MIN_MOTION_CONFIDENCE = 0.4; // matches config.MOTION_MIN_CORRELATION
 const APPROACH_TOLERANCE_DEG = 45;
+const APPROACHING_MAX_KM = 20.0;   // matches interpret.APPROACHING_MAX_KM
 
 function angularDiff(a, b) {
   let d = Math.abs(a - b) % 360;
   return d > 180 ? 360 - d : d;
 }
 
-function assessApproaching(closestRing) {
+function assessApproaching(closestRing, closestExactKm) {
   const motion = (window.RADAR_DATA && window.RADAR_DATA.sources
                   && window.RADAR_DATA.sources.dhmz
                   && window.RADAR_DATA.sources.dhmz.motion) || null;
@@ -357,13 +358,19 @@ function assessApproaching(closestRing) {
   }
   const reverse = (closestRing.bearing + 180) % 360;
   const diff = angularDiff(motion.direction_deg, reverse);
-  const approaching = diff < APPROACH_TOLERANCE_DEG;
+  const directionAligned = diff < APPROACH_TOLERANCE_DEG;
+  const distKm = closestExactKm != null ? closestExactKm : closestRing.r_km;
+  const withinRange = distKm != null && distKm <= APPROACHING_MAX_KM;
+  const approaching = directionAligned && withinRange;
   let eta = null;
   if (approaching && motion.speed_kmh != null && motion.speed_kmh > 1) {
-    eta = +(closestRing.r_km / motion.speed_kmh * 60).toFixed(1);
+    eta = +(distKm / motion.speed_kmh * 60).toFixed(1);
   }
-  return { approaching, reason: approaching ? 'approaching' : 'not_aligned',
-           motion, eta, angular_diff: diff };
+  let reason;
+  if (approaching) reason = 'approaching';
+  else if (directionAligned && !withinRange) reason = 'aligned_but_too_far';
+  else reason = 'not_aligned';
+  return { approaching, reason, motion, eta, angular_diff: diff, dist_km: distKm };
 }
 
 function formatKm(km) {
@@ -405,23 +412,33 @@ function renderOutput(label, cx, cy, result, ms) {
     const exactKm = exact ? formatKm(exact.km) : formatKm(nearest.r_km);
     const exactBrg = exact ? bearingCardinal(exact.bearing) : bearingCardinal(nearest.bearing);
     const intensity = classifyIntensity(exact ? exact.dbz : nearest.max_dbz);
-    const a = assessApproaching(nearest);
+    const a = assessApproaching(nearest, exact ? exact.km : null);
     if (a.approaching) {
+      // Only fires when echo is within APPROACHING_MAX_KM (20 km) AND motion aligned.
       alertEl.className = 'alert warn';
       const etaTxt = a.eta != null ? `~${a.eta} min` : 'nepoznato';
-      alertText.textContent = `Kiša se primice ka ${label} — ETA ${etaTxt}`;
+      alertText.textContent = `KIŠA SE PRIMIČE KA ${label.toUpperCase()} — ETA ${etaTxt}`;
       const spd = a.motion.speed_kmh != null ? a.motion.speed_kmh.toFixed(1) : '?';
-      addLine(list, `[dhmz] PRIMICE SE: ${intensity} na ${exactKm} km ${exactBrg}, `
+      addLine(list, `[dhmz] PRIMIČE SE: ${intensity} na ${exactKm} km ${exactBrg}, `
                   + `kreće se ka ${label} brzinom ${spd} km/h, ETA ${etaTxt}`);
     } else {
-      alertEl.className = 'alert ok';
-      alertText.textContent = `Nema padavina koje se primicu ka ${label}`;
-      const mcard = (a.motion && a.motion.direction_cardinal) || '?';
-      const why = a.reason === 'no_motion_data' ? 'nema motion podataka'
-               : a.reason === 'low_motion_confidence' ? `slab motion signal (${(a.motion.confidence || 0).toFixed(2)})`
-               : `motion ${mcard} (${a.angular_diff != null ? a.angular_diff.toFixed(0) : '?'}° van putanje)`;
-      addLine(list, `[dhmz] padavine prisutne: ${intensity} na ${exactKm} km ${exactBrg}, `
-                  + `ali ne ide ka ${label} — ${why}`);
+      // Rain exists somewhere — either too far for an arrival prediction
+      // or motion not aligned. Either way, surface it as "postoji kisa".
+      alertEl.className = 'alert warn';
+      alertText.textContent = `POSTOJI KIŠA U OKOLINI ${label.toUpperCase()} `
+                            + `— ${intensity} na ${exactKm} km ${exactBrg}`;
+      let why;
+      if (a.reason === 'aligned_but_too_far') {
+        why = `motion ka nama, ali predaleko (${exactKm} km > 20 km — vjerovatno ce se rasuti)`;
+      } else if (a.reason === 'no_motion_data') {
+        why = 'nema motion podataka';
+      } else if (a.reason === 'low_motion_confidence') {
+        why = `slab motion signal (${(a.motion.confidence || 0).toFixed(2)})`;
+      } else {
+        const mcard = (a.motion && a.motion.direction_cardinal) || '?';
+        why = `motion ${mcard} (${a.angular_diff != null ? a.angular_diff.toFixed(0) : '?'}° van putanje)`;
+      }
+      addLine(list, `[dhmz] padavine prisutne: ${intensity} na ${exactKm} km ${exactBrg} — ${why}`);
     }
   }
 

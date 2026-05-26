@@ -110,7 +110,15 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
 
 
 DISTANCE_HARD_KM = 25.0    # Closer than this, a few stray wet pixels still count.
-FAR_MIN_WET_PIXELS = 100   # Farther than DISTANCE_HARD_KM, require dense cluster.
+FAR_MIN_WET_PIXELS = 700   # Farther than DISTANCE_HARD_KM, require dense cluster.
+
+# Max distance at which we will say "kisa se primice" (is_approaching=True).
+# Anything farther only fires "kisa postoji u okolini", even when motion is
+# aligned with us. Rationale: small isolated pulse storms live 20-30 min and
+# travel 10-25 km/h (research doc 2026-05) so realistic range is ~10 km; a
+# cell at 30+ km that "points at us" almost always dissipates before arrival.
+# Large organized systems will be inside this radius soon enough.
+APPROACHING_MAX_KM = 20.0
 
 
 def _min_wet_for_ring(radius_km):
@@ -235,14 +243,28 @@ def _is_approaching(rings, motion_info, center_dbz=None):
     # if approaching).
     reverse = (bearing_to_rain + 180) % 360
     diff = _angular_diff(motion_dir, reverse)
-    is_appr = diff is not None and diff < 45  # within +/- 45 deg tolerance
+    direction_aligned = diff is not None and diff < 45  # +/- 45 deg tolerance
+
+    # Distance gate: "primice se" only fires when the nearest wet pixel is
+    # inside APPROACHING_MAX_KM. Beyond that, we keep is_approaching=False and
+    # let the rendering use the lighter "kisa postoji u okolini" wording.
+    dist_for_check = closest_exact_km if closest_exact_km is not None else closest["radius_km"]
+    within_approach_range = (dist_for_check is not None
+                             and dist_for_check <= APPROACHING_MAX_KM)
+    is_appr = direction_aligned and within_approach_range
+
     eta_min = None
     if is_appr and motion_info.get("speed_kmh"):
         spd = motion_info["speed_kmh"]
         if spd > 1:  # ignore noise-level motion
-            # Prefer exact closest-wet distance over the coarse ring radius.
-            dist_for_eta = closest_exact_km if closest_exact_km is not None else closest["radius_km"]
-            eta_min = round(dist_for_eta / spd * 60, 1)
+            eta_min = round(dist_for_check / spd * 60, 1)
+
+    if is_appr:
+        reason = "approaching"
+    elif direction_aligned and not within_approach_range:
+        reason = "aligned_but_too_far"  # rain heading toward us but unlikely to arrive
+    else:
+        reason = "motion_not_aligned"
 
     base.update({
         "motion_direction_deg": motion_dir,
@@ -252,6 +274,7 @@ def _is_approaching(rings, motion_info, center_dbz=None):
         "is_approaching": bool(is_appr),
         "eta_minutes": eta_min,
         "angular_alignment_deg": diff,
+        "reason": reason,
     })
     return base
 
@@ -272,6 +295,7 @@ def interpret_all() -> dict:
     summary_lines = []
     any_approaching = False
     any_at_location = False
+    any_in_vicinity = False  # rain detected but neither approaching nor at-location
     closest_eta = None
     for src_id, info in out["sources"].items():
         if not info.get("ok"):
@@ -300,14 +324,22 @@ def interpret_all() -> dict:
             if eta is not None and (closest_eta is None or eta < closest_eta):
                 closest_eta = eta
         else:
+            # Rain is present but not "approaching" — either motion not aligned,
+            # or cell is too far to be a reliable predictor (reason == 'aligned_but_too_far').
+            any_in_vicinity = True
+            reason = appr.get("reason", "")
+            why = ("aligned but too far at {km} km — likely to dissipate"
+                   if reason == "aligned_but_too_far"
+                   else f"not heading toward us (motion: {appr.get('motion_direction_cardinal','?')})")
             summary_lines.append(
                 f"[{src_id}] precipitation present: {intensity} at {km} km {card}, "
-                f"but not heading toward us (motion: {appr.get('motion_direction_cardinal','?')})"
+                f"{why}"
             )
 
     out["summary"] = {
         "rain_approaching": any_approaching,
         "rain_at_location": any_at_location,
+        "rain_in_vicinity": any_in_vicinity,
         "closest_eta_minutes": closest_eta,
         "lines": summary_lines,
     }
