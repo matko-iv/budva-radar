@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-26T13:54:07",
+  "generated": "2026-05-26T13:57:21",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\dhmz\\20260526_135021_e5e640dce19b.png",
-      "frame_timestamp": "2026-05-26T13:50:21",
+      "frame_path": "data/frames/dhmz/20260526_135030_e5e640dce19b.png",
+      "frame_timestamp": "2026-05-26T13:50:30",
       "center_dbz": null,
       "rings": [
         {
@@ -1387,15 +1387,15 @@
         }
       ],
       "motion": {
-        "dx_px": -1,
-        "dy_px": 2,
-        "speed_px_per_frame": 2.24,
-        "confidence": 0.639,
-        "direction_deg": 206.6,
-        "direction_cardinal": "SW",
+        "dx_px": 0,
+        "dy_px": 0,
+        "speed_px_per_frame": 0.0,
+        "confidence": 1.0,
+        "direction_deg": null,
+        "direction_cardinal": null,
         "px_per_km": 1.365,
-        "dt_minutes": 5.0,
-        "speed_kmh": 19.8
+        "dt_minutes": 0.1,
+        "speed_kmh": 0.0
       },
       "approaching": {
         "any_rain_within_radii": true,
@@ -1406,13 +1406,9 @@
         "closest_rain_bearing_cardinal": "NW",
         "closest_rain_intensity_dbz": 12.5,
         "closest_rain_intensity_label": "trace",
-        "motion_direction_deg": 206.6,
-        "motion_direction_cardinal": "SW",
-        "motion_speed_kmh": 19.8,
-        "motion_confidence": 0.639,
         "is_approaching": false,
-        "eta_minutes": null,
-        "angular_alignment_deg": 79.1
+        "reason": "no_reliable_motion",
+        "motion_confidence": 1.0
       },
       "budva_pixel": {
         "x": 485.0,
@@ -1427,8 +1423,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "C:\\Users\\Matija\\Documents\\GitHub\\budva-radar\\data\\frames\\opera\\20260526_134500.gif",
-      "frame_timestamp": "2026-05-26T13:45:00",
+      "frame_path": "data/frames/opera/20260526_135000.gif",
+      "frame_timestamp": "2026-05-26T13:50:00",
       "center_dbz": null,
       "rings": [
         {
@@ -2874,7 +2870,7 @@
     "rain_at_location": false,
     "closest_eta_minutes": null,
     "lines": [
-      "[dhmz] precipitation present: trace at 86.32 km NW, but not heading toward us (motion: SW)",
+      "[dhmz] precipitation present: trace at 86.32 km NW, but not heading toward us (motion: ?)",
       "[opera] no precipitation within 150 km"
     ]
   }
