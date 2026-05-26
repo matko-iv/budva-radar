@@ -310,7 +310,31 @@ def interpret_all() -> dict:
             continue
         appr = info.get("approaching") or {}
         if not appr.get("any_rain_within_radii"):
-            summary_lines.append(f"[{src_id}] no precipitation within {max(config.SAMPLE_RADII_KM)} km")
+            # No ring qualified as "actionable rain", but there may still be
+            # sub-threshold wet pixels somewhere in the 150 km horizon. Surface
+            # the nearest one so the user knows what's actually on the radar
+            # instead of a false "no precipitation" claim.
+            nearest_any_km = None
+            nearest_any_card = None
+            nearest_any_dbz = None
+            for r in info.get("rings", []):
+                ck = r.get("closest_wet_km")
+                if ck is None:
+                    continue
+                if nearest_any_km is None or ck < nearest_any_km:
+                    nearest_any_km = ck
+                    nearest_any_card = r.get("closest_wet_bearing_cardinal")
+                    nearest_any_dbz = r.get("closest_wet_dbz")
+            if nearest_any_km is not None:
+                intensity_label = colormap.classify_intensity(nearest_any_dbz)
+                summary_lines.append(
+                    f"[{src_id}] nearest echo (ignored — sub-threshold or > {APPROACHING_MAX_KM:.0f} km): "
+                    f"{intensity_label} at {nearest_any_km} km {nearest_any_card or '?'}"
+                )
+            else:
+                summary_lines.append(
+                    f"[{src_id}] no precipitation within {max(config.SAMPLE_RADII_KM)} km"
+                )
             continue
         km = appr.get("closest_rain_km")
         card = appr.get("closest_rain_bearing_cardinal", "?")
