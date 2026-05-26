@@ -336,7 +336,7 @@ function classifyIntensity(dbz) {
 const MIN_WET_PIXELS = 5;          // matches sampling.MIN_WET_PIXELS_PER_ANNULUS
 const MIN_MOTION_CONFIDENCE = 0.4; // matches config.MOTION_MIN_CORRELATION
 const APPROACH_TOLERANCE_DEG = 45;
-const APPROACHING_MAX_KM = 20.0;   // matches interpret.APPROACHING_MAX_KM
+const APPROACHING_MAX_KM = 15.0;   // matches interpret.APPROACHING_MAX_KM
 
 function angularDiff(a, b) {
   let d = Math.abs(a - b) % 360;
@@ -429,7 +429,7 @@ function renderOutput(label, cx, cy, result, ms) {
                             + `— ${intensity} na ${exactKm} km ${exactBrg}`;
       let why;
       if (a.reason === 'aligned_but_too_far') {
-        why = `motion ka nama, ali predaleko (${exactKm} km > 20 km — vjerovatno ce se rasuti)`;
+        why = `motion ka nama, ali predaleko (${exactKm} km > 15 km — vjerovatno ce se rasuti)`;
       } else if (a.reason === 'no_motion_data') {
         why = 'nema motion podataka';
       } else if (a.reason === 'low_motion_confidence') {
