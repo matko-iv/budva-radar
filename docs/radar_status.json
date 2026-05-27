@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-27T14:53:19",
+  "generated": "2026-05-27T14:58:18",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260527_145318_1fe01fb8882a.png",
-      "frame_timestamp": "2026-05-27T14:53:18",
+      "frame_path": "data/frames/dhmz/20260527_145816_9381b264d105.png",
+      "frame_timestamp": "2026-05-27T14:58:16",
       "center_dbz": null,
       "rings": [
         {
@@ -404,9 +404,9 @@
               "lat": 42.2278,
               "lon": 19.1333,
               "rgb": [
-                214,
-                230,
-                181
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -1159,18 +1159,18 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 28,
-          "n_wet": 28,
-          "frac_wet": 0.00041,
+          "n_valid_color": 4,
+          "n_wet": 4,
+          "frac_wet": 6e-05,
           "max_dbz": 27.5,
-          "mean_dbz": 17.7,
-          "strongest_bearing": 75.1,
-          "strongest_bearing_cardinal": "E",
+          "mean_dbz": 25.0,
+          "strongest_bearing": 290.0,
+          "strongest_bearing_cardinal": "W",
           "strongest_dbz": 27.5,
-          "closest_wet_km": 102.46,
-          "closest_wet_bearing": 78.4,
-          "closest_wet_bearing_cardinal": "E",
-          "closest_wet_dbz": 12.5,
+          "closest_wet_km": 127.71,
+          "closest_wet_bearing": 289.8,
+          "closest_wet_bearing_cardinal": "W",
+          "closest_wet_dbz": 22.5,
           "n_samples": 24,
           "n_in_image": 19,
           "samples": [
@@ -1405,8 +1405,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260527_144500.gif",
-      "frame_timestamp": "2026-05-27T14:45:00",
+      "frame_path": "data/frames/opera/20260527_145000.gif",
+      "frame_timestamp": "2026-05-27T14:50:00",
       "center_dbz": null,
       "rings": [
         {
@@ -2853,7 +2853,7 @@
     "rain_in_vicinity": false,
     "closest_eta_minutes": null,
     "lines": [
-      "[dhmz] nearest echo (ignored — sub-threshold or > 15 km): trace at 102.46 km E",
+      "[dhmz] nearest echo (ignored — sub-threshold or > 15 km): light rain at 127.71 km W",
       "[opera] no precipitation within 150 km"
     ]
   }
