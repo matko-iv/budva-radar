@@ -133,7 +133,7 @@ const IMG_W = 720, IMG_H = 751;
 const VALID = { x0: 3, y0: 96, x1: 657, y1: 716 };
 const PX_PER_KM = 1.3648;
 const RADII_KM = [10, 25, 50, 100, 150];
-const RAIN_DBZ = 10.0;
+const RAIN_DBZ = 20.0; // NOAA JetStream: "20 dBZ point at which light rain begins"
 const NO_MATCH = 35;
 
 const DHMZ_LEGEND = [
@@ -323,19 +323,25 @@ function drawOverlay(cx, cy) {
 }
 
 function classifyIntensity(dbz) {
+  // Mirrors radar/colormap.py:classify_intensity (NOAA / DHMZ operational scale).
   if (dbz == null || isNaN(dbz)) return 'no precip';
-  if (dbz < 20) return 'trace';
-  if (dbz < 30) return 'light rain';
+  if (dbz < 5)  return 'no precip';
+  if (dbz < 15) return 'noise / clear-air';
+  if (dbz < 20) return 'trace (sub-rain)';
+  if (dbz < 25) return 'light rain';
+  if (dbz < 30) return 'light to moderate rain';
   if (dbz < 40) return 'moderate rain';
-  if (dbz < 50) return 'heavy rain';
-  return 'extreme';
+  if (dbz < 45) return 'heavy rain';
+  if (dbz < 50) return 'very heavy rain';
+  if (dbz < 55) return 'severe (likely hail)';
+  return 'extreme (hail core)';
 }
 
 // Approaching logic mirrors radar/interpret.py:_is_approaching.
 // Motion vector for the DHMZ field is global to the radar image, so we reuse
 // the value from data.js (computed against Budva, but applies to any observer).
 const MIN_WET_PIXELS = 5;          // matches sampling.MIN_WET_PIXELS_PER_ANNULUS
-const MIN_MOTION_CONFIDENCE = 0.4; // matches config.MOTION_MIN_CORRELATION
+const MIN_MOTION_CONFIDENCE = 0.6; // matches config.MOTION_MIN_CORRELATION
 const APPROACH_TOLERANCE_DEG = 10.0; // matches interpret.APPROACH_TOLERANCE_DEG
 const APPROACHING_MAX_KM = 15.0;   // matches interpret.APPROACHING_MAX_KM
 const VICINITY_MAX_KM = 15.0;      // suppress "postoji kisa" beyond this
