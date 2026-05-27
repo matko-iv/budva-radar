@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-27T17:47:04",
+  "generated": "2026-05-27T17:52:04",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260527_174703_a6eacf8265bc.png",
-      "frame_timestamp": "2026-05-27T17:47:03",
+      "frame_path": "data/frames/dhmz/20260527_175203_3b82e6d50c14.png",
+      "frame_timestamp": "2026-05-27T17:52:03",
       "center_dbz": null,
       "rings": [
         {
@@ -28,6 +28,8 @@
           "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
+          "n_echo": 0,
+          "n_trace": 0,
           "frac_wet": 0.0,
           "max_dbz": null,
           "mean_dbz": null,
@@ -317,6 +319,8 @@
           "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
+          "n_echo": 0,
+          "n_trace": 0,
           "frac_wet": 0.0,
           "max_dbz": null,
           "mean_dbz": null,
@@ -606,6 +610,8 @@
           "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
+          "n_echo": 0,
+          "n_trace": 0,
           "frac_wet": 0.0,
           "max_dbz": null,
           "mean_dbz": null,
@@ -892,13 +898,15 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 75,
           "n_pixels_in_annulus": 43896,
-          "n_valid_color": 17,
+          "n_valid_color": 31,
           "n_wet": 0,
           "n_wet_raw": 0,
+          "n_echo": 31,
+          "n_trace": 31,
           "frac_wet": 0.0,
           "max_dbz": 17.5,
           "mean_dbz": 14.9,
-          "strongest_bearing": 66.1,
+          "strongest_bearing": 64.7,
           "strongest_bearing_cardinal": "NE",
           "strongest_dbz": 17.5,
           "closest_wet_km": null,
@@ -1184,6 +1192,8 @@
           "n_valid_color": 4,
           "n_wet": 0,
           "n_wet_raw": 0,
+          "n_echo": 4,
+          "n_trace": 4,
           "frac_wet": 0.0,
           "max_dbz": 17.5,
           "mean_dbz": 13.8,
@@ -1412,15 +1422,15 @@
         }
       ],
       "motion": {
-        "dx_px": 0,
+        "dx_px": -3,
         "dy_px": 0,
-        "speed_px_per_frame": 0.0,
-        "confidence": 0.622,
-        "direction_deg": null,
-        "direction_cardinal": null,
+        "speed_px_per_frame": 3.0,
+        "confidence": 0.666,
+        "direction_deg": 270.0,
+        "direction_cardinal": "W",
         "px_per_km": 1.365,
         "dt_minutes": 5.0,
-        "speed_kmh": 0.0,
+        "speed_kmh": 26.4,
         "confidence_band": "high"
       },
       "approaching": {
@@ -1429,6 +1439,13 @@
         "persistence_available": true,
         "candidate_unconfirmed_rings": 0,
         "center_dbz": null
+      },
+      "scenario": {
+        "state": "BIO_NOISE",
+        "reason": "only sub-rain echo (< 20 dBZ) on the radar — likely insects, drizzle / virga or bright band",
+        "action": "log only",
+        "severe_present": false,
+        "eta_min": null
       },
       "budva_pixel": {
         "x": 485.0,
@@ -1443,8 +1460,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260527_173500.gif",
-      "frame_timestamp": "2026-05-27T17:35:00",
+      "frame_path": "data/frames/opera/20260527_174000.gif",
+      "frame_timestamp": "2026-05-27T17:40:00",
       "center_dbz": null,
       "rings": [
         {
@@ -1455,6 +1472,8 @@
           "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
+          "n_echo": 0,
+          "n_trace": 0,
           "frac_wet": 0.0,
           "max_dbz": null,
           "mean_dbz": null,
@@ -1744,6 +1763,8 @@
           "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
+          "n_echo": 0,
+          "n_trace": 0,
           "frac_wet": 0.0,
           "max_dbz": null,
           "mean_dbz": null,
@@ -2033,6 +2054,8 @@
           "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
+          "n_echo": 0,
+          "n_trace": 0,
           "frac_wet": 0.0,
           "max_dbz": null,
           "mean_dbz": null,
@@ -2322,6 +2345,8 @@
           "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
+          "n_echo": 0,
+          "n_trace": 0,
           "frac_wet": 0.0,
           "max_dbz": null,
           "mean_dbz": null,
@@ -2611,6 +2636,8 @@
           "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
+          "n_echo": 0,
+          "n_trace": 0,
           "frac_wet": 0.0,
           "max_dbz": null,
           "mean_dbz": null,
@@ -2895,14 +2922,14 @@
       ],
       "motion": {
         "dx_px": 0,
-        "dy_px": 1,
-        "speed_px_per_frame": 1.0,
-        "confidence": 0.795,
-        "direction_deg": 180.0,
-        "direction_cardinal": "S",
+        "dy_px": 0,
+        "speed_px_per_frame": 0.0,
+        "confidence": 0.758,
+        "direction_deg": null,
+        "direction_cardinal": null,
         "px_per_km": 0.237,
         "dt_minutes": 5.0,
-        "speed_kmh": 50.6,
+        "speed_kmh": 0.0,
         "confidence_band": "high"
       },
       "approaching": {
@@ -2911,6 +2938,13 @@
         "persistence_available": true,
         "candidate_unconfirmed_rings": 0,
         "center_dbz": null
+      },
+      "scenario": {
+        "state": "CLEAR",
+        "reason": "no echo above noise floor within 150 km",
+        "action": "no action",
+        "severe_present": false,
+        "eta_min": null
       },
       "budva_pixel": {
         "x": 669.0,
@@ -2928,9 +2962,16 @@
     "rain_at_location": false,
     "rain_in_vicinity": false,
     "closest_eta_minutes": null,
+    "scenario_state": "BIO_NOISE",
+    "scenario_reason": "only sub-rain echo (< 20 dBZ) on the radar — likely insects, drizzle / virga or bright band",
+    "scenario_action": "log only",
+    "severe_present": false,
+    "scenario_eta_minutes": null,
     "lines": [
       "[dhmz] no precipitation within 150 km",
-      "[opera] no precipitation within 150 km"
+      "[opera] no precipitation within 150 km",
+      "[dhmz] scenario: BIO_NOISE — only sub-rain echo (< 20 dBZ) on the radar — likely insects, drizzle / virga or bright band",
+      "[opera] scenario: CLEAR — no echo above noise floor within 150 km"
     ]
   }
 }

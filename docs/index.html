@@ -166,14 +166,28 @@ function render(d) {
       const conf = (info.motion.confidence || 0).toFixed(2);
       html += '<p>Motion: ' + dir + ' @ ' + spd + ' (conf ' + conf + ')</p>';
     }
-    html += '<table><thead><tr><th>R (km)</th><th>wet px</th><th>max dBZ</th><th>bearing</th></tr></thead><tbody>';
+    html += '<table><thead><tr>'
+         + '<th title="Ring radius in km">R (km)</th>'
+         + '<th title="Speckle-filtered count of pixels >= 20 dBZ (rain). Threshold for the alarm logic is in the second number.">rain px</th>'
+         + '<th title="Total echo >= 5 dBZ (rain + sub-rain trace). Shows what is on the radar at all.">echo px</th>'
+         + '<th>max dBZ</th>'
+         + '<th title="Persistence: was the same ring wet in the previous scan too?">conf</th>'
+         + '<th>bearing</th>'
+         + '</tr></thead><tbody>';
     info.rings.forEach(ring => {
       const nWet = ring.n_wet || 0;
-      const hasRain = nWet > 0;
-      html += '<tr' + (hasRain ? ' style="background:#fff8e1"' : '') + '>' +
+      const nWetThreshold = ring.min_wet_threshold || 5;
+      const nEcho = ring.n_echo || 0;
+      const confirmed = !!ring.confirmed;
+      const hasRain = nWet >= nWetThreshold && confirmed;
+      const hasCandidate = nWet >= nWetThreshold && !confirmed;
+      const bg = hasRain ? '#fff8e1' : (hasCandidate ? '#f3f3f3' : '');
+      html += '<tr' + (bg ? ' style="background:' + bg + '"' : '') + '>' +
         '<td>' + ring.radius_km + '</td>' +
-        '<td>' + nWet + (ring.n_pixels_in_annulus ? ' / ' + ring.n_pixels_in_annulus : '') + '</td>' +
+        '<td>' + nWet + ' / ' + nWetThreshold + '</td>' +
+        '<td>' + nEcho + '</td>' +
         '<td>' + (ring.max_dbz != null ? ring.max_dbz : '–') + '</td>' +
+        '<td>' + (confirmed ? '✓' : (ring.persistence_scans === 1 ? '?' : '–')) + '</td>' +
         '<td>' + (ring.strongest_bearing_cardinal || '–') + '</td>' +
       '</tr>';
     });
