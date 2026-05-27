@@ -19,6 +19,11 @@
     <p id="alert-text">loading...</p>
   </section>
 
+  <section id="scenario" style="margin: 6px 0 10px; font-size: 13px;">
+    <span id="scenario-badge" style="display:inline-block; padding:3px 8px; border-radius:3px; font-weight:bold; background:#eee; color:#333;">–</span>
+    <span id="scenario-reason" style="margin-left: 8px; color: #555;"></span>
+  </section>
+
   <section id="summary">
     <h2>Summary</h2>
     <ul id="summary-list"></ul>
@@ -101,6 +106,27 @@ function render(d) {
     alert.className = 'alert ok';
     alertText.textContent = 'Nema padavina u okolini ' + locName;
   }
+
+  // Scenario state badge (PDF "Klasifikacija scenarija")
+  // Severity colours mirror the precedence order in interpret.py:SCENARIO_STATES.
+  const STATE_COLORS = {
+    SEVERE:         {bg: '#7b1fa2', fg: '#fff'},  // hail / severe warning
+    RAINING:        {bg: '#1565c0', fg: '#fff'},  // it's raining on us
+    IMMINENT:       {bg: '#c62828', fg: '#fff'},  // heavy core within 25 km
+    LIKELY:         {bg: '#ef6c00', fg: '#fff'},  // moderate approach
+    POSSIBLE:       {bg: '#f9a825', fg: '#222'},  // soft notify
+    LIKELY_NO_RAIN: {bg: '#9e9e9e', fg: '#fff'},  // echo but not for us
+    BIO_NOISE:      {bg: '#cfd8dc', fg: '#333'},  // sub-rain clutter
+    CLEAR:          {bg: '#a5d6a7', fg: '#1b3a1c'}, // nothing on the radar
+  };
+  const badge = document.getElementById('scenario-badge');
+  const reasonEl = document.getElementById('scenario-reason');
+  const state = (d.summary && d.summary.scenario_state) || 'CLEAR';
+  const col = STATE_COLORS[state] || STATE_COLORS.CLEAR;
+  badge.textContent = state;
+  badge.style.background = col.bg;
+  badge.style.color = col.fg;
+  reasonEl.textContent = (d.summary && d.summary.scenario_reason) || '';
 
   // Summary lines
   const list = document.getElementById('summary-list');
