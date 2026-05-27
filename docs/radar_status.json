@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-27T11:43:17",
+  "generated": "2026-05-27T11:48:18",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260527_114316_627f345b19cc.png",
-      "frame_timestamp": "2026-05-27T11:43:16",
+      "frame_path": "data/frames/dhmz/20260527_114816_47d7bb035da7.png",
+      "frame_timestamp": "2026-05-27T11:48:16",
       "center_dbz": null,
       "rings": [
         {
@@ -43,9 +43,9 @@
               "lat": 42.3763,
               "lon": 18.84,
               "rgb": [
-                165,
-                165,
-                165
+                239,
+                214,
+                189
               ],
               "dbz": null
             },
@@ -875,17 +875,17 @@
         {
           "radius_km": 100,
           "n_pixels_in_annulus": 43896,
-          "n_valid_color": 77,
-          "n_wet": 77,
-          "frac_wet": 0.00175,
+          "n_valid_color": 71,
+          "n_wet": 71,
+          "frac_wet": 0.00162,
           "max_dbz": 12.5,
           "mean_dbz": 12.5,
-          "strongest_bearing": 332.5,
+          "strongest_bearing": 323.8,
           "strongest_bearing_cardinal": "NW",
           "strongest_dbz": 12.5,
-          "closest_wet_km": 90.15,
-          "closest_wet_bearing": 109.5,
-          "closest_wet_bearing_cardinal": "E",
+          "closest_wet_km": 66.68,
+          "closest_wet_bearing": 269.4,
+          "closest_wet_bearing_cardinal": "W",
           "closest_wet_dbz": 12.5,
           "n_samples": 24,
           "n_in_image": 24,
@@ -1159,14 +1159,14 @@
         {
           "radius_km": 150,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 73,
-          "n_wet": 73,
-          "frac_wet": 0.00107,
-          "max_dbz": 22.5,
-          "mean_dbz": 12.9,
-          "strongest_bearing": 324.8,
+          "n_valid_color": 84,
+          "n_wet": 84,
+          "frac_wet": 0.00123,
+          "max_dbz": 17.5,
+          "mean_dbz": 12.7,
+          "strongest_bearing": 302.0,
           "strongest_bearing_cardinal": "NW",
-          "strongest_dbz": 22.5,
+          "strongest_dbz": 17.5,
           "closest_wet_km": 100.01,
           "closest_wet_bearing": 315.9,
           "closest_wet_bearing_cardinal": "NW",
@@ -1366,9 +1366,9 @@
               "lat": 43.4509,
               "lon": 17.9109,
               "rgb": [
-                239,
-                230,
-                189
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -1390,7 +1390,7 @@
         "dx_px": 0,
         "dy_px": 0,
         "speed_px_per_frame": 0.0,
-        "confidence": 0.641,
+        "confidence": 0.674,
         "direction_deg": null,
         "direction_cardinal": null,
         "px_per_km": 1.365,
@@ -1415,8 +1415,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260527_113500.gif",
-      "frame_timestamp": "2026-05-27T11:35:00",
+      "frame_path": "data/frames/opera/20260527_114000.gif",
+      "frame_timestamp": "2026-05-27T11:40:00",
       "center_dbz": null,
       "rings": [
         {
@@ -2863,7 +2863,7 @@
     "rain_in_vicinity": false,
     "closest_eta_minutes": null,
     "lines": [
-      "[dhmz] nearest echo (ignored — sub-threshold or > 15 km): trace at 90.15 km E",
+      "[dhmz] nearest echo (ignored — sub-threshold or > 15 km): trace at 66.68 km W",
       "[opera] no precipitation within 150 km"
     ]
   }
