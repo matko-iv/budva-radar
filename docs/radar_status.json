@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-27T17:28:18",
+  "generated": "2026-05-27T17:32:03",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260527_172816_e772ff8a50be.png",
-      "frame_timestamp": "2026-05-27T17:28:16",
+      "frame_path": "data/frames/dhmz/20260527_173203_975041119ad1.png",
+      "frame_timestamp": "2026-05-27T17:32:03",
       "center_dbz": null,
       "rings": [
         {
@@ -412,9 +412,9 @@
               "lat": 42.2278,
               "lon": 19.1333,
               "rgb": [
-                214,
-                230,
-                181
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -892,15 +892,15 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 75,
           "n_pixels_in_annulus": 43896,
-          "n_valid_color": 0,
+          "n_valid_color": 18,
           "n_wet": 0,
           "n_wet_raw": 0,
           "frac_wet": 0.0,
-          "max_dbz": null,
-          "mean_dbz": null,
-          "strongest_bearing": null,
-          "strongest_bearing_cardinal": null,
-          "strongest_dbz": null,
+          "max_dbz": 12.5,
+          "mean_dbz": 12.5,
+          "strongest_bearing": 112.7,
+          "strongest_bearing_cardinal": "SE",
+          "strongest_dbz": 12.5,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -1411,7 +1411,18 @@
           "persistence_scans": 0
         }
       ],
-      "motion": null,
+      "motion": {
+        "dx_px": -8,
+        "dy_px": 8,
+        "speed_px_per_frame": 11.31,
+        "confidence": 0.485,
+        "direction_deg": 225.0,
+        "direction_cardinal": "SW",
+        "px_per_km": 1.365,
+        "dt_minutes": 3.8,
+        "speed_kmh": 131.4,
+        "confidence_band": "low"
+      },
       "approaching": {
         "any_rain_within_radii": false,
         "rain_at_location": false,
