@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-27T20:52:01",
+  "generated": "2026-05-27T20:57:01",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260527_205200_f747960d4737.png",
-      "frame_timestamp": "2026-05-27T20:52:00",
+      "frame_path": "data/frames/dhmz/20260527_205700_d0a8e92ac92b.png",
+      "frame_timestamp": "2026-05-27T20:57:00",
       "center_dbz": null,
       "rings": [
         {
@@ -301,9 +301,9 @@
               "lat": 42.3733,
               "lon": 18.8085,
               "rgb": [
-                239,
-                214,
-                189
+                165,
+                165,
+                165
               ],
               "dbz": null
             }
@@ -416,9 +416,9 @@
               "lat": 42.2278,
               "lon": 19.1333,
               "rgb": [
-                214,
-                230,
-                181
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -898,17 +898,17 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 75,
           "n_pixels_in_annulus": 43896,
-          "n_valid_color": 49,
+          "n_valid_color": 29,
           "n_wet": 0,
           "n_wet_raw": 0,
-          "n_echo": 49,
-          "n_trace": 49,
+          "n_echo": 29,
+          "n_trace": 29,
           "frac_wet": 0.0,
-          "max_dbz": 17.5,
-          "mean_dbz": 13.6,
-          "strongest_bearing": 107.6,
-          "strongest_bearing_cardinal": "E",
-          "strongest_dbz": 17.5,
+          "max_dbz": 12.5,
+          "mean_dbz": 12.5,
+          "strongest_bearing": 113.3,
+          "strongest_bearing_cardinal": "SE",
+          "strongest_dbz": 12.5,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -1189,16 +1189,16 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 186,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 5,
+          "n_valid_color": 23,
           "n_wet": 0,
           "n_wet_raw": 0,
-          "n_echo": 5,
-          "n_trace": 5,
+          "n_echo": 23,
+          "n_trace": 23,
           "frac_wet": 0.0,
           "max_dbz": 12.5,
           "mean_dbz": 12.5,
-          "strongest_bearing": 114.1,
-          "strongest_bearing_cardinal": "SE",
+          "strongest_bearing": 109.3,
+          "strongest_bearing_cardinal": "E",
           "strongest_dbz": 12.5,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
@@ -1422,15 +1422,15 @@
         }
       ],
       "motion": {
-        "dx_px": -14,
-        "dy_px": -18,
-        "speed_px_per_frame": 22.8,
-        "confidence": 0.264,
-        "direction_deg": 322.1,
-        "direction_cardinal": "NW",
+        "dx_px": 3,
+        "dy_px": 13,
+        "speed_px_per_frame": 13.34,
+        "confidence": 0.253,
+        "direction_deg": 167.0,
+        "direction_cardinal": "S",
         "px_per_km": 1.365,
         "dt_minutes": 5.0,
-        "speed_kmh": 200.4,
+        "speed_kmh": 117.3,
         "confidence_band": "noise"
       },
       "approaching": {
@@ -1460,8 +1460,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260527_204000.gif",
-      "frame_timestamp": "2026-05-27T20:40:00",
+      "frame_path": "data/frames/opera/20260527_204500.gif",
+      "frame_timestamp": "2026-05-27T20:45:00",
       "center_dbz": null,
       "rings": [
         {
@@ -2922,14 +2922,14 @@
       ],
       "motion": {
         "dx_px": 0,
-        "dy_px": 1,
-        "speed_px_per_frame": 1.0,
-        "confidence": 0.998,
-        "direction_deg": 180.0,
-        "direction_cardinal": "S",
+        "dy_px": 0,
+        "speed_px_per_frame": 0.0,
+        "confidence": 0.882,
+        "direction_deg": null,
+        "direction_cardinal": null,
         "px_per_km": 0.237,
         "dt_minutes": 5.0,
-        "speed_kmh": 50.6,
+        "speed_kmh": 0.0,
         "confidence_band": "high"
       },
       "approaching": {
