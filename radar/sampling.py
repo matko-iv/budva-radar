@@ -12,6 +12,7 @@ plus the sector with the strongest signal.
 
 import math
 import numpy as np
+from scipy.ndimage import convolve
 
 import config
 from radar import calibration, colormap
@@ -21,7 +22,54 @@ from radar import calibration, colormap
 # legend matches happen on basemap textures, so we require a small cluster
 # before reporting precipitation. Tuned conservatively - real cells produce
 # tens to thousands of wet pixels in a single annulus.
+#
+# The distance-aware version is min_wet_for_distance() — this constant is
+# the close-range floor that the per-source threshold scales up from.
 MIN_WET_PIXELS_PER_ANNULUS = 5
+
+# Speckle filter: a pixel keeps "wet" status only when at least this many
+# of its 8 neighbours are also wet. Operational radar processing routinely
+# applies this 3x3 rule to suppress salt-and-pepper artefacts (RF interference,
+# isolated bright-band specks, single-pixel sun spikes).
+SPECKLE_MIN_NEIGHBOURS = 4
+
+
+def _apply_speckle_filter(wet_mask: np.ndarray) -> np.ndarray:
+    """Drop wet pixels that have fewer than SPECKLE_MIN_NEIGHBOURS wet
+    neighbours in their 3x3 window. Removes isolated 1-2 pixel echoes."""
+    if wet_mask.size == 0:
+        return wet_mask
+    kernel = np.ones((3, 3), dtype=np.int8)
+    kernel[1, 1] = 0  # exclude self
+    neighbours = convolve(wet_mask.astype(np.int8), kernel,
+                          mode="constant", cval=0)
+    return wet_mask & (neighbours >= SPECKLE_MIN_NEIGHBOURS)
+
+
+def min_wet_for_distance(distance_km: float, km_per_pixel: float = 2.0) -> int:
+    """Distance-aware threshold for "this annulus has rain".
+
+    Calibrated against 2 km pixels (OPERA ODYSSEY); for finer-resolution
+    sources the count is scaled up by the pixel area ratio so we keep the
+    same equivalent square-kilometre cluster size.
+      <= 25 km:  ~12 km^2 cluster
+      <= 50 km:  ~20 km^2 cluster
+      <= 100 km: ~40 km^2 cluster
+      <= 150 km: ~100 km^2 cluster
+      > 150 km:  ~200 km^2 cluster (effectively only large systems count)
+    """
+    if distance_km is None or distance_km <= 25:
+        base_at_2km = 3
+    elif distance_km <= 50:
+        base_at_2km = 5
+    elif distance_km <= 100:
+        base_at_2km = 10
+    elif distance_km <= 150:
+        base_at_2km = 25
+    else:
+        base_at_2km = 50
+    area_scale = (2.0 / max(km_per_pixel, 0.1)) ** 2
+    return max(MIN_WET_PIXELS_PER_ANNULUS, int(round(base_at_2km * area_scale)))
 
 
 def points_on_circle(lat_c, lon_c, radius_km, n_points=24):
@@ -87,6 +135,7 @@ def sample_concentric(rgb_array, source, lat_c, lon_c, radii_km, n_per_ring=24):
     pixels_per_deg_lat = math.hypot(px_n - bx, py_n - by)
     KM_PER_DEG_LAT = 111.32
     px_per_km = pixels_per_deg_lat / KM_PER_DEG_LAT
+    km_per_pixel = 1.0 / max(px_per_km, 1e-6)
     # Grid of pixel coordinates within the valid area
     ys = np.arange(vy0, vy1)
     xs = np.arange(vx0, vx1)
@@ -102,6 +151,13 @@ def sample_concentric(rgb_array, source, lat_c, lon_c, radii_km, n_per_ring=24):
     area_rgb = rgb_array[vy0:vy1, vx0:vx1].reshape(-1, 3)
     area_dbz_flat = colormap.pixels_to_dbz(area_rgb, source)
     area_dbz = area_dbz_flat.reshape(vy1 - vy0, vx1 - vx0)
+    # 2D wet mask over the whole valid area, then speckle-filter it once.
+    # Doing this on the full area (not per annulus) lets the 3x3 neighbour
+    # rule see across annulus boundaries — a cluster straddling 49/51 km is
+    # still a cluster.
+    area_valid = ~np.isnan(area_dbz)
+    area_wet_raw = area_valid & (area_dbz >= config.RAIN_DBZ_THRESHOLD)
+    area_wet = _apply_speckle_filter(area_wet_raw)
 
     results = []
     prev_r = 0.0
@@ -117,9 +173,13 @@ def sample_concentric(rgb_array, source, lat_c, lon_c, radii_km, n_per_ring=24):
         ann_dbz = area_dbz[annulus_mask]
         ann_brg = BRG[annulus_mask]
         ann_dist = DIST_KM[annulus_mask]
+        ann_wet_filtered = area_wet[annulus_mask]
         valid_ann = ~np.isnan(ann_dbz)
         n_valid_ann = int(valid_ann.sum())
-        wet_mask = valid_ann & (ann_dbz >= config.RAIN_DBZ_THRESHOLD)
+        wet_raw_mask = valid_ann & (ann_dbz >= config.RAIN_DBZ_THRESHOLD)
+        n_wet_raw_ann = int(wet_raw_mask.sum())
+        # Speckle-filtered count is the one the rest of the pipeline uses.
+        wet_mask = ann_wet_filtered
         n_wet_ann = int(wet_mask.sum())
         if n_valid_ann > 0:
             max_dbz = float(np.nanmax(ann_dbz))
@@ -175,10 +235,13 @@ def sample_concentric(rgb_array, source, lat_c, lon_c, radii_km, n_per_ring=24):
             })
         results.append({
             "radius_km": r_km,
+            "km_per_pixel": round(km_per_pixel, 3),
+            "min_wet_threshold": min_wet_for_distance(r_km, km_per_pixel),
             # Annulus-based aggregates (these are the values the table uses)
             "n_pixels_in_annulus": n_pixels_in_annulus,
             "n_valid_color": n_valid_ann,
-            "n_wet": n_wet_ann,
+            "n_wet": n_wet_ann,            # speckle-filtered count (used downstream)
+            "n_wet_raw": n_wet_raw_ann,    # pre-speckle count, kept for debugging
             "frac_wet": round(frac_wet, 5),
             "max_dbz": None if np.isnan(max_dbz) else round(max_dbz, 1),
             "mean_dbz": None if np.isnan(mean_dbz) else round(mean_dbz, 1),

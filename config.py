@@ -58,12 +58,29 @@ USER_AGENT = "budva-radar/0.1 (local precipitation analysis; non-commercial)"
 # ============================================================================
 # Interpretation
 # ============================================================================
-# Threshold for "rain detected" in dBZ.
-# 10 dBZ = light/visible echo. 20 dBZ = ~ 0.5 mm/h (light rain).
-# Using 10 means trace echoes within range are flagged, so the user is aware
-# something exists on the radar even if it's not yet actual rainfall.
-RAIN_DBZ_THRESHOLD = 10.0   # ~ visible echo on radar
-HEAVY_DBZ_THRESHOLD = 40.0  # ~ 12 mm/h (heavy rain)
+# dBZ thresholds. Calibrated against NOAA JetStream ("light rain begins at
+# 20 dBZ") and DHMZ operational scale. Below 5 dBZ is essentially clear-air
+# noise (insects, ground/sea clutter); 5-20 is sub-rain (drizzle, virga,
+# bright band); 20+ is what NOAA calls light rain.
+NOISE_DBZ = 5.0             # below this: clear-air noise / insects / OPERA noise floor
+RAIN_DBZ_THRESHOLD = 20.0   # NOAA JetStream: "20 dBZ point at which light rain begins"
+MODERATE_DBZ = 30.0
+HEAVY_DBZ_THRESHOLD = 40.0  # ~ 12 mm/h Marshall-Palmer
+SEVERE_DBZ = 50.0           # Z-R becomes unreliable above this (hail / Mie scattering)
+EXTREME_DBZ = 55.0          # hail core territory
 
-# Motion detection: minimum cross-correlation for a valid motion vector
-MOTION_MIN_CORRELATION = 0.4
+# Motion detection. Operational TREC implementations (Vaisala IRIS, CHMI)
+# use 0.5-0.7; vectors below MOTION_LOW_CONFIDENCE_MIN are dropped, vectors
+# in [MOTION_LOW_CONFIDENCE_MIN, MOTION_MIN_CORRELATION] are kept but flagged.
+MOTION_MIN_CORRELATION = 0.6
+MOTION_LOW_CONFIDENCE_MIN = 0.4
+
+# Cell persistence: a wet annulus is "confirmed" only if the same ring also
+# had >= min_wet_pixels in the previous scan. Standard across SCIT/TITAN/
+# KONRAD; single-frame detections are treated as candidates only.
+PERSISTENCE_MIN_SCANS = 2
+
+# Maximum rain rate to report (mm/h). Above dBZ ~50 the Marshall-Palmer
+# relation breaks down (hail, Mie scattering) and produces wildly inflated
+# values; cap so the UI doesn't claim "300 mm/h" for a hail core.
+RAIN_RATE_CAP_MMH = 60.0

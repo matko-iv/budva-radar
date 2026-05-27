@@ -3,14 +3,17 @@
 Each radar image has its own color scale (legend). We map known colors to
 known dBZ values, then classify each pixel via nearest-neighbor in RGB space.
 
-dBZ -> mm/h conversion uses the Marshall-Palmer Z-R relation:
-    Z = 200 * R^1.6   =>   R = (Z / 200)^(1 / 1.6)
-where Z is linear reflectivity (mm^6 / m^3) and R is rain rate (mm/h).
-dBZ = 10 * log10(Z).
+dBZ -> mm/h conversion is adaptive: Marshall-Palmer (Z=200 R^1.6) for
+stratiform rain, WSR-88D convective (Z=300 R^1.4, Fulton 1998) for
+convection. Marshall-Palmer underestimates convective rain by 30-50%.
+Above dBZ 50 both relations break down (hail / Mie scattering) so rates
+are capped via config.RAIN_RATE_CAP_MMH.
 """
 
 import numpy as np
 from PIL import Image
+
+import config
 
 
 # ----------------------------------------------------------------------------
@@ -157,30 +160,84 @@ def pixels_to_dbz(pixels_rgb: np.ndarray, source: str) -> np.ndarray:
     return dbz_out
 
 
-def dbz_to_mmh(dbz: np.ndarray) -> np.ndarray:
-    """Marshall-Palmer Z-R: R = (Z / 200)^(1 / 1.6).
-    Where dBZ is NaN, output is 0 (no rain)."""
+def dbz_to_mmh(dbz, scenario: str = "stratiform"):
+    """dBZ -> rain rate (mm/h) under one of two Z-R relations.
+
+    scenario:
+      "stratiform" (default): Marshall-Palmer Z=200 R^1.6 — wide-area frontal
+                              rain, melting layer, drizzle.
+      "convective":           WSR-88D Z=300 R^1.4 (Fulton 1998) — pulse
+                              storms, multicells, squall lines. ~2-3x higher
+                              rates than M-P for the same dBZ.
+
+    Rates are clipped to config.RAIN_RATE_CAP_MMH for dBZ >= SEVERE_DBZ since
+    the Z-R assumption (Rayleigh scattering off rain drops) breaks down once
+    hail enters the radar volume.
+
+    NaN dBZ -> 0 (no rain).
+    """
     dbz = np.asarray(dbz, dtype=float)
-    mmh = np.where(
-        np.isnan(dbz), 0.0,
-        np.power(np.power(10.0, dbz / 10.0) / 200.0, 1.0 / 1.6)
-    )
-    return mmh
+    scalar_in = dbz.ndim == 0
+    if scenario == "convective":
+        a, b = 300.0, 1.4
+    else:
+        a, b = 200.0, 1.6
+    with np.errstate(invalid="ignore"):
+        mmh = np.where(
+            np.isnan(dbz), 0.0,
+            np.power(np.power(10.0, dbz / 10.0) / a, 1.0 / b),
+        )
+    # Z-R cap: hail / extreme reflectivity inflates the inversion wildly.
+    cap = np.where((~np.isnan(dbz)) & (dbz >= config.SEVERE_DBZ),
+                   np.minimum(mmh, config.RAIN_RATE_CAP_MMH), mmh)
+    return float(cap) if scalar_in else cap
+
+
+def pick_zr_scenario(max_dbz_in_scene, cell_max_diameter_km=None) -> str:
+    """Pick which Z-R relation to use based on scene characteristics.
+
+    Convective if there is at least one cell core >= 45 dBZ AND (if known)
+    the cell is compact (<30 km across). Otherwise stratiform.
+    Matches the PDF recommendation: convective for narrow strong cores,
+    stratiform for broad moderate fields.
+    """
+    if max_dbz_in_scene is None or np.isnan(max_dbz_in_scene):
+        return "stratiform"
+    if max_dbz_in_scene < 45.0:
+        return "stratiform"
+    if cell_max_diameter_km is not None and cell_max_diameter_km > 30.0:
+        return "stratiform"
+    return "convective"
 
 
 def classify_intensity(dbz_value) -> str:
-    """Human-readable classification for a single dBZ value."""
+    """Human-readable classification for a single dBZ value.
+
+    Tracks the NOAA / DHMZ operational scale: below 20 dBZ is sub-rain
+    (clutter / drizzle / virga / bright-band), 20 is where rain begins,
+    50+ is severe and likely contains hail.
+    """
     if dbz_value is None or (isinstance(dbz_value, float) and np.isnan(dbz_value)):
         return "no precipitation"
-    if dbz_value < 20:
-        return "trace"
-    if dbz_value < 30:
-        return "light rain"
-    if dbz_value < 40:
+    if dbz_value < config.NOISE_DBZ:           # < 5
+        return "no precipitation"
+    if dbz_value < 15.0:
+        return "noise / clear-air"             # 5-15: insects, virga, clutter
+    if dbz_value < config.RAIN_DBZ_THRESHOLD:  # 15-20
+        return "trace (sub-rain)"
+    if dbz_value < 25.0:
+        return "light rain"                    # 20-25
+    if dbz_value < config.MODERATE_DBZ:        # 25-30
+        return "light to moderate rain"
+    if dbz_value < config.HEAVY_DBZ_THRESHOLD: # 30-40
         return "moderate rain"
-    if dbz_value < 50:
+    if dbz_value < 45.0:                       # 40-45
         return "heavy rain"
-    return "extreme (likely hail)"
+    if dbz_value < config.SEVERE_DBZ:          # 45-50
+        return "very heavy rain"
+    if dbz_value < config.EXTREME_DBZ:         # 50-55
+        return "severe (likely hail)"
+    return "extreme (hail core)"               # 55+
 
 
 def load_image_as_rgb(path) -> np.ndarray:

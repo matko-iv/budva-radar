@@ -33,19 +33,34 @@ def _load_rgb(path) -> np.ndarray:
 
 
 def _classify_center_pixel(rgb_array, source_id: str, lat: float, lon: float):
-    """Return the dBZ of the exact pixel covering (lat, lon), or None if the
-    pixel is background/out-of-image. Used to decide "kisa pada na lokaciji"
-    based on what's literally under the marker, not a 2 km radius."""
+    """Return (dBZ, wet_neighbour_count) for the exact pixel covering
+    (lat, lon). dBZ is None if the pixel is background/out-of-image.
+    wet_neighbour_count is the number of pixels in the 3x3 neighbourhood
+    (8 pixels, centre excluded) that are >= RAIN_DBZ_THRESHOLD — used to
+    enforce a speckle test on the strict "rain at location" signal.
+    """
     cal = calibration.get_calibration(source_id)
     px, py = cal.latlon_to_pixel(lat, lon)
     H, W = rgb_array.shape[:2]
     xi, yi = int(round(px)), int(round(py))
     if not (0 <= xi < W and 0 <= yi < H):
-        return None
+        return None, 0
     arr = colormap.pixels_to_dbz(rgb_array[yi, xi].reshape(1, 3), source_id)
-    if arr.size == 0 or np.isnan(arr[0]):
-        return None
-    return float(arr[0])
+    centre_dbz = (None if arr.size == 0 or np.isnan(arr[0])
+                  else float(arr[0]))
+    # 3x3 neighbourhood (excluding the centre pixel itself)
+    x0, x1 = max(0, xi - 1), min(W, xi + 2)
+    y0, y1 = max(0, yi - 1), min(H, yi + 2)
+    block = rgb_array[y0:y1, x0:x1].reshape(-1, 3)
+    block_dbz = colormap.pixels_to_dbz(block, source_id)
+    # Count wet neighbours (the centre is in this block — subtract its
+    # contribution if it itself is wet so we get neighbours only).
+    wet_total = int(np.nansum(block_dbz >= config.RAIN_DBZ_THRESHOLD))
+    if centre_dbz is not None and centre_dbz >= config.RAIN_DBZ_THRESHOLD:
+        wet_neighbours = max(0, wet_total - 1)
+    else:
+        wet_neighbours = wet_total
+    return centre_dbz, wet_neighbours
 
 
 def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
@@ -59,16 +74,27 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
     rings = sampling.sample_concentric(
         latest_rgb, source_id, location["lat"], location["lon"], radii_km
     )
-    center_dbz = _classify_center_pixel(
+    center_dbz, center_wet_neighbours = _classify_center_pixel(
         latest_rgb, source_id, location["lat"], location["lon"]
     )
 
-    # Motion vector vs the previous frame
+    # Motion vector vs the previous frame + persistence check (rings & centre
+    # are "confirmed" only when the same signal showed up in the previous
+    # scan too — the SCIT/TITAN/KONRAD persistence rule).
     motion_info = None
+    prev_rings = None
+    prev_center_dbz = None
+    prev_center_neighbours = 0
     if len(frames) >= 2:
         prev_path = frames[-2]
         try:
             prev_rgb = _load_rgb(prev_path)
+            prev_rings = sampling.sample_concentric(
+                prev_rgb, source_id, location["lat"], location["lon"], radii_km
+            )
+            prev_center_dbz, prev_center_neighbours = _classify_center_pixel(
+                prev_rgb, source_id, location["lat"], location["lon"]
+            )
             motion_info = motion.compute_motion_vector(
                 prev_rgb, latest_rgb, source_id, location["lat"], location["lon"]
             )
@@ -82,10 +108,32 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
                     motion_info["speed_kmh"] = kmh
                 except Exception:
                     pass
+                # Tag confidence band so the UI / downstream can distinguish
+                # "use as primary" from "use as hint only".
+                conf = motion_info.get("confidence", 0) or 0
+                if conf >= config.MOTION_MIN_CORRELATION:
+                    motion_info["confidence_band"] = "high"
+                elif conf >= config.MOTION_LOW_CONFIDENCE_MIN:
+                    motion_info["confidence_band"] = "low"
+                else:
+                    motion_info["confidence_band"] = "noise"
         except Exception as e:
             motion_info = {"error": str(e)}
 
-    approaching = _is_approaching(rings, motion_info, center_dbz)
+    # Annotate each ring with persistence info (was the same ring wet in
+    # the previous scan too?). prev_rings may be None when only one frame
+    # is cached — in that case no ring can be "confirmed".
+    _annotate_persistence(rings, prev_rings)
+
+    centre_confirmed = _check_centre_persistence(
+        center_dbz, center_wet_neighbours,
+        prev_center_dbz, prev_center_neighbours,
+    )
+    approaching = _is_approaching(
+        rings, motion_info, center_dbz,
+        centre_confirmed=centre_confirmed,
+        persistence_available=(prev_rings is not None),
+    )
 
     # Store the path RELATIVE to the repo root so the JSON is reproducible
     # across machines. Previously this was an absolute Windows path and
@@ -109,9 +157,6 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
     }
 
 
-DISTANCE_HARD_KM = 20.0    # Closer than this, a few stray wet pixels still count.
-FAR_MIN_WET_PIXELS = 700   # Farther than DISTANCE_HARD_KM, require dense cluster.
-
 # Max distance at which we will say "kisa se primice" (is_approaching=True).
 # Anything farther only fires "kisa postoji u okolini", even when motion is
 # aligned with us. Rationale: small isolated pulse storms live 20-30 min and
@@ -128,48 +173,118 @@ APPROACHING_MAX_KM = 15.0
 APPROACH_TOLERANCE_DEG = 10.0
 
 
-def _min_wet_for_ring(radius_km):
+def _min_wet_for_ring(ring):
     """Threshold for treating a ring as containing actionable rain.
 
-    Distant small convective cells often dissipate before reaching us, so a
-    handful of pixels at 50-150 km are unreliable predictors. Beyond 25 km
-    we require a substantially larger, denser cluster (>= 100 wet pixels)
-    before we even consider that ring as "rain".
+    The threshold is published by sampling.sample_concentric in the ring
+    dict itself (`min_wet_threshold`), already scaled for the source's
+    pixel size. We fall back to the old 5-pixel floor only if a ring lacks
+    that field (e.g., out-of-image annulus).
     """
-    if radius_km is None or radius_km <= DISTANCE_HARD_KM:
-        return sampling.MIN_WET_PIXELS_PER_ANNULUS  # 5 — close cells matter
-    return FAR_MIN_WET_PIXELS
+    if not ring:
+        return sampling.MIN_WET_PIXELS_PER_ANNULUS
+    t = ring.get("min_wet_threshold")
+    return t if t is not None else sampling.MIN_WET_PIXELS_PER_ANNULUS
 
 
-def _is_approaching(rings, motion_info, center_dbz=None):
+def _annotate_persistence(rings, prev_rings):
+    """Mark each ring with `confirmed` (true iff this ring AND the matching
+    ring in the previous scan both cleared their wet-pixel threshold).
+
+    Without prev_rings we can't confirm anything — every ring stays as
+    `confirmed=False, persistence_scans=1`, and downstream logic treats
+    them as candidates only.
+    """
+    by_radius = {r.get("radius_km"): r for r in (prev_rings or [])}
+    for r in rings:
+        threshold = _min_wet_for_ring(r)
+        n_now = r.get("n_wet", 0) or 0
+        wet_now = n_now >= threshold
+        prev = by_radius.get(r.get("radius_km"))
+        if prev is None:
+            r["confirmed"] = False
+            r["persistence_scans"] = 1 if wet_now else 0
+            continue
+        prev_n = prev.get("n_wet", 0) or 0
+        wet_prev = prev_n >= _min_wet_for_ring(prev)
+        if wet_now and wet_prev:
+            r["confirmed"] = True
+            r["persistence_scans"] = 2
+        elif wet_now:
+            r["confirmed"] = False
+            r["persistence_scans"] = 1  # candidate this scan only
+        else:
+            r["confirmed"] = False
+            r["persistence_scans"] = 0
+
+
+def _check_centre_persistence(center_dbz, center_neighbours,
+                              prev_center_dbz, prev_center_neighbours):
+    """Strict "rain at location" requires speckle-clean wet pixels on the
+    marker in TWO consecutive scans. Returns True only if both scans had
+    centre dBZ above the rain threshold AND >= SPECKLE_MIN_NEIGHBOURS
+    wet neighbours."""
+    def _wet(dbz, neighbours):
+        return (dbz is not None
+                and dbz >= config.RAIN_DBZ_THRESHOLD
+                and neighbours >= sampling.SPECKLE_MIN_NEIGHBOURS)
+    return _wet(center_dbz, center_neighbours) and _wet(prev_center_dbz,
+                                                         prev_center_neighbours)
+
+
+def _is_approaching(rings, motion_info, center_dbz=None,
+                    centre_confirmed=False, persistence_available=False):
     """Heuristic: rain is approaching if:
-      (a) there is a 'wet' sector within 100 km,
+      (a) there is a 'wet' sector within 100 km that is *confirmed*
+          (>= threshold in the latest AND the previous scan),
       (b) the motion direction is opposite of the strongest-sector bearing.
 
     `center_dbz` is the dBZ value of the single pixel under the marker
-    (None if background/out-of-image). When that pixel itself shows rain
-    (dBZ >= threshold), we set `rain_at_location=True` — that is the
-    strictest possible "kisa pada na lokaciji" signal.
+    (None if background/out-of-image). `centre_confirmed` requires the
+    marker pixel to be wet (with a clean 3x3 neighbourhood) in both
+    consecutive scans before we set rain_at_location=True.
+
+    `persistence_available` is False when only one frame is cached — in
+    that case we degrade gracefully: wet rings are reported but flagged
+    as `persistence_available=False` and never raise an "approaching"
+    alarm. The data is shown, the user is not yet warned.
 
     Returns a dict with the qualitative assessment, or None.
     """
     if not rings:
         return None
 
-    # Strict "rain at location" check: only true if the EXACT pixel under
-    # the marker has rain (not a 2 km radius). User-requested behavior.
-    rain_at_location = (center_dbz is not None
-                        and center_dbz >= config.RAIN_DBZ_THRESHOLD)
+    # Strict "rain at location" requires speckle-clean wet pixels on the
+    # marker in TWO consecutive scans. Without persistence we cannot make
+    # that claim — fall back to single-scan check.
+    if persistence_available:
+        rain_at_location = bool(centre_confirmed)
+    else:
+        rain_at_location = (center_dbz is not None
+                            and center_dbz >= config.RAIN_DBZ_THRESHOLD)
 
-    # First check: is there any rain at all? Threshold scales with distance:
-    # close rings keep the low 5-pixel floor (small cells matter when near),
-    # but rings > 25 km need >= 100 wet pixels — a small distant convective
-    # cell isn't a reliable predictor that rain will reach us.
-    wet_rings = [r for r in rings
-                 if r.get("n_wet", 0) >= _min_wet_for_ring(r.get("radius_km"))]
+    # A ring counts as actionable rain only when it cleared the distance-
+    # aware threshold in BOTH the current and the previous scan. Operational
+    # standard across SCIT / TITAN / KONRAD. Without a previous frame, we
+    # report the rings as candidates (no alarms raised downstream).
+    def _ring_counts(r):
+        if persistence_available:
+            return bool(r.get("confirmed"))
+        return (r.get("n_wet", 0) or 0) >= _min_wet_for_ring(r)
+    wet_rings = [r for r in rings if _ring_counts(r)]
+    # Candidate rings: passed the wet threshold in the latest scan but were
+    # not confirmed by the previous scan. Reported separately so the UI can
+    # render "echo detected, awaiting next scan for confirmation".
+    candidate_count = sum(
+        1 for r in rings
+        if (r.get("n_wet", 0) or 0) >= _min_wet_for_ring(r)
+        and not _ring_counts(r)
+    )
     if not wet_rings:
         return {"any_rain_within_radii": False,
                 "rain_at_location": rain_at_location,
+                "persistence_available": persistence_available,
+                "candidate_unconfirmed_rings": candidate_count,
                 "center_dbz": round(center_dbz, 1) if center_dbz is not None else None}
 
     closest = min(wet_rings, key=lambda r: r["radius_km"])
@@ -195,6 +310,8 @@ def _is_approaching(rings, motion_info, center_dbz=None):
         return {
             "any_rain_within_radii": True,
             "rain_at_location": rain_at_location,
+            "persistence_available": persistence_available,
+            "candidate_unconfirmed_rings": candidate_count,
             "closest_rain_km": round(closest_exact_km, 2) if closest_exact_km is not None else closest["radius_km"],
             "closest_rain_ring_km": closest["radius_km"],
             "closest_rain_bearing_deg": (
@@ -221,6 +338,8 @@ def _is_approaching(rings, motion_info, center_dbz=None):
     base = {
         "any_rain_within_radii": True,
         "rain_at_location": rain_at_location,
+        "persistence_available": persistence_available,
+        "candidate_unconfirmed_rings": candidate_count,
         "closest_rain_km": round(closest_exact_km, 2) if closest_exact_km is not None else closest["radius_km"],
         "closest_rain_ring_km": closest["radius_km"],
         "closest_rain_bearing_deg": (
@@ -258,7 +377,9 @@ def _is_approaching(rings, motion_info, center_dbz=None):
     dist_for_check = closest_exact_km if closest_exact_km is not None else closest["radius_km"]
     within_approach_range = (dist_for_check is not None
                              and dist_for_check <= APPROACHING_MAX_KM)
-    is_appr = direction_aligned and within_approach_range
+    # Persistence gate: an "approaching" alarm requires a previous-scan
+    # confirmation. SCIT/TITAN/KONRAD all enforce >= 2 consecutive scans.
+    is_appr = direction_aligned and within_approach_range and persistence_available
 
     eta_min = None
     if is_appr and motion_info.get("speed_kmh"):
@@ -270,6 +391,8 @@ def _is_approaching(rings, motion_info, center_dbz=None):
         reason = "approaching"
     elif direction_aligned and not within_approach_range:
         reason = "aligned_but_too_far"  # rain heading toward us but unlikely to arrive
+    elif direction_aligned and not persistence_available:
+        reason = "aligned_but_unconfirmed"  # need a second scan before alarming
     else:
         reason = "motion_not_aligned"
 
@@ -278,6 +401,7 @@ def _is_approaching(rings, motion_info, center_dbz=None):
         "motion_direction_cardinal": calibration.bearing_to_cardinal(motion_dir),
         "motion_speed_kmh": motion_info.get("speed_kmh"),
         "motion_confidence": motion_conf,
+        "motion_confidence_band": motion_info.get("confidence_band"),
         "is_approaching": bool(is_appr),
         "eta_minutes": eta_min,
         "angular_alignment_deg": diff,
