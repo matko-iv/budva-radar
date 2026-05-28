@@ -82,6 +82,7 @@
 </footer>
 
 <script src="data.js"></script>
+<script src="skala-text.js"></script>
 <script>
 // ---------------------------------------------------------------------------
 // BOOT SEQUENCE
@@ -452,8 +453,9 @@ function assessApproach(bearingDeg, distKm) {
   return { approaching, reason, motion, eta, diff };
 }
 
-// The single source of truth — mirrors classify_scenario in interpret.py.
-function classifyScenario(result) {
+// Per-location interpretation. Builds normalized facts, then defers ALL wording
+// to SKALA.interpret() (shared with index.html) so both pages read identically.
+function classifyScenario(result, label) {
   const rainAtLoc = result.center_dbz != null && result.center_dbz >= RAIN_DBZ;
   const confirmedRings = result.rings.filter(
     r => (r.n_wet || 0) >= minWetForDistance(r.r_km));
@@ -463,107 +465,40 @@ function classifyScenario(result) {
   const km = c ? c.km : null;
   const deg = c ? c.bearing : null;
   const dbz = c ? c.dbz : null;
-  const cell = cellPhrase(km, deg, dbz, classifyIntensity(dbz));
 
-  const ap = c ? assessApproach(deg, km) : { approaching: false, reason: 'no_motion_data', motion: getMotion() };
+  const ap = c ? assessApproach(deg, km)
+               : { approaching: false, reason: 'no_motion_data', motion: getMotion() };
   const motion = ap.motion;
-  const motionCardDeg = motion && motion.direction_deg != null ? motion.direction_deg : null;
-  const speed = motion && motion.speed_kmh != null ? motion.speed_kmh : null;
+  const motionCardinal = motion && motion.direction_deg != null
+    ? cardinalFromDeg(motion.direction_deg) : null;
 
-  // Severe core (may be a different, farther cell than the closest).
-  const sev = result.severeClosest;  // {km, bearing, dbz} | null
-  const severePresent = !!sev;
-  const severeIsThreat = severePresent && (
-    sev.km <= SEVERE_THREAT_KM || (ap.approaching && dbz != null && dbz >= SEVERE_DBZ));
-  let severeNote = '';
-  if (severePresent && !severeIsThreat) {
-    const samePlace = (km != null && Math.abs(km - sev.km) <= 15);
-    if (!samePlace) {
-      severeNote = ` Plus a strong core (~${Math.round(sev.dbz)} dBZ) at `
-                 + `${formatKm(sev.km)} km ${cardinalFromDeg(sev.bearing)} — too far to threaten.`;
-    }
-  }
-  const pack = (state, narrative, eta) =>
-    ({ state, narrative: narrative + severeNote, action: SCENARIO_ACTION[state],
-       severe_present: severePresent, eta_min: eta == null ? null : eta });
-
-  // SEVERE — hail core that actually threatens the point.
-  if (severeIsThreat) {
-    const sk = sev.km, sd = sev.dbz, sc = cardinalFromDeg(sev.bearing);
-    let tail = '';
-    if (ap.approaching && ap.eta != null) tail = `, approaching, ETA ~${Math.round(ap.eta)} min`;
-    else if (sk <= SEVERE_THREAT_KM) tail = ', in the immediate vicinity';
-    return pack('SEVERE',
-      `Severe core (${Math.round(sd)} dBZ) at ${formatKm(sk)} km ${sc}, hail possible${tail}.`,
-      ap.approaching ? ap.eta : null);
-  }
-
-  // No confirmed rain: CLEAR / BIO_NOISE / scattered.
-  if (!hasRain) {
-    const anyEcho = result.rings.some(r => (r.n_echo || 0) > 0);
-    const anyWet = result.rings.some(r => (r.n_wet || 0) > 0);
-    if (anyWet) return pack('LIKELY_NO_RAIN',
-      'Scattered rain pixels on the radar, below the confirmation threshold (cluster too small).', null);
-    if (anyEcho) return pack('BIO_NOISE',
-      'Only weak echo (<20 dBZ) — likely insects, mist or bright-band; not rain.', null);
-    return pack('CLEAR', 'No echo on the radar within 150 km.', null);
-  }
-
-  // Confirmed rain present — state from the single closest cell.
-  if (rainAtLoc)
-    return pack('RAINING', `Rain at the location: ${cell}.`, 0);
-  if (km != null && km <= 10) {
-    let move = '';
-    if (motionCardDeg != null)
-      move = ` Cell is moving ${cardinalFromDeg(motionCardDeg)}`
-           + (ap.approaching ? ' (toward us).' : ' (will pass by).');
-    return pack('RAINING', `Rain falling nearby: ${cell}.${move}`, 0);
-  }
-  if (ap.approaching) {
-    const etaTxt = ap.eta != null ? `, ETA ~${Math.round(ap.eta)} min` : '';
-    const spdTxt = speed ? ` (~${Math.round(speed)} km/h)` : '';
-    if ((dbz || 0) >= HEAVY_DBZ && km <= 25)
-      return pack('IMMINENT', `Rain imminent: ${cell}, approaching${spdTxt}${etaTxt}.`, ap.eta);
-    if ((dbz || 0) >= MODERATE_DBZ && km <= 100)
-      return pack('LIKELY', `Rain likely: ${cell}, approaching${spdTxt}${etaTxt}.`, ap.eta);
-    return pack('POSSIBLE', `Rain possible: ${cell}, approaching${spdTxt}${etaTxt}.`, ap.eta);
-  }
-  // Rain present but not approaching — phrase WHY accurately (never call a
-  // 50+ km cell "nearby").
-  let why;
-  if (ap.reason === 'aligned_but_too_far')
-    why = `heading our way but too far (${formatKm(km)} km) to reliably arrive`;
-  else if (ap.reason === 'no_reliable_motion' || ap.reason === 'no_motion_data')
-    why = 'motion can\'t be reliably estimated yet';
-  else if (motionCardDeg != null)
-    why = `not heading toward us (moving ${cardinalFromDeg(motionCardDeg)})`;
-  else why = 'not heading toward us';
-  return pack('LIKELY_NO_RAIN', `Rain present: ${cell}, ${why}.`, null);
+  const facts = {
+    locationName: label,
+    rainAtLocation: rainAtLoc,
+    approaching: ap.approaching,
+    anyRain: hasRain,
+    anyWet: result.rings.some(r => (r.n_wet || 0) > 0),
+    anyEcho: result.rings.some(r => (r.n_echo || 0) > 0),
+    km: km,
+    cardinal: cardinalFromDeg(deg),
+    dbz: dbz,
+    motionCardinal: motionCardinal,
+    eta: ap.eta,
+  };
+  const res = SKALA.interpret(facts);
+  res.eta_min = ap.approaching ? ap.eta : (rainAtLoc ? 0 : null);
+  return res;
 }
 
-const STATE_META = {
-  SEVERE:         {bg: '#7b1fa2', fg: '#fff', cls: 'warn', head: 'SEVERE WEATHER — HAIL POSSIBLE'},
-  RAINING:        {bg: '#1565c0', fg: '#fff', cls: 'warn', head: 'RAINING'},
-  IMMINENT:       {bg: '#c62828', fg: '#fff', cls: 'warn', head: 'RAIN IMMINENT'},
-  LIKELY:         {bg: '#ef6c00', fg: '#fff', cls: 'warn', head: 'RAIN LIKELY'},
-  POSSIBLE:       {bg: '#f9a825', fg: '#222', cls: 'warn', head: 'RAIN POSSIBLE'},
-  LIKELY_NO_RAIN: {bg: '#9e9e9e', fg: '#fff', cls: 'ok',   head: 'NO RAIN HEADING HERE'},
-  BIO_NOISE:      {bg: '#cfd8dc', fg: '#333', cls: 'ok',   head: 'NO RAIN (radar noise only)'},
-  CLEAR:          {bg: '#a5d6a7', fg: '#1b3a1c', cls: 'ok', head: 'NO PRECIPITATION'},
-};
-
 function renderOutput(label, cx, cy, result, ms) {
-  const sc = classifyScenario(result);
-  const meta = STATE_META[sc.state] || STATE_META.CLEAR;
+  const sc = classifyScenario(result, label);
+  const meta = sc.meta;
 
-  // Headline banner (single source of truth).
+  // Headline banner (single source of truth — identical wording to index.html).
   const alertEl = document.getElementById('alert');
   const alertText = document.getElementById('alert-text');
   alertEl.className = 'alert ' + meta.cls;
-  let head = meta.head + ' — ' + label;
-  if (sc.eta_min != null && ['IMMINENT', 'LIKELY', 'POSSIBLE'].includes(sc.state))
-    head += ` (ETA ~${Math.round(sc.eta_min)} min)`;
-  alertText.textContent = head;
+  alertText.textContent = sc.headline;
 
   // State badge + the one coherent narrative.
   const badge = document.getElementById('scenario-badge');

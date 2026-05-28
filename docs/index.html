@@ -49,6 +49,7 @@
 </footer>
 
 <script src="data.js"></script>
+<script src="skala-text.js"></script>
 <script>
 function load() {
   if (window.RADAR_DATA) {
@@ -68,52 +69,70 @@ function render(d) {
   // one detail line, one colour — no competing alert systems.
   // Colours + headline mirror interpret.py:SCENARIO_STATES (worst -> best).
   const locName = (d.location && d.location.name) || 'this location';
-  const STATE_META = {
-    SEVERE:         {bg: '#7b1fa2', fg: '#fff', cls: 'warn', head: 'SEVERE WEATHER — HAIL POSSIBLE'},
-    RAINING:        {bg: '#1565c0', fg: '#fff', cls: 'warn', head: 'RAINING IN ' + locName.toUpperCase()},
-    IMMINENT:       {bg: '#c62828', fg: '#fff', cls: 'warn', head: 'RAIN IMMINENT'},
-    LIKELY:         {bg: '#ef6c00', fg: '#fff', cls: 'warn', head: 'RAIN LIKELY'},
-    POSSIBLE:       {bg: '#f9a825', fg: '#222', cls: 'warn', head: 'RAIN POSSIBLE'},
-    LIKELY_NO_RAIN: {bg: '#9e9e9e', fg: '#fff', cls: 'ok',   head: 'NO RAIN HEADING HERE'},
-    BIO_NOISE:      {bg: '#cfd8dc', fg: '#333', cls: 'ok',   head: 'NO RAIN (radar noise only)'},
-    CLEAR:          {bg: '#a5d6a7', fg: '#1b3a1c', cls: 'ok', head: 'NO PRECIPITATION'},
-    UNAVAILABLE:    {bg: '#eee', fg: '#333', cls: 'ok', head: 'DATA UNAVAILABLE'},
-  };
-  const state = (d.summary && d.summary.scenario_state) || 'CLEAR';
-  const meta = STATE_META[state] || STATE_META.CLEAR;
-  const eta = d.summary && d.summary.scenario_eta_minutes;
+
+  // Build the normalized facts SKALA.interpret() expects from one source's
+  // precomputed ring/approach data. Same shape radar-map.html produces live,
+  // so both pages render identical wording.
+  function factsFromSource(src, loc) {
+    const app = (src && src.approaching) || {};
+    const rings = (src && src.rings) || [];
+    const motion = (src && src.motion) || {};
+    return {
+      locationName: loc,
+      rainAtLocation: !!app.rain_at_location,
+      approaching: !!app.is_approaching,
+      anyRain: !!app.any_rain_within_radii,
+      anyWet: rings.some(r => (r.n_wet || 0) > 0),
+      anyEcho: rings.some(r => (r.n_echo || 0) > 0),
+      km: app.closest_rain_km,
+      cardinal: app.closest_rain_bearing_cardinal,
+      dbz: app.closest_rain_intensity_dbz,
+      motionCardinal: app.motion_direction_cardinal || motion.direction_cardinal,
+      eta: app.eta_minutes,
+    };
+  }
+
+  // Composite headline/narrative: take the source that drove the summary, but
+  // let summary-level booleans win where present.
+  const sum = d.summary || {};
+  const srcId = sum.scenario_source || Object.keys(d.sources || {})[0];
+  const compFacts = factsFromSource((d.sources || {})[srcId], locName);
+  if (sum.rain_at_location != null) compFacts.rainAtLocation = !!sum.rain_at_location;
+  if (sum.rain_approaching != null) compFacts.approaching = !!sum.rain_approaching;
+  if (sum.rain_in_vicinity != null) compFacts.anyRain = !!sum.rain_in_vicinity;
+  if (sum.closest_eta_minutes != null) compFacts.eta = sum.closest_eta_minutes;
+  const res = SKALA.interpret(compFacts);
+  const meta = res.meta;
 
   const alert = document.getElementById('alert');
   const alertText = document.getElementById('alert-text');
   alert.className = 'alert ' + meta.cls;
-  let head = meta.head;
-  if (eta != null && (state === 'IMMINENT' || state === 'LIKELY' || state === 'POSSIBLE')) {
-    head += ' — ETA ~' + Math.round(eta) + ' min';
-  }
-  alertText.textContent = head;
+  alertText.textContent = res.headline;
 
-  // Scenario badge + composite narrative — optional (the section may be
-  // commented out in the markup), so guard every lookup.
+  // Scenario badge + narrative — optional (the section may be commented out).
   const badge = document.getElementById('scenario-badge');
   if (badge) {
-    badge.textContent = state;
+    badge.textContent = res.state;
     badge.style.background = meta.bg;
     badge.style.color = meta.fg;
   }
   const reasonEl = document.getElementById('scenario-reason');
-  if (reasonEl) {
-    reasonEl.textContent = (d.summary && d.summary.scenario_narrative) || '';
-  }
+  if (reasonEl) reasonEl.textContent = res.narrative;
 
   // Per-radar interpretation: ONE coherent line per radar (DHMZ / OPERA),
-  // straight from each radar's own scenario narrative.
+  // using the SAME wording scheme as radar-map.html.
   const list = document.getElementById('summary-list');
   list.innerHTML = '';
-  (d.summary.lines || []).forEach(line => {
+  for (const [sid, info] of Object.entries(d.sources || {})) {
     const li = document.createElement('li');
-    li.textContent = line;
+    if (!info || !info.ok) {
+      li.textContent = sid.toUpperCase() + ': unavailable';
+    } else {
+      const r = SKALA.interpret(factsFromSource(info, locName));
+      li.textContent = sid.toUpperCase() + ': [' + r.state + '] ' + r.narrative;
+    }
     list.appendChild(li);
-  });
+  }
 
   // Radar image previews (latest_dhmz.png + latest_opera.gif) with Budva
   // marker + concentric sampling-ring overlay rendered as inline SVG.
