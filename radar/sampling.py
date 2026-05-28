@@ -176,9 +176,17 @@ def sample_concentric(rgb_array, source, lat_c, lon_c, radii_km, n_per_ring=24):
         ann_wet_filtered = area_wet[annulus_mask]
         valid_ann = ~np.isnan(ann_dbz)
         n_valid_ann = int(valid_ann.sum())
+        # Tiered counts so the UI can show sub-rain echo too (the radar
+        # routinely shows 5-20 dBZ traces of drizzle / bright band / clutter
+        # that aren't "rain" but are also not "nothing on the radar"):
+        echo_mask  = valid_ann & (ann_dbz >= config.NOISE_DBZ)
+        trace_mask = echo_mask & (ann_dbz <  config.RAIN_DBZ_THRESHOLD)
         wet_raw_mask = valid_ann & (ann_dbz >= config.RAIN_DBZ_THRESHOLD)
+        n_echo_ann    = int(echo_mask.sum())
+        n_trace_ann   = int(trace_mask.sum())
         n_wet_raw_ann = int(wet_raw_mask.sum())
-        # Speckle-filtered count is the one the rest of the pipeline uses.
+        # Speckle-filtered count is the one the rest of the pipeline uses
+        # for "rain" decisions; the others are reporting fields.
         wet_mask = ann_wet_filtered
         n_wet_ann = int(wet_mask.sum())
         if n_valid_ann > 0:
@@ -242,6 +250,8 @@ def sample_concentric(rgb_array, source, lat_c, lon_c, radii_km, n_per_ring=24):
             "n_valid_color": n_valid_ann,
             "n_wet": n_wet_ann,            # speckle-filtered count (used downstream)
             "n_wet_raw": n_wet_raw_ann,    # pre-speckle count, kept for debugging
+            "n_echo": n_echo_ann,          # any echo >= NOISE_DBZ (~5 dBZ)
+            "n_trace": n_trace_ann,        # sub-rain echo NOISE_DBZ..RAIN_DBZ
             "frac_wet": round(frac_wet, 5),
             "max_dbz": None if np.isnan(max_dbz) else round(max_dbz, 1),
             "mean_dbz": None if np.isnan(mean_dbz) else round(mean_dbz, 1),

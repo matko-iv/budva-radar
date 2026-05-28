@@ -129,11 +129,13 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         center_dbz, center_wet_neighbours,
         prev_center_dbz, prev_center_neighbours,
     )
+    persistence_available = prev_rings is not None
     approaching = _is_approaching(
         rings, motion_info, center_dbz,
         centre_confirmed=centre_confirmed,
-        persistence_available=(prev_rings is not None),
+        persistence_available=persistence_available,
     )
+    scenario = classify_scenario(rings, approaching, persistence_available)
 
     # Store the path RELATIVE to the repo root so the JSON is reproducible
     # across machines. Previously this was an absolute Windows path and
@@ -154,6 +156,7 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         "rings": rings,
         "motion": motion_info,
         "approaching": approaching,
+        "scenario": scenario,
     }
 
 
@@ -230,6 +233,231 @@ def _check_centre_persistence(center_dbz, center_neighbours,
                 and neighbours >= sampling.SPECKLE_MIN_NEIGHBOURS)
     return _wet(center_dbz, center_neighbours) and _wet(prev_center_dbz,
                                                          prev_center_neighbours)
+
+
+# --------------------------------------------------------------------------
+# Scenario state machine (PDF section "Klasifikacija scenarija"):
+#   CLEAR     -> nothing on the radar
+#   BIO_NOISE -> only sub-rain widespread echo (insects, virga, bright band)
+#   LIKELY_NO_RAIN -> wet echo present but not heading toward us
+#   POSSIBLE  -> confirmed >= 25 dBZ within 150 km, approaching
+#   LIKELY    -> confirmed >= 30 dBZ within 100 km, approaching
+#   IMMINENT  -> confirmed >= 40 dBZ within 25 km, ETA <= 30 min
+#   RAINING   -> rain at location (or confirmed echo within 10 km)
+#   SEVERE    -> >= 50 dBZ core anywhere visible (hail / severe warning)
+# Higher-severity states override lower-severity ones.
+# --------------------------------------------------------------------------
+SCENARIO_STATES = [
+    "SEVERE", "RAINING", "IMMINENT", "LIKELY", "POSSIBLE",
+    "LIKELY_NO_RAIN", "BIO_NOISE", "CLEAR",
+]
+SCENARIO_PRIORITY = {s: i for i, s in enumerate(SCENARIO_STATES)}  # lower = worse
+
+SCENARIO_ACTION = {
+    "SEVERE":         "Severe weather warning",
+    "RAINING":        "Rain now",
+    "IMMINENT":       "Alarm: rain imminent",
+    "LIKELY":         "Notify (sat/lightning verify)",
+    "POSSIBLE":       "Soft notify",
+    "LIKELY_NO_RAIN": "Status only",
+    "BIO_NOISE":      "Log only",
+    "CLEAR":          "No action",
+}
+
+# A severe (>= 50 dBZ) core is treated as a direct threat to Budva only when
+# it is this close, OR when it is approaching. Beyond this, it is mentioned as
+# context but does not become the headline state (a hail core 150 km away
+# moving inland is not a Budva warning).
+SEVERE_THREAT_KM = 50.0
+
+# Rain that is not approaching is only described as "nearby" within this
+# range. Beyond it, non-approaching rain is reported as distant and not a
+# threat — so we never claim "rain nearby" for a cell 50+ km away.
+VICINITY_KM = 20.0
+
+
+def _cell_phrase(km, card, dbz, intensity):
+    """One consistent description of a single cell, e.g.
+    'light rain (28 dBZ) at 5.3 km E'. `intensity` and `card` are already
+    English (from colormap.classify_intensity / calibration.bearing_to_cardinal)."""
+    txt = intensity or "precipitation"
+    if dbz is not None:
+        txt += f" ({dbz:.0f} dBZ)"
+    if km is not None:
+        txt += f" at {km:.1f} km"
+        if card:
+            txt += f" {card}"
+    return txt
+
+
+def classify_scenario(rings, approaching, persistence_available):
+    """Single source of truth for one radar's interpretation.
+
+    Produces ONE coherent state + ONE English narrative sentence in which
+    every number (distance, bearing, intensity, motion, ETA) refers to the
+    same cell — the closest confirmed cell from `approaching` — plus an
+    optional secondary note if a far-off severe core also exists.
+
+    rings:                 sampling rings, annotated with `confirmed`.
+    approaching:           the dict returned by _is_approaching — the coherent
+                           closest-cell data set (km, bearing, dBZ, ETA, ...).
+    persistence_available: False when only one frame is cached.
+
+    Returns {state, narrative, action, severe_present, severe_detail, eta_min}.
+    """
+    a = approaching or {}
+
+    # --- The one cell every number refers to (closest confirmed rain) ---
+    has_rain = bool(a.get("any_rain_within_radii"))
+    rain_at_loc = bool(a.get("rain_at_location"))
+    km = a.get("closest_rain_km")
+    card = a.get("closest_rain_bearing_cardinal")
+    dbz = a.get("closest_rain_intensity_dbz")
+    intensity = a.get("closest_rain_intensity_label")
+    is_appr = bool(a.get("is_approaching"))
+    eta = a.get("eta_minutes")
+    motion_card = a.get("motion_direction_cardinal")
+    speed = a.get("motion_speed_kmh")
+    cell = _cell_phrase(km, card, dbz, intensity)
+
+    # --- Severe core scan (may be a different, farther cell) ---
+    severe_ring = None
+    if persistence_available:
+        severe_ring = next(
+            (r for r in rings
+             if r.get("confirmed")
+             and (r.get("max_dbz") or 0) >= config.SEVERE_DBZ),
+            None,
+        )
+    severe_km = severe_card = severe_dbz = None
+    if severe_ring is not None:
+        severe_km = severe_ring.get("closest_wet_km") or severe_ring.get("radius_km")
+        severe_card = (severe_ring.get("closest_wet_bearing_cardinal")
+                       or severe_ring.get("strongest_bearing_cardinal"))
+        severe_dbz = severe_ring.get("max_dbz")
+    severe_present = severe_ring is not None
+    # A severe core is a direct threat only if close, or if it is the cell
+    # we're already tracking as approaching.
+    severe_is_threat = severe_present and (
+        (severe_km is not None and severe_km <= SEVERE_THREAT_KM)
+        or (is_appr and dbz is not None and dbz >= config.SEVERE_DBZ)
+    )
+    severe_detail = None
+    severe_note = ""
+    if severe_present and not severe_is_threat:
+        sev_loc = ""
+        if severe_km is not None:
+            sev_loc = f" at {severe_km:.0f} km"
+            if severe_card:
+                sev_loc += f" {severe_card}"
+        sev_dbz_txt = f"~{severe_dbz:.0f} dBZ" if severe_dbz is not None else "strong"
+        severe_detail = f"strong core ({sev_dbz_txt}){sev_loc}"
+        # Only add a separate note when the severe core is at a clearly
+        # different place than the cell we're already describing — otherwise
+        # the primary sentence already covers that location.
+        same_place = (km is not None and severe_km is not None
+                      and abs(km - severe_km) <= 15)
+        if not same_place:
+            severe_note = f" Plus a {severe_detail} — too far to threaten Budva."
+
+    def _result(state, narrative, eta_min=None):
+        return {
+            "state": state,
+            "narrative": narrative + severe_note,
+            "action": SCENARIO_ACTION[state],
+            "severe_present": severe_present,
+            "severe_detail": severe_detail,
+            "eta_min": eta_min,
+        }
+
+    # ---- SEVERE: hail core that actually threatens Budva ----
+    if severe_is_threat:
+        sk = severe_km if severe_km is not None else km
+        sc = severe_card if severe_card is not None else card
+        sd = severe_dbz if severe_dbz is not None else dbz
+        loc = ""
+        if sk is not None:
+            loc = f" at {sk:.1f} km"
+            if sc:
+                loc += f" {sc}"
+        dbz_txt = f"{sd:.0f} dBZ" if sd is not None else "strong"
+        if is_appr and eta is not None:
+            tail = f", approaching, ETA ~{eta:.0f} min"
+        elif sk is not None and sk <= SEVERE_THREAT_KM:
+            tail = ", in the immediate vicinity"
+        else:
+            tail = ""
+        return _result("SEVERE",
+                       f"Severe core ({dbz_txt}){loc}, hail possible{tail}.",
+                       eta_min=eta if is_appr else None)
+
+    # ---- No confirmed rain at all: CLEAR / BIO_NOISE / unconfirmed ----
+    if not has_rain:
+        any_echo = any((r.get("n_echo", 0) or 0) > 0 for r in rings)
+        any_wet_raw = any((r.get("n_wet_raw", 0) or 0) > 0 for r in rings)
+        candidate = any(
+            (r.get("n_wet", 0) or 0) >= _min_wet_for_ring(r)
+            and not r.get("confirmed")
+            for r in rings
+        )
+        if candidate and not persistence_available:
+            return _result("LIKELY_NO_RAIN",
+                           "Rain pixels in this scan, but no previous scan to "
+                           "confirm them (waiting for the next one).")
+        if candidate or any_wet_raw:
+            return _result("LIKELY_NO_RAIN",
+                           "Scattered rain pixels on the radar, below the "
+                           "confirmation threshold (cluster too small).")
+        if any_echo:
+            return _result("BIO_NOISE",
+                           "Only weak echo (<20 dBZ) on the radar — likely "
+                           "insects, mist or bright-band; not rain.")
+        return _result("CLEAR", "No echo on the radar within 150 km.")
+
+    # ---- There IS confirmed rain. State from the single closest cell. ----
+    if rain_at_loc:
+        return _result("RAINING", f"Rain at the location: {cell}.", eta_min=0)
+
+    if km is not None and km <= 10:
+        move = ""
+        if motion_card:
+            move = (f" Cell is moving {motion_card}"
+                    + (" (toward us)." if is_appr else " (will pass by)."))
+        return _result("RAINING", f"Rain falling nearby: {cell}.{move}", eta_min=0)
+
+    if is_appr:
+        eta_txt = f", ETA ~{eta:.0f} min" if eta is not None else ""
+        spd_txt = f" (~{speed:.0f} km/h)" if speed else ""
+        if (dbz or 0) >= config.HEAVY_DBZ_THRESHOLD and km <= 25:
+            return _result("IMMINENT",
+                           f"Rain imminent: {cell}, approaching"
+                           f"{spd_txt}{eta_txt}.", eta_min=eta)
+        if (dbz or 0) >= config.MODERATE_DBZ and km <= 100:
+            return _result("LIKELY",
+                           f"Rain likely: {cell}, approaching"
+                           f"{spd_txt}{eta_txt}.", eta_min=eta)
+        return _result("POSSIBLE",
+                       f"Rain possible: {cell}, approaching{spd_txt}{eta_txt}.",
+                       eta_min=eta)
+
+    # Confirmed rain present but not approaching us — phrase the WHY
+    # accurately from the approaching reason so we never claim to know the
+    # motion when we don't, and never call a 50+ km cell "nearby".
+    reason = a.get("reason", "")
+    if reason == "aligned_but_too_far":
+        why = (f"heading our way but too far ({km:.0f} km) to reliably arrive"
+               if km is not None else "heading our way but too far to reliably arrive")
+    elif reason == "aligned_but_unconfirmed":
+        why = "heading our way but not yet confirmed (waiting for the next scan)"
+    elif reason in ("no_reliable_motion", "no_motion_data"):
+        why = "motion can't be reliably estimated yet"
+    elif motion_card:
+        why = f"not heading toward us (moving {motion_card})"
+    else:
+        why = "not heading toward us"
+    return _result("LIKELY_NO_RAIN", f"Rain present: {cell}, {why}.")
+
+
 
 
 def _is_approaching(rings, motion_info, center_dbz=None,
@@ -422,87 +650,82 @@ def interpret_all() -> dict:
         out["sources"][src_id] = interpret_source(src_id, config.LOCATION,
                                                   config.SAMPLE_RADII_KM)
 
-    # Composite summary: which sources report approaching rain + descriptive lines
+    # ------------------------------------------------------------------
+    # ONE coherent interpretation per radar, driven entirely by that
+    # radar's scenario. No competing text systems: the scenario narrative
+    # is the single source of truth, and the composite picks the worst
+    # state across radars for the headline.
+    # ------------------------------------------------------------------
+    SRC_LABEL = {"dhmz": "DHMZ Uljenje", "opera": "OPERA composite"}
+    per_radar = {}
     summary_lines = []
-    any_approaching = False
-    any_at_location = False
-    any_in_vicinity = False  # rain detected but neither approaching nor at-location
+    composite_state = None
+    composite_narrative = None
+    composite_action = None
+    composite_src = None
+    composite_severe = False
+    composite_eta = None
     closest_eta = None
+
     for src_id, info in out["sources"].items():
+        label = SRC_LABEL.get(src_id, src_id.upper())
         if not info.get("ok"):
-            summary_lines.append(f"[{src_id}] unavailable: {info.get('reason', '?')}")
+            reason = info.get("reason", "?")
+            per_radar[src_id] = {"state": "UNAVAILABLE",
+                                 "narrative": f"nedostupno ({reason})"}
+            summary_lines.append(f"{label}: nedostupno ({reason}).")
             continue
-        appr = info.get("approaching") or {}
-        if not appr.get("any_rain_within_radii"):
-            # No ring qualified as "actionable rain", but there may still be
-            # sub-threshold wet pixels somewhere in the 150 km horizon. Surface
-            # the nearest one so the user knows what's actually on the radar
-            # instead of a false "no precipitation" claim.
-            nearest_any_km = None
-            nearest_any_card = None
-            nearest_any_dbz = None
-            for r in info.get("rings", []):
-                ck = r.get("closest_wet_km")
-                if ck is None:
-                    continue
-                if nearest_any_km is None or ck < nearest_any_km:
-                    nearest_any_km = ck
-                    nearest_any_card = r.get("closest_wet_bearing_cardinal")
-                    nearest_any_dbz = r.get("closest_wet_dbz")
-            if nearest_any_km is not None:
-                intensity_label = colormap.classify_intensity(nearest_any_dbz)
-                summary_lines.append(
-                    f"[{src_id}] nearest echo (ignored — sub-threshold or > {APPROACHING_MAX_KM:.0f} km): "
-                    f"{intensity_label} at {nearest_any_km} km {nearest_any_card or '?'}"
-                )
-            else:
-                summary_lines.append(
-                    f"[{src_id}] no precipitation within {max(config.SAMPLE_RADII_KM)} km"
-                )
-            continue
-        km = appr.get("closest_rain_km")
-        card = appr.get("closest_rain_bearing_cardinal", "?")
-        intensity = appr.get("closest_rain_intensity_label", "?")
-        if appr.get("rain_at_location"):
-            any_at_location = True
-            summary_lines.append(
-                f"[{src_id}] RAIN AT LOCATION: {intensity} ({km} km {card})"
-            )
-        elif appr.get("is_approaching"):
-            any_approaching = True
-            eta = appr.get("eta_minutes")
-            spd = appr.get("motion_speed_kmh")
-            summary_lines.append(
-                f"[{src_id}] APPROACHING: {intensity} at {km} km {card}, "
-                f"moving toward us at {spd} km/h, ETA ~{eta} min"
-            )
-            if eta is not None and (closest_eta is None or eta < closest_eta):
-                closest_eta = eta
-        else:
-            # Rain is present but not "approaching" — either motion not aligned,
-            # or cell is too far to be a reliable predictor.
-            # "rain_in_vicinity" only fires for echoes inside APPROACHING_MAX_KM
-            # — beyond that we don't bother the user (consistent with the
-            # approaching gate, both at 15 km).
-            in_vicinity = (isinstance(km, (int, float))
-                           and km <= APPROACHING_MAX_KM)
-            if in_vicinity:
-                any_in_vicinity = True
-            reason = appr.get("reason", "")
-            if reason == "aligned_but_too_far":
-                why = f"aligned but too far ({km} km > {APPROACHING_MAX_KM:.0f} km — likely to dissipate)"
-            else:
-                why = f"not heading toward us (motion: {appr.get('motion_direction_cardinal','?')})"
-            label = "precipitation present" if in_vicinity else "distant precipitation (>15 km, ignored)"
-            summary_lines.append(
-                f"[{src_id}] {label}: {intensity} at {km} km {card}, "
-                f"{why}"
-            )
+
+        sc = info.get("scenario") or {}
+        state = sc.get("state", "CLEAR")
+        narrative = sc.get("narrative", "")
+        per_radar[src_id] = {
+            "state": state,
+            "narrative": narrative,
+            "action": sc.get("action"),
+            "severe_present": sc.get("severe_present", False),
+            "eta_min": sc.get("eta_min"),
+        }
+        # ONE line per radar — the coherent narrative.
+        summary_lines.append(f"{label}: [{state}] {narrative}")
+
+        if sc.get("severe_present"):
+            composite_severe = True
+        eta_min = sc.get("eta_min")
+        if eta_min is not None and (closest_eta is None or eta_min < closest_eta):
+            closest_eta = eta_min
+        if composite_state is None or (
+            SCENARIO_PRIORITY.get(state, 99)
+            < SCENARIO_PRIORITY.get(composite_state, 99)
+        ):
+            composite_state = state
+            composite_narrative = narrative
+            composite_action = sc.get("action")
+            composite_eta = eta_min
+            composite_src = src_id
+
+    # Legacy booleans kept so existing consumers (the alert banner, the
+    # weather-forecast card) still work — now derived from the scenario.
+    rain_at_location = composite_state == "RAINING"
+    rain_approaching = composite_state in ("IMMINENT", "LIKELY", "POSSIBLE")
+    rain_in_vicinity = composite_state in (
+        "IMMINENT", "LIKELY", "POSSIBLE", "LIKELY_NO_RAIN", "SEVERE",
+    )
 
     out["summary"] = {
-        "rain_approaching": any_approaching,
-        "rain_at_location": any_at_location,
-        "rain_in_vicinity": any_in_vicinity,
+        # Single headline (worst state across radars)
+        "scenario_state": composite_state,
+        "scenario_narrative": composite_narrative,
+        "scenario_action": composite_action,
+        "scenario_source": composite_src,
+        "severe_present": composite_severe,
+        "scenario_eta_minutes": composite_eta,
+        # Per-radar coherent interpretation (DHMZ and OPERA separately)
+        "per_radar": per_radar,
+        # Legacy compatibility flags (derived from scenario_state)
+        "rain_approaching": rain_approaching,
+        "rain_at_location": rain_at_location,
+        "rain_in_vicinity": rain_in_vicinity,
         "closest_eta_minutes": closest_eta,
         "lines": summary_lines,
     }
