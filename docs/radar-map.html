@@ -70,7 +70,7 @@
     </section>
 
     <section id="summary">
-      <h2>Detalji</h2>
+      <h2>Details</h2>
       <ul id="summary-list"></ul>
     </section>
   </section>
@@ -356,7 +356,7 @@ function classifyIntensity(dbz) {
 
 // ---------------------------------------------------------------------------
 // Centralized interpretation — mirrors radar/interpret.py:classify_scenario.
-// ONE coherent Serbian narrative per scan, same state machine as the main
+// ONE coherent English narrative per scan, same state machine as the main
 // pipeline. NOTE: the explorer loads only the latest DHMZ frame, so there is
 // no previous scan to confirm persistence; we therefore trust the current
 // frame (treat clusters above threshold as confirmed). The motion vector is
@@ -372,23 +372,10 @@ const SCENARIO_PRIORITY = {
   LIKELY_NO_RAIN: 5, BIO_NOISE: 6, CLEAR: 7,
 };
 const SCENARIO_ACTION = {
-  SEVERE: 'Upozorenje na nevrijeme', RAINING: 'Pada kiša',
-  IMMINENT: 'Alarm: kiša samo što nije', LIKELY: 'Najava',
-  POSSIBLE: 'Tiha najava', LIKELY_NO_RAIN: 'Samo status',
-  BIO_NOISE: 'Log', CLEAR: 'Ništa',
-};
-const INTENSITY_SR = {
-  'no precip': 'bez padavina',
-  'no precipitation': 'bez padavina',
-  'noise / clear-air': 'šum (clear-air)',
-  'trace (sub-rain)': 'trag, ispod praga kiše',
-  'light rain': 'slaba kiša',
-  'light to moderate rain': 'slaba do umjerena kiša',
-  'moderate rain': 'umjerena kiša',
-  'heavy rain': 'jaka kiša',
-  'very heavy rain': 'vrlo jaka kiša',
-  'severe (likely hail)': 'olujno, moguć grad',
-  'extreme (hail core)': 'ekstremno, gradonosno jezgro',
+  SEVERE: 'Severe weather warning', RAINING: 'Rain now',
+  IMMINENT: 'Alarm: rain imminent', LIKELY: 'Notify',
+  POSSIBLE: 'Soft notify', LIKELY_NO_RAIN: 'Status only',
+  BIO_NOISE: 'Log only', CLEAR: 'No action',
 };
 
 function angularDiff(a, b) {
@@ -416,20 +403,18 @@ function minWetForDistance(km) {
   return Math.max(5, Math.round(base * scale));
 }
 
-function srIntensity(label) { return INTENSITY_SR[label] || label || 'padavine'; }
-
-function srCardinalFromDeg(deg) {
+function cardinalFromDeg(deg) {
   if (deg == null) return '';
-  // 0=N -> S(jever), 45=NE -> SI, 90=E -> I, ... (Serbian 8-point compass)
-  return ['S', 'SI', 'I', 'JI', 'J', 'JZ', 'Z', 'SZ'][Math.round(deg / 45) % 8];
+  // 8-point English compass, matches calibration.bearing_to_cardinal.
+  return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(deg / 45) % 8];
 }
 
 function cellPhrase(km, deg, dbz, intensityLabel) {
-  let txt = srIntensity(intensityLabel);
+  let txt = intensityLabel || 'precipitation';
   if (dbz != null) txt += ` (${Math.round(dbz)} dBZ)`;
   if (km != null) {
-    txt += ` na ${formatKm(km)} km`;
-    const c = srCardinalFromDeg(deg);
+    txt += ` at ${formatKm(km)} km`;
+    const c = cardinalFromDeg(deg);
     if (c) txt += ` ${c}`;
   }
   return txt;
@@ -494,8 +479,8 @@ function classifyScenario(result) {
   if (severePresent && !severeIsThreat) {
     const samePlace = (km != null && Math.abs(km - sev.km) <= 15);
     if (!samePlace) {
-      severeNote = ` Uz to, jako jezgro (~${Math.round(sev.dbz)} dBZ) na `
-                 + `${formatKm(sev.km)} km ${srCardinalFromDeg(sev.bearing)} — predaleko da prijeti.`;
+      severeNote = ` Plus a strong core (~${Math.round(sev.dbz)} dBZ) at `
+                 + `${formatKm(sev.km)} km ${cardinalFromDeg(sev.bearing)} — too far to threaten.`;
     }
   }
   const pack = (state, narrative, eta) =>
@@ -504,12 +489,12 @@ function classifyScenario(result) {
 
   // SEVERE — hail core that actually threatens the point.
   if (severeIsThreat) {
-    const sk = sev.km, sd = sev.dbz, sc = srCardinalFromDeg(sev.bearing);
+    const sk = sev.km, sd = sev.dbz, sc = cardinalFromDeg(sev.bearing);
     let tail = '';
-    if (ap.approaching && ap.eta != null) tail = `, približava se, ETA ~${Math.round(ap.eta)} min`;
-    else if (sk <= SEVERE_THREAT_KM) tail = ', u neposrednoj blizini';
+    if (ap.approaching && ap.eta != null) tail = `, approaching, ETA ~${Math.round(ap.eta)} min`;
+    else if (sk <= SEVERE_THREAT_KM) tail = ', in the immediate vicinity';
     return pack('SEVERE',
-      `Olujno jezgro (${Math.round(sd)} dBZ) na ${formatKm(sk)} km ${sc}, moguć grad${tail}.`,
+      `Severe core (${Math.round(sd)} dBZ) at ${formatKm(sk)} km ${sc}, hail possible${tail}.`,
       ap.approaching ? ap.eta : null);
   }
 
@@ -518,52 +503,53 @@ function classifyScenario(result) {
     const anyEcho = result.rings.some(r => (r.n_echo || 0) > 0);
     const anyWet = result.rings.some(r => (r.n_wet || 0) > 0);
     if (anyWet) return pack('LIKELY_NO_RAIN',
-      'Raštrkani kišni pikseli na radaru, ispod praga potvrde (premali klaster).', null);
+      'Scattered rain pixels on the radar, below the confirmation threshold (cluster too small).', null);
     if (anyEcho) return pack('BIO_NOISE',
-      'Samo slab eho (<20 dBZ) — vjerovatno insekti, izmaglica ili bright-band; nije kiša.', null);
-    return pack('CLEAR', 'Nema eha na radaru u krugu od 150 km.', null);
+      'Only weak echo (<20 dBZ) — likely insects, mist or bright-band; not rain.', null);
+    return pack('CLEAR', 'No echo on the radar within 150 km.', null);
   }
 
   // Confirmed rain present — state from the single closest cell.
   if (rainAtLoc)
-    return pack('RAINING', `Kiša pada na lokaciji: ${cell}.`, 0);
+    return pack('RAINING', `Rain at the location: ${cell}.`, 0);
   if (km != null && km <= 10) {
     let move = '';
     if (motionCardDeg != null)
-      move = ` Ćelija se kreće na ${srCardinalFromDeg(motionCardDeg)}`
-           + (ap.approaching ? ' (prema nama).' : ' (proći će pored).');
-    return pack('RAINING', `Kiša pada blizu: ${cell}.${move}`, 0);
+      move = ` Cell is moving ${cardinalFromDeg(motionCardDeg)}`
+           + (ap.approaching ? ' (toward us).' : ' (will pass by).');
+    return pack('RAINING', `Rain falling nearby: ${cell}.${move}`, 0);
   }
   if (ap.approaching) {
     const etaTxt = ap.eta != null ? `, ETA ~${Math.round(ap.eta)} min` : '';
     const spdTxt = speed ? ` (~${Math.round(speed)} km/h)` : '';
     if ((dbz || 0) >= HEAVY_DBZ && km <= 25)
-      return pack('IMMINENT', `Kiša samo što nije: ${cell}, približava se${spdTxt}${etaTxt}.`, ap.eta);
+      return pack('IMMINENT', `Rain imminent: ${cell}, approaching${spdTxt}${etaTxt}.`, ap.eta);
     if ((dbz || 0) >= MODERATE_DBZ && km <= 100)
-      return pack('LIKELY', `Vjerovatna kiša: ${cell}, približava se${spdTxt}${etaTxt}.`, ap.eta);
-    return pack('POSSIBLE', `Moguća kiša: ${cell}, približava se${spdTxt}${etaTxt}.`, ap.eta);
+      return pack('LIKELY', `Rain likely: ${cell}, approaching${spdTxt}${etaTxt}.`, ap.eta);
+    return pack('POSSIBLE', `Rain possible: ${cell}, approaching${spdTxt}${etaTxt}.`, ap.eta);
   }
-  // Rain present but not approaching — phrase WHY accurately.
+  // Rain present but not approaching — phrase WHY accurately (never call a
+  // 50+ km cell "nearby").
   let why;
   if (ap.reason === 'aligned_but_too_far')
-    why = `usmjerena je prema nama ali je predaleko (${formatKm(km)} km) da pouzdano stigne`;
+    why = `heading our way but too far (${formatKm(km)} km) to reliably arrive`;
   else if (ap.reason === 'no_reliable_motion' || ap.reason === 'no_motion_data')
-    why = 'kretanje se za sada ne može pouzdano procijeniti';
+    why = 'motion can\'t be reliably estimated yet';
   else if (motionCardDeg != null)
-    why = `ne kreće se prema nama (kreće se na ${srCardinalFromDeg(motionCardDeg)})`;
-  else why = 'ne kreće se prema nama';
-  return pack('LIKELY_NO_RAIN', `Kiša postoji: ${cell}, ${why}.`, null);
+    why = `not heading toward us (moving ${cardinalFromDeg(motionCardDeg)})`;
+  else why = 'not heading toward us';
+  return pack('LIKELY_NO_RAIN', `Rain present: ${cell}, ${why}.`, null);
 }
 
 const STATE_META = {
-  SEVERE:         {bg: '#7b1fa2', fg: '#fff', cls: 'warn', head: 'NEVRIJEME — MOGUĆ GRAD'},
-  RAINING:        {bg: '#1565c0', fg: '#fff', cls: 'warn', head: 'KIŠA PADA'},
-  IMMINENT:       {bg: '#c62828', fg: '#fff', cls: 'warn', head: 'KIŠA SAMO ŠTO NIJE'},
-  LIKELY:         {bg: '#ef6c00', fg: '#fff', cls: 'warn', head: 'KIŠA VJEROVATNO STIŽE'},
-  POSSIBLE:       {bg: '#f9a825', fg: '#222', cls: 'warn', head: 'MOGUĆA KIŠA'},
-  LIKELY_NO_RAIN: {bg: '#9e9e9e', fg: '#fff', cls: 'warn', head: 'KIŠA U OKOLINI (ne stiže)'},
-  BIO_NOISE:      {bg: '#cfd8dc', fg: '#333', cls: 'ok',   head: 'NEMA KIŠE (samo šum)'},
-  CLEAR:          {bg: '#a5d6a7', fg: '#1b3a1c', cls: 'ok', head: 'NEMA PADAVINA'},
+  SEVERE:         {bg: '#7b1fa2', fg: '#fff', cls: 'warn', head: 'SEVERE WEATHER — HAIL POSSIBLE'},
+  RAINING:        {bg: '#1565c0', fg: '#fff', cls: 'warn', head: 'RAINING'},
+  IMMINENT:       {bg: '#c62828', fg: '#fff', cls: 'warn', head: 'RAIN IMMINENT'},
+  LIKELY:         {bg: '#ef6c00', fg: '#fff', cls: 'warn', head: 'RAIN LIKELY'},
+  POSSIBLE:       {bg: '#f9a825', fg: '#222', cls: 'warn', head: 'RAIN POSSIBLE'},
+  LIKELY_NO_RAIN: {bg: '#9e9e9e', fg: '#fff', cls: 'ok',   head: 'NO RAIN HEADING HERE'},
+  BIO_NOISE:      {bg: '#cfd8dc', fg: '#333', cls: 'ok',   head: 'NO RAIN (radar noise only)'},
+  CLEAR:          {bg: '#a5d6a7', fg: '#1b3a1c', cls: 'ok', head: 'NO PRECIPITATION'},
 };
 
 function renderOutput(label, cx, cy, result, ms) {
@@ -594,10 +580,10 @@ function renderOutput(label, cx, cy, result, ms) {
     const dbz = r.max_dbz == null ? '–' : r.max_dbz.toFixed(1);
     const brg = r.bearing == null ? '–' : bearingCardinal(r.bearing);
     const thr = minWetForDistance(r.r_km);
-    return `${r.r_km} km: kiša ${r.n_wet}/${thr}, eho ${r.n_echo}, max ${dbz} dBZ ${brg}`;
+    return `${r.r_km} km: rain ${r.n_wet}/${thr}, echo ${r.n_echo}, max ${dbz} dBZ ${brg}`;
   }).join(' · ');
   addLine(list, ringSummary);
-  addLine(list, `Scan ${label} na pixelu (${cx}, ${cy}) — ${ms} ms`);
+  addLine(list, `Scan ${label} at pixel (${cx}, ${cy}) — ${ms} ms`);
 }
 
 function addLine(list, text) {
