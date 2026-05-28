@@ -67,17 +67,17 @@ function render(d) {
   // Single source of truth: the composite scenario state. One headline,
   // one detail line, one colour — no competing alert systems.
   // Colours + headline mirror interpret.py:SCENARIO_STATES (worst -> best).
-  const locName = (d.location && d.location.name) || 'lokaciji';
+  const locName = (d.location && d.location.name) || 'this location';
   const STATE_META = {
-    SEVERE:         {bg: '#7b1fa2', fg: '#fff', cls: 'warn', head: 'NEVRIJEME — MOGUĆ GRAD'},
-    RAINING:        {bg: '#1565c0', fg: '#fff', cls: 'warn', head: 'KIŠA PADA U ' + locName.toUpperCase()},
-    IMMINENT:       {bg: '#c62828', fg: '#fff', cls: 'warn', head: 'KIŠA SAMO ŠTO NIJE'},
-    LIKELY:         {bg: '#ef6c00', fg: '#fff', cls: 'warn', head: 'KIŠA VJEROVATNO STIŽE'},
-    POSSIBLE:       {bg: '#f9a825', fg: '#222', cls: 'warn', head: 'MOGUĆA KIŠA'},
-    LIKELY_NO_RAIN: {bg: '#9e9e9e', fg: '#fff', cls: 'warn', head: 'KIŠA U OKOLINI (ne stiže do nas)'},
-    BIO_NOISE:      {bg: '#cfd8dc', fg: '#333', cls: 'ok',   head: 'NEMA KIŠE (samo šum na radaru)'},
-    CLEAR:          {bg: '#a5d6a7', fg: '#1b3a1c', cls: 'ok', head: 'NEMA PADAVINA'},
-    UNAVAILABLE:    {bg: '#eee', fg: '#333', cls: 'ok', head: 'PODACI NEDOSTUPNI'},
+    SEVERE:         {bg: '#7b1fa2', fg: '#fff', cls: 'warn', head: 'SEVERE WEATHER — HAIL POSSIBLE'},
+    RAINING:        {bg: '#1565c0', fg: '#fff', cls: 'warn', head: 'RAINING IN ' + locName.toUpperCase()},
+    IMMINENT:       {bg: '#c62828', fg: '#fff', cls: 'warn', head: 'RAIN IMMINENT'},
+    LIKELY:         {bg: '#ef6c00', fg: '#fff', cls: 'warn', head: 'RAIN LIKELY'},
+    POSSIBLE:       {bg: '#f9a825', fg: '#222', cls: 'warn', head: 'RAIN POSSIBLE'},
+    LIKELY_NO_RAIN: {bg: '#9e9e9e', fg: '#fff', cls: 'ok',   head: 'NO RAIN HEADING HERE'},
+    BIO_NOISE:      {bg: '#cfd8dc', fg: '#333', cls: 'ok',   head: 'NO RAIN (radar noise only)'},
+    CLEAR:          {bg: '#a5d6a7', fg: '#1b3a1c', cls: 'ok', head: 'NO PRECIPITATION'},
+    UNAVAILABLE:    {bg: '#eee', fg: '#333', cls: 'ok', head: 'DATA UNAVAILABLE'},
   };
   const state = (d.summary && d.summary.scenario_state) || 'CLEAR';
   const meta = STATE_META[state] || STATE_META.CLEAR;
@@ -92,13 +92,18 @@ function render(d) {
   }
   alertText.textContent = head;
 
-  // Scenario badge + the composite narrative (full coherent sentence).
+  // Scenario badge + composite narrative — optional (the section may be
+  // commented out in the markup), so guard every lookup.
   const badge = document.getElementById('scenario-badge');
+  if (badge) {
+    badge.textContent = state;
+    badge.style.background = meta.bg;
+    badge.style.color = meta.fg;
+  }
   const reasonEl = document.getElementById('scenario-reason');
-  badge.textContent = state;
-  badge.style.background = meta.bg;
-  badge.style.color = meta.fg;
-  reasonEl.textContent = (d.summary && d.summary.scenario_narrative) || '';
+  if (reasonEl) {
+    reasonEl.textContent = (d.summary && d.summary.scenario_narrative) || '';
+  }
 
   // Per-radar interpretation: ONE coherent line per radar (DHMZ / OPERA),
   // straight from each radar's own scenario narrative.
