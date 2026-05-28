@@ -509,7 +509,7 @@ function classifyScenario(result) {
     if (ap.approaching && ap.eta != null) tail = `, približava se, ETA ~${Math.round(ap.eta)} min`;
     else if (sk <= SEVERE_THREAT_KM) tail = ', u neposrednoj blizini';
     return pack('SEVERE',
-      `Olujno jezgro: ${srIntensity('severe (likely hail)')} (${Math.round(sd)} dBZ) na ${formatKm(sk)} km ${sc}${tail}.`,
+      `Olujno jezgro (${Math.round(sd)} dBZ) na ${formatKm(sk)} km ${sc}, moguć grad${tail}.`,
       ap.approaching ? ap.eta : null);
   }
 
