@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-28T22:20:37",
+  "generated": "2026-05-28T22:25:36",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260528_222035_e9f8e436e060.png",
-      "frame_timestamp": "2026-05-28T22:20:35",
+      "frame_path": "data/frames/dhmz/20260528_222535_93afdafbeb2a.png",
+      "frame_timestamp": "2026-05-28T22:25:35",
       "center_dbz": null,
       "rings": [
         {
@@ -1189,17 +1189,17 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 186,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 3,
+          "n_valid_color": 11,
           "n_wet": 0,
           "n_wet_raw": 0,
-          "n_echo": 3,
-          "n_trace": 3,
+          "n_echo": 11,
+          "n_trace": 11,
           "frac_wet": 0.0,
-          "max_dbz": 12.5,
-          "mean_dbz": 12.5,
-          "strongest_bearing": 325.0,
+          "max_dbz": 17.5,
+          "mean_dbz": 14.3,
+          "strongest_bearing": 324.8,
           "strongest_bearing_cardinal": "NW",
-          "strongest_dbz": 12.5,
+          "strongest_dbz": 17.5,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -1450,8 +1450,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260528_221000.gif",
-      "frame_timestamp": "2026-05-28T22:10:00",
+      "frame_path": "data/frames/opera/20260528_221500.gif",
+      "frame_timestamp": "2026-05-28T22:15:00",
       "center_dbz": null,
       "rings": [
         {
@@ -2910,18 +2910,7 @@
           "persistence_scans": 0
         }
       ],
-      "motion": {
-        "dx_px": 10,
-        "dy_px": -6,
-        "speed_px_per_frame": 11.66,
-        "confidence": 0.707,
-        "direction_deg": 59.0,
-        "direction_cardinal": "NE",
-        "px_per_km": 0.237,
-        "dt_minutes": 5.0,
-        "speed_kmh": 590.4,
-        "confidence_band": "high"
-      },
+      "motion": null,
       "approaching": {
         "any_rain_within_radii": false,
         "rain_at_location": false,
