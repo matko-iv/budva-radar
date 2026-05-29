@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-29T03:40:37",
+  "generated": "2026-05-29T03:45:37",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -16,8 +16,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260529_034036_9f8656555e1f.png",
-      "frame_timestamp": "2026-05-29T03:40:36",
+      "frame_path": "data/frames/dhmz/20260529_034536_d8b735500f13.png",
+      "frame_timestamp": "2026-05-29T03:45:36",
       "center_dbz": null,
       "rings": [
         {
@@ -1189,17 +1189,17 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 186,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 14,
+          "n_valid_color": 17,
           "n_wet": 0,
-          "n_wet_raw": 0,
-          "n_echo": 14,
-          "n_trace": 14,
+          "n_wet_raw": 1,
+          "n_echo": 17,
+          "n_trace": 16,
           "frac_wet": 0.0,
-          "max_dbz": 12.5,
-          "mean_dbz": 12.5,
-          "strongest_bearing": 324.7,
+          "max_dbz": 22.5,
+          "mean_dbz": 14.3,
+          "strongest_bearing": 327.4,
           "strongest_bearing_cardinal": "NW",
-          "strongest_dbz": 12.5,
+          "strongest_dbz": 22.5,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -1430,9 +1430,9 @@
         "center_dbz": null
       },
       "scenario": {
-        "state": "BIO_NOISE",
-        "narrative": "Only weak echo (<20 dBZ) on the radar — likely insects, mist or bright-band; not rain.",
-        "action": "Log only",
+        "state": "LIKELY_NO_RAIN",
+        "narrative": "Scattered rain pixels on the radar, below the confirmation threshold (cluster too small).",
+        "action": "Status only",
         "severe_present": false,
         "severe_detail": null,
         "eta_min": null
@@ -1450,8 +1450,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260529_033000.gif",
-      "frame_timestamp": "2026-05-29T03:30:00",
+      "frame_path": "data/frames/opera/20260529_033500.gif",
+      "frame_timestamp": "2026-05-29T03:35:00",
       "center_dbz": null,
       "rings": [
         {
@@ -2938,17 +2938,17 @@
     }
   },
   "summary": {
-    "scenario_state": "BIO_NOISE",
-    "scenario_narrative": "Only weak echo (<20 dBZ) on the radar — likely insects, mist or bright-band; not rain.",
-    "scenario_action": "Log only",
+    "scenario_state": "LIKELY_NO_RAIN",
+    "scenario_narrative": "Scattered rain pixels on the radar, below the confirmation threshold (cluster too small).",
+    "scenario_action": "Status only",
     "scenario_source": "dhmz",
     "severe_present": false,
     "scenario_eta_minutes": null,
     "per_radar": {
       "dhmz": {
-        "state": "BIO_NOISE",
-        "narrative": "Only weak echo (<20 dBZ) on the radar — likely insects, mist or bright-band; not rain.",
-        "action": "Log only",
+        "state": "LIKELY_NO_RAIN",
+        "narrative": "Scattered rain pixels on the radar, below the confirmation threshold (cluster too small).",
+        "action": "Status only",
         "severe_present": false,
         "eta_min": null
       },
@@ -2962,10 +2962,10 @@
     },
     "rain_approaching": false,
     "rain_at_location": false,
-    "rain_in_vicinity": false,
+    "rain_in_vicinity": true,
     "closest_eta_minutes": null,
     "lines": [
-      "DHMZ Uljenje: [BIO_NOISE] Only weak echo (<20 dBZ) on the radar — likely insects, mist or bright-band; not rain.",
+      "DHMZ Uljenje: [LIKELY_NO_RAIN] Scattered rain pixels on the radar, below the confirmation threshold (cluster too small).",
       "OPERA composite: [CLEAR] No echo on the radar within 150 km."
     ]
   }
