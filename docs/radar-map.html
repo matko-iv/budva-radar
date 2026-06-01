@@ -73,6 +73,21 @@
       <h2>Details</h2>
       <ul id="summary-list"></ul>
     </section>
+
+    <!-- Budva overview — IDENTICAL sections + wording as index.html, rendered
+         by the shared skala-sections.js from the precomputed window.RADAR_DATA. -->
+    <section id="budva-overview">
+      <h2>Budva — pregled (radari)</h2>
+      <ul id="budva-summary-list"></ul>
+    </section>
+    <section id="radar-images">
+      <h2>Latest radar images</h2>
+      <div id="images-grid"></div>
+    </section>
+    <section id="sources">
+      <h2>Per-source detail</h2>
+      <div id="sources-grid"></div>
+    </section>
   </section>
 
 </main>
@@ -83,6 +98,7 @@
 
 <script src="data.js"></script>
 <script src="skala-text.js"></script>
+<script src="skala-sections.js"></script>
 <script>
 // ---------------------------------------------------------------------------
 // BOOT SEQUENCE
@@ -117,6 +133,13 @@ function finishBoot() {
   bootSection.hidden = true;
   document.getElementById('app').hidden = false;
   initApp();
+  // Render the Budva overview sections (identical to index.html) from the
+  // precomputed data, via the shared module.
+  if (window.RADAR_DATA && window.SKALA_SECTIONS) {
+    SKALA_SECTIONS.renderSummaryLines(window.RADAR_DATA, document.getElementById('budva-summary-list'));
+    SKALA_SECTIONS.renderImages(window.RADAR_DATA, document.getElementById('images-grid'));
+    SKALA_SECTIONS.renderSources(window.RADAR_DATA, document.getElementById('sources-grid'));
+  }
 }
 (function runBoot() {
   let t = 0;
