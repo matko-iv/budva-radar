@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-01T16:36:35",
+  "generated": "2026-06-01T16:41:36",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -39,7 +39,7 @@
           "n_cells_considered": 108,
           "approaching": false,
           "dominant": {
-            "track_id": "fb6b44db",
+            "track_id": "0d6d0faf",
             "p": 0.0,
             "eta_minutes": null,
             "dist_km": 356.57123303003294,
@@ -1489,13 +1489,13 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260601_162500.gif",
-      "frame_timestamp": "2026-06-01T16:25:00",
+      "frame_path": "data/frames/opera/20260601_163000.gif",
+      "frame_timestamp": "2026-06-01T16:30:00",
       "motion": {
         "dx_px": 1,
         "dy_px": 0,
         "speed_px_per_frame": 1.0,
-        "confidence": 0.841,
+        "confidence": 0.837,
         "direction_deg": 90.0,
         "direction_cardinal": "E",
         "px_per_km": 0.237,
@@ -1507,19 +1507,19 @@
         "eta_minutes": null,
         "any_rain_within_radii": true,
         "rain_at_location": false,
-        "closest_rain_km": 79.1,
-        "closest_rain_intensity_dbz": 45.0,
-        "closest_rain_bearing_cardinal": "N",
-        "closest_rain_intensity_label": "very heavy rain",
+        "closest_rain_km": 59.0,
+        "closest_rain_intensity_dbz": 24.0,
+        "closest_rain_bearing_cardinal": "NE",
+        "closest_rain_intensity_label": "light rain",
         "motion_speed_kmh": 50.6,
         "reason": "P_rain below threshold",
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 2328,
+          "n_cells_considered": 2333,
           "approaching": false,
           "dominant": {
-            "track_id": "10c1cf5e",
+            "track_id": "3c1a0bab",
             "p": 0.0,
             "eta_minutes": null,
             "dist_km": 3082.7667277663977,
@@ -1545,14 +1545,14 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 2328,
-        "n_convective": 296,
+        "n_cells": 2333,
+        "n_convective": 312,
         "max_dbz": 50.0,
         "largest_area_km2": 243351.4
       },
       "scenario": {
         "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: very heavy rain (45 dBZ) at 79.1 km N, P_rain below threshold.",
+        "narrative": "Rain present: light rain (24 dBZ) at 59.0 km NE, P_rain below threshold.",
         "action": "LIKELY_NO_RAIN",
         "severe_present": false,
         "severe_detail": null,
@@ -2435,21 +2435,21 @@
           "km_per_pixel": 4.224,
           "min_wet_threshold": 5,
           "n_pixels_in_annulus": 1320,
-          "n_valid_color": 65,
-          "n_wet": 22,
-          "n_wet_raw": 27,
-          "n_echo": 53,
-          "n_trace": 26,
-          "frac_wet": 0.01667,
-          "max_dbz": 45.0,
-          "mean_dbz": 18.9,
-          "strongest_bearing": 357.4,
-          "strongest_bearing_cardinal": "N",
-          "strongest_dbz": 45.0,
-          "closest_wet_km": 80.37,
-          "closest_wet_bearing": 357.0,
+          "n_valid_color": 62,
+          "n_wet": 24,
+          "n_wet_raw": 32,
+          "n_echo": 55,
+          "n_trace": 23,
+          "frac_wet": 0.01818,
+          "max_dbz": 50.0,
+          "mean_dbz": 20.3,
+          "strongest_bearing": 24.0,
+          "strongest_bearing_cardinal": "NE",
+          "strongest_dbz": 50.0,
+          "closest_wet_km": 84.49,
+          "closest_wet_bearing": 0.0,
           "closest_wet_bearing_cardinal": "N",
-          "closest_wet_dbz": 24.0,
+          "closest_wet_dbz": 30.0,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -2469,11 +2469,11 @@
               "lat": 43.1546,
               "lon": 19.1591,
               "rgb": [
-                255,
+                5,
                 205,
-                20
+                170
               ],
-              "dbz": 30.0
+              "dbz": 12.0
             },
             {
               "bearing": 30.0,
@@ -2481,10 +2481,10 @@
               "lon": 19.4555,
               "rgb": [
                 255,
-                150,
-                50
+                80,
+                60
               ],
-              "dbz": 34.0
+              "dbz": 40.0
             },
             {
               "bearing": 45.0,
@@ -2725,21 +2725,21 @@
           "km_per_pixel": 4.224,
           "min_wet_threshold": 6,
           "n_pixels_in_annulus": 2212,
-          "n_valid_color": 94,
-          "n_wet": 10,
-          "n_wet_raw": 34,
-          "n_echo": 86,
-          "n_trace": 52,
-          "frac_wet": 0.00452,
+          "n_valid_color": 100,
+          "n_wet": 6,
+          "n_wet_raw": 25,
+          "n_echo": 91,
+          "n_trace": 66,
+          "frac_wet": 0.00271,
           "max_dbz": 45.0,
-          "mean_dbz": 17.9,
-          "strongest_bearing": 355.4,
+          "mean_dbz": 16.7,
+          "strongest_bearing": 355.6,
           "strongest_bearing_cardinal": "N",
           "strongest_dbz": 45.0,
           "closest_wet_km": 100.77,
           "closest_wet_bearing": 33.0,
           "closest_wet_bearing_cardinal": "NE",
-          "closest_wet_dbz": 34.0,
+          "closest_wet_dbz": 40.0,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -3037,7 +3037,7 @@
       },
       "opera": {
         "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: very heavy rain (45 dBZ) at 79.1 km N, P_rain below threshold.",
+        "narrative": "Rain present: light rain (24 dBZ) at 59.0 km NE, P_rain below threshold.",
         "severe_present": false,
         "eta_min": null
       }
@@ -3048,7 +3048,7 @@
     "closest_eta_minutes": null,
     "lines": [
       "DHMZ Uljenje: [LIKELY_NO_RAIN] Rain present: light to moderate rain (28 dBZ) at 58.6 km NE, P_rain below threshold.",
-      "OPERA composite: [LIKELY_NO_RAIN] Rain present: very heavy rain (45 dBZ) at 79.1 km N, P_rain below threshold."
+      "OPERA composite: [LIKELY_NO_RAIN] Rain present: light rain (24 dBZ) at 59.0 km NE, P_rain below threshold."
     ]
   }
 }
