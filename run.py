@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 import config
-from radar import fetch, interpret, calibration
+from radar import fetch, interpret, calibration, verification
 
 BASE_DIR = Path(__file__).resolve().parent
 DOCS_DIR = BASE_DIR / "docs"
@@ -107,6 +107,17 @@ def main():
         with open(LOCAL_WEATHER_FORECAST_DOCS, "w", encoding="utf-8") as f:
             json.dump(status, f, indent=2, ensure_ascii=False, default=str)
         print(f"  Saved: {LOCAL_WEATHER_FORECAST_DOCS}")
+
+    # Self-verification + feature log (PDF Stage 3): append one slim row per
+    # run, then re-score the accumulated history. Both are best-effort and must
+    # never break the main output.
+    row = verification.append_log(status, DOCS_DIR)
+    if row is not None:
+        print(f"  Log: appended scan to docs/skala_log_{str(row['generated'])[:4]}.csv")
+    metrics = verification.score_log(DOCS_DIR)
+    if metrics and metrics.get("n_scans_scored"):
+        print(f"  Verify: POD={metrics.get('POD')} FAR={metrics.get('FAR')} "
+              f"CSI={metrics.get('CSI')} (n={metrics.get('n_scans_scored')})")
 
     print()
     for line in status["summary"]["lines"]:

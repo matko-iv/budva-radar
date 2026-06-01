@@ -84,3 +84,19 @@ PERSISTENCE_MIN_SCANS = 2
 # relation breaks down (hail, Mie scattering) and produces wildly inflated
 # values; cap so the UI doesn't claim "300 mm/h" for a hail core.
 RAIN_RATE_CAP_MMH = 60.0
+
+RAIN_DBZ_THRESHOLD = 20.0       # dBZ edge to define rain onset
+NOWCAST_MIN_LIFETIME_MIN = 15.0  # Floor for decaying cell survival
+NOWCAST_REACH_BUFFER_KM = 5.0    # Spatial buffer around Budva for a "hit"
+P_APPROACH_THRESHOLD = 0.25      # Probability threshold to trigger 'approaching=True'
+CELL_CORE_DBZ = 40.0            # Threshold to distinguish convective cores from stratiform
+
+# Unscented Mini-Ensemble settings
+NOWCAST_SPEED_FACTORS = [0.8, 0.9, 1.0, 1.1, 1.2] 
+NOWCAST_LEAD_STEPS_MIN = 5      # Advection time step resolution
+NOWCAST_LEAD_MAX_MIN = 120       # Maximum lookahead window (2 hours)
+
+# Confidence Cone Spread Rates
+NOWCAST_DIR_SPREAD_CONVECTIVE_DEG = 15.0 # Erratic movement base spread
+NOWCAST_DIR_SPREAD_STRATIFORM_DEG = 5.0   # Steady movement base spread
+NOWCAST_DIR_GROWTH_DEG_PER_MIN = 0.1     # Cone widening factor over time
