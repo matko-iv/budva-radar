@@ -11,10 +11,10 @@
 (function (global) {
   'use strict';
 
-  // Outermost monitored ring (km). Rain beyond this is never reported as
-  // "in the area". Only rain within SKALA_NEARBY_KM is phrased as "nearby".
-  var SKALA_VICINITY_KM = 150;
-  var SKALA_NEARBY_KM = 40;
+  // Only rain within this radius (km) of the point is called "nearby". Rain
+  // farther out is not a concern for the location — reported as no rain
+  // heading here, with the nearest-echo distance noted (not "no rain at all").
+  var SKALA_VICINITY_KM = 20;
 
   function skalaIntensity(dbz) {
     if (dbz == null || isNaN(dbz)) return 'rain';
@@ -59,14 +59,15 @@
       var eta = (facts.eta != null && !isNaN(facts.eta)) ? ', ETA ~' + Math.round(facts.eta) + ' min' : '';
       narrative = 'Rain approaching — ' + intensity + ', ' + where + eta + '.';
     } else if (facts.anyRain && facts.km != null && !isNaN(facts.km) && facts.km <= SKALA_VICINITY_KM) {
-      // "nearby/bypassing" only makes sense within the monitored vicinity —
-      // never call rain hundreds of km away "nearby".
+      // "nearby" only within ~20 km — never call distant rain nearby.
       state = 'BYPASSING';
       var moving = facts.motionCardinal ? ' (moving ' + facts.motionCardinal + ')' : '';
-      var lead = (facts.km <= SKALA_NEARBY_KM)
-        ? 'Rain nearby but not heading here'
-        : 'Rain in the area but not heading here';
-      narrative = lead + ' — ' + intensity + ', ' + where + moving + '.';
+      narrative = 'Rain nearby but not heading here — ' + intensity + ', ' + where + moving + '.';
+    } else if (facts.anyRain && facts.km != null && !isNaN(facts.km)) {
+      // Rain exists but beyond ~20 km — not a concern for the point. Say so
+      // accurately, noting the distance (don't claim "no rain on the radar").
+      state = 'NO_RAIN';
+      narrative = 'No rain heading toward ' + loc + ' (nearest echo ' + where + ').';
     } else {
       state = 'NO_RAIN';
       if (facts.anyWet) narrative = 'Scattered radar echoes below the rain threshold — not falling.';
