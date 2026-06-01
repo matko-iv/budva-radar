@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-01T12:18:42",
+  "generated": "2026-06-01T12:23:42",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -9,13 +9,13 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260601_121841_062e22ecf3ad.png",
-      "frame_timestamp": "2026-06-01T12:18:41",
+      "frame_path": "data/frames/dhmz/20260601_122341_a7da07cd26bf.png",
+      "frame_timestamp": "2026-06-01T12:23:41",
       "motion": {
         "dx_px": 3,
         "dy_px": 1,
         "speed_px_per_frame": 3.16,
-        "confidence": 0.779,
+        "confidence": 0.817,
         "direction_deg": 108.4,
         "direction_cardinal": "E",
         "px_per_km": 1.365,
@@ -24,10 +24,10 @@
       },
       "approaching": {
         "is_approaching": false,
-        "eta_minutes": 84.7,
+        "eta_minutes": 79.7,
         "any_rain_within_radii": true,
         "rain_at_location": false,
-        "closest_rain_km": 42.212481440505364,
+        "closest_rain_km": 40.12983366975791,
         "closest_rain_intensity_dbz": 37.5,
         "closest_rain_bearing_cardinal": "NW",
         "closest_rain_intensity_label": "moderate rain",
@@ -35,15 +35,15 @@
         "reason": "P_rain below threshold",
         "nowcast_details": {
           "p_rain": 0.244,
-          "eta_minutes": 84.7,
-          "n_cells_considered": 56,
+          "eta_minutes": 79.7,
+          "n_cells_considered": 72,
           "approaching": false,
           "dominant": {
-            "track_id": "9742866a",
+            "track_id": "6e642cc1",
             "p": 0.244,
-            "eta_minutes": 84.7,
-            "dist_km": 42.212481440505364,
-            "bearing_deg": 300.6875149587112,
+            "eta_minutes": 79.7,
+            "dist_km": 40.12983366975791,
+            "bearing_deg": 301.11660529968935,
             "bearing_cardinal": "NW",
             "max_dbz": 37.5,
             "cell_type": "stratiform",
@@ -65,14 +65,14 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 56,
-        "n_convective": 19,
+        "n_cells": 72,
+        "n_convective": 17,
         "max_dbz": 67.5,
-        "largest_area_km2": 1688.0
+        "largest_area_km2": 1731.5
       },
       "scenario": {
         "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: moderate rain (38 dBZ) at 42.2 km NW, P_rain below threshold.",
+        "narrative": "Rain present: moderate rain (38 dBZ) at 40.1 km NW, P_rain below threshold.",
         "action": "LIKELY_NO_RAIN",
         "severe_present": false,
         "severe_detail": null,
@@ -92,13 +92,13 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260601_121000.gif",
-      "frame_timestamp": "2026-06-01T12:10:00",
+      "frame_path": "data/frames/opera/20260601_121500.gif",
+      "frame_timestamp": "2026-06-01T12:15:00",
       "motion": {
         "dx_px": 1,
         "dy_px": 0,
         "speed_px_per_frame": 1.0,
-        "confidence": 0.855,
+        "confidence": 0.805,
         "direction_deg": 90.0,
         "direction_cardinal": "E",
         "px_per_km": 0.237,
@@ -119,10 +119,10 @@
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 1841,
+          "n_cells_considered": 1835,
           "approaching": false,
           "dominant": {
-            "track_id": "58c4fc8c",
+            "track_id": "c90d7e95",
             "p": 0.0,
             "eta_minutes": null,
             "dist_km": 3082.7667277663977,
@@ -148,8 +148,8 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 1841,
-        "n_convective": 196,
+        "n_cells": 1835,
+        "n_convective": 205,
         "max_dbz": 50.0,
         "largest_area_km2": 243351.4
       },
@@ -175,14 +175,14 @@
   },
   "summary": {
     "scenario_state": "LIKELY_NO_RAIN",
-    "scenario_narrative": "Rain present: moderate rain (38 dBZ) at 42.2 km NW, P_rain below threshold.",
+    "scenario_narrative": "Rain present: moderate rain (38 dBZ) at 40.1 km NW, P_rain below threshold.",
     "scenario_source": "dhmz",
     "severe_present": false,
     "scenario_eta_minutes": null,
     "per_radar": {
       "dhmz": {
         "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: moderate rain (38 dBZ) at 42.2 km NW, P_rain below threshold.",
+        "narrative": "Rain present: moderate rain (38 dBZ) at 40.1 km NW, P_rain below threshold.",
         "severe_present": false,
         "eta_min": null
       },
@@ -198,7 +198,7 @@
     "rain_in_vicinity": true,
     "closest_eta_minutes": null,
     "lines": [
-      "DHMZ Uljenje: [LIKELY_NO_RAIN] Rain present: moderate rain (38 dBZ) at 42.2 km NW, P_rain below threshold.",
+      "DHMZ Uljenje: [LIKELY_NO_RAIN] Rain present: moderate rain (38 dBZ) at 40.1 km NW, P_rain below threshold.",
       "OPERA composite: [LIKELY_NO_RAIN] Rain present: severe (likely hail) (50 dBZ) at 3082.8 km N, P_rain below threshold."
     ]
   }
