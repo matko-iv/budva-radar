@@ -11,8 +11,10 @@
 (function (global) {
   'use strict';
 
-  // Outermost monitored ring (km). Rain beyond this is never "nearby".
+  // Outermost monitored ring (km). Rain beyond this is never reported as
+  // "in the area". Only rain within SKALA_NEARBY_KM is phrased as "nearby".
   var SKALA_VICINITY_KM = 150;
+  var SKALA_NEARBY_KM = 40;
 
   function skalaIntensity(dbz) {
     if (dbz == null || isNaN(dbz)) return 'rain';
@@ -61,7 +63,10 @@
       // never call rain hundreds of km away "nearby".
       state = 'BYPASSING';
       var moving = facts.motionCardinal ? ' (moving ' + facts.motionCardinal + ')' : '';
-      narrative = 'Rain nearby but not heading here — ' + intensity + ', ' + where + moving + '.';
+      var lead = (facts.km <= SKALA_NEARBY_KM)
+        ? 'Rain nearby but not heading here'
+        : 'Rain in the area but not heading here';
+      narrative = lead + ' — ' + intensity + ', ' + where + moving + '.';
     } else {
       state = 'NO_RAIN';
       if (facts.anyWet) narrative = 'Scattered radar echoes below the rain threshold — not falling.';
