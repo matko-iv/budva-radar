@@ -11,6 +11,9 @@
 (function (global) {
   'use strict';
 
+  // Outermost monitored ring (km). Rain beyond this is never "nearby".
+  var SKALA_VICINITY_KM = 150;
+
   function skalaIntensity(dbz) {
     if (dbz == null || isNaN(dbz)) return 'rain';
     if (dbz < 25) return 'light rain';
@@ -53,7 +56,9 @@
       state = 'APPROACHING';
       var eta = (facts.eta != null && !isNaN(facts.eta)) ? ', ETA ~' + Math.round(facts.eta) + ' min' : '';
       narrative = 'Rain approaching — ' + intensity + ', ' + where + eta + '.';
-    } else if (facts.anyRain) {
+    } else if (facts.anyRain && facts.km != null && !isNaN(facts.km) && facts.km <= SKALA_VICINITY_KM) {
+      // "nearby/bypassing" only makes sense within the monitored vicinity —
+      // never call rain hundreds of km away "nearby".
       state = 'BYPASSING';
       var moving = facts.motionCardinal ? ' (moving ' + facts.motionCardinal + ')' : '';
       narrative = 'Rain nearby but not heading here — ' + intensity + ', ' + where + moving + '.';
