@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-01T12:53:42",
+  "generated": "2026-06-01T12:58:42",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -9,17 +9,17 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260601_125340_c8e0d8637632.png",
-      "frame_timestamp": "2026-06-01T12:53:40",
+      "frame_path": "data/frames/dhmz/20260601_125841_5cf7bf5885d1.png",
+      "frame_timestamp": "2026-06-01T12:58:41",
       "motion": {
-        "dx_px": 2,
+        "dx_px": 3,
         "dy_px": 0,
-        "speed_px_per_frame": 2.0,
-        "confidence": 0.767,
+        "speed_px_per_frame": 3.0,
+        "confidence": 0.883,
         "direction_deg": 90.0,
         "direction_cardinal": "E",
         "px_per_km": 1.365,
-        "speed_kmh": 17.6,
+        "speed_kmh": 26.3,
         "confidence_band": "high"
       },
       "approaching": {
@@ -27,30 +27,30 @@
         "eta_minutes": null,
         "any_rain_within_radii": true,
         "rain_at_location": false,
-        "closest_rain_km": 362.50561549937095,
-        "closest_rain_intensity_dbz": 47.5,
-        "closest_rain_bearing_cardinal": "N",
-        "closest_rain_intensity_label": "very heavy rain",
-        "motion_speed_kmh": 17.6,
+        "closest_rain_km": 406.6290418698728,
+        "closest_rain_intensity_dbz": 27.5,
+        "closest_rain_bearing_cardinal": "NW",
+        "closest_rain_intensity_label": "light to moderate rain",
+        "motion_speed_kmh": 26.3,
         "reason": "P_rain below threshold",
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 76,
+          "n_cells_considered": 72,
           "approaching": false,
           "dominant": {
-            "track_id": "0e50d530",
+            "track_id": "8e778753",
             "p": 0.0,
             "eta_minutes": null,
-            "dist_km": 362.50561549937095,
-            "bearing_deg": 340.940158216783,
-            "bearing_cardinal": "N",
-            "max_dbz": 47.5,
-            "cell_type": "convective",
+            "dist_km": 406.6290418698728,
+            "bearing_deg": 328.94994289309153,
+            "bearing_cardinal": "NW",
+            "max_dbz": 27.5,
+            "cell_type": "stratiform",
             "trend": "steady",
-            "speed_kmh": 17.6,
+            "speed_kmh": 26.3,
             "direction_cardinal": "E",
-            "intensity_label": "very heavy rain",
+            "intensity_label": "light to moderate rain",
             "on_location": false
           },
           "p_by_lead": {
@@ -65,14 +65,14 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 76,
-        "n_convective": 21,
+        "n_cells": 72,
+        "n_convective": 19,
         "max_dbz": 67.5,
-        "largest_area_km2": 1694.4
+        "largest_area_km2": 1681.0
       },
       "scenario": {
         "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: very heavy rain (48 dBZ) at 362.5 km N, P_rain below threshold.",
+        "narrative": "Rain present: light to moderate rain (28 dBZ) at 406.6 km NW, P_rain below threshold.",
         "action": "LIKELY_NO_RAIN",
         "severe_present": false,
         "severe_detail": null,
@@ -92,13 +92,13 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260601_124500.gif",
-      "frame_timestamp": "2026-06-01T12:45:00",
+      "frame_path": "data/frames/opera/20260601_125000.gif",
+      "frame_timestamp": "2026-06-01T12:50:00",
       "motion": {
         "dx_px": 1,
         "dy_px": 0,
         "speed_px_per_frame": 1.0,
-        "confidence": 0.827,
+        "confidence": 0.733,
         "direction_deg": 90.0,
         "direction_cardinal": "E",
         "px_per_km": 0.237,
@@ -110,7 +110,7 @@
         "eta_minutes": null,
         "any_rain_within_radii": true,
         "rain_at_location": false,
-        "closest_rain_km": 3082.7806881664224,
+        "closest_rain_km": 3082.7667277663977,
         "closest_rain_intensity_dbz": 50.0,
         "closest_rain_bearing_cardinal": "N",
         "closest_rain_intensity_label": "severe (likely hail)",
@@ -119,14 +119,14 @@
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 1929,
+          "n_cells_considered": 1977,
           "approaching": false,
           "dominant": {
-            "track_id": "a2ea92c8",
+            "track_id": "530fd772",
             "p": 0.0,
             "eta_minutes": null,
-            "dist_km": 3082.7806881664224,
-            "bearing_deg": 16.09303006341264,
+            "dist_km": 3082.7667277663977,
+            "bearing_deg": 16.09321240727911,
             "bearing_cardinal": "N",
             "max_dbz": 50.0,
             "cell_type": "convective",
@@ -148,10 +148,10 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 1929,
-        "n_convective": 232,
+        "n_cells": 1977,
+        "n_convective": 246,
         "max_dbz": 50.0,
-        "largest_area_km2": 243369.2
+        "largest_area_km2": 243351.4
       },
       "scenario": {
         "state": "LIKELY_NO_RAIN",
@@ -175,14 +175,14 @@
   },
   "summary": {
     "scenario_state": "LIKELY_NO_RAIN",
-    "scenario_narrative": "Rain present: very heavy rain (48 dBZ) at 362.5 km N, P_rain below threshold.",
+    "scenario_narrative": "Rain present: light to moderate rain (28 dBZ) at 406.6 km NW, P_rain below threshold.",
     "scenario_source": "dhmz",
     "severe_present": false,
     "scenario_eta_minutes": null,
     "per_radar": {
       "dhmz": {
         "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: very heavy rain (48 dBZ) at 362.5 km N, P_rain below threshold.",
+        "narrative": "Rain present: light to moderate rain (28 dBZ) at 406.6 km NW, P_rain below threshold.",
         "severe_present": false,
         "eta_min": null
       },
@@ -198,7 +198,7 @@
     "rain_in_vicinity": true,
     "closest_eta_minutes": null,
     "lines": [
-      "DHMZ Uljenje: [LIKELY_NO_RAIN] Rain present: very heavy rain (48 dBZ) at 362.5 km N, P_rain below threshold.",
+      "DHMZ Uljenje: [LIKELY_NO_RAIN] Rain present: light to moderate rain (28 dBZ) at 406.6 km NW, P_rain below threshold.",
       "OPERA composite: [LIKELY_NO_RAIN] Rain present: severe (likely hail) (50 dBZ) at 3082.8 km N, P_rain below threshold."
     ]
   }
