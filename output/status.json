@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-03T18:41:45",
+  "generated": "2026-06-03T18:46:45",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -9,55 +9,55 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260603_184144_61596efd9349.png",
-      "frame_timestamp": "2026-06-03T18:41:44",
+      "frame_path": "data/frames/dhmz/20260603_184643_57e570a3b15f.png",
+      "frame_timestamp": "2026-06-03T18:46:43",
       "motion": {
-        "dx_px": 3,
+        "dx_px": 4,
         "dy_px": -1,
-        "speed_px_per_frame": 3.16,
-        "confidence": 0.822,
-        "direction_deg": 71.6,
+        "speed_px_per_frame": 4.12,
+        "confidence": 0.793,
+        "direction_deg": 76.0,
         "direction_cardinal": "E",
         "px_per_km": 1.365,
-        "speed_kmh": 27.7,
+        "speed_kmh": 36.3,
         "confidence_band": "high"
       },
       "approaching": {
         "is_approaching": true,
-        "eta_minutes": 75.6,
+        "eta_minutes": 50.3,
         "any_rain_within_radii": true,
         "rain_at_location": false,
-        "closest_rain_km": 34.81869022056712,
+        "closest_rain_km": 29.080864869982314,
         "closest_rain_intensity_dbz": 57.5,
         "closest_rain_bearing_cardinal": "W",
         "closest_rain_intensity_label": "extreme (hail core)",
-        "motion_speed_kmh": 27.7,
-        "reason": "Probabilistic Nowcast P_rain: 0.81",
+        "motion_speed_kmh": 36.3,
+        "reason": "Probabilistic Nowcast P_rain: 0.954",
         "nowcast_details": {
-          "p_rain": 0.81,
-          "eta_minutes": 75.6,
-          "n_cells_considered": 104,
+          "p_rain": 0.954,
+          "eta_minutes": 50.3,
+          "n_cells_considered": 102,
           "approaching": true,
           "dominant": {
-            "track_id": "f49bc765",
-            "p": 0.693,
-            "eta_minutes": 75.6,
-            "dist_km": 34.81869022056712,
-            "bearing_deg": 271.2783126407643,
+            "track_id": "ef7b513b",
+            "p": 0.946,
+            "eta_minutes": 50.3,
+            "dist_km": 29.080864869982314,
+            "bearing_deg": 270.23317301407826,
             "bearing_cardinal": "W",
             "max_dbz": 57.5,
             "cell_type": "convective",
             "trend": "steady",
-            "speed_kmh": 27.7,
+            "speed_kmh": 36.3,
             "direction_cardinal": "E",
             "intensity_label": "extreme (hail core)",
             "on_location": false
           },
           "p_by_lead": {
             "15": 0.0,
-            "30": 0.008,
-            "60": 0.353,
-            "120": 0.81
+            "30": 0.0,
+            "60": 0.849,
+            "120": 0.954
           }
         }
       },
@@ -65,18 +65,18 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 104,
-        "n_convective": 24,
+        "n_cells": 102,
+        "n_convective": 23,
         "max_dbz": 67.5,
-        "largest_area_km2": 11356.2
+        "largest_area_km2": 11319.7
       },
       "scenario": {
         "state": "SEVERE",
-        "narrative": "Severe core approaching: extreme (hail core) (58 dBZ) at 34.8 km W, ETA ~76 min.",
+        "narrative": "Severe core approaching: extreme (hail core) (58 dBZ) at 29.1 km W, ETA ~50 min.",
         "action": "SEVERE",
         "severe_present": false,
         "severe_detail": null,
-        "eta_min": 75.6
+        "eta_min": 50.3
       },
       "zr_scenario": "convective",
       "rings": [
@@ -350,9 +350,9 @@
               "lat": 42.3643,
               "lon": 18.7791,
               "rgb": [
-                165,
-                165,
-                165
+                214,
+                230,
+                181
               ],
               "dbz": null
             },
@@ -375,20 +375,20 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 22,
           "n_pixels_in_annulus": 3064,
-          "n_valid_color": 516,
-          "n_wet": 160,
-          "n_wet_raw": 174,
-          "n_echo": 516,
-          "n_trace": 342,
-          "frac_wet": 0.05222,
+          "n_valid_color": 605,
+          "n_wet": 310,
+          "n_wet_raw": 327,
+          "n_echo": 605,
+          "n_trace": 278,
+          "frac_wet": 0.10117,
           "max_dbz": 37.5,
-          "mean_dbz": 18.3,
-          "strongest_bearing": 299.2,
+          "mean_dbz": 21.6,
+          "strongest_bearing": 300.4,
           "strongest_bearing_cardinal": "NW",
           "strongest_dbz": 37.5,
-          "closest_wet_km": 18.02,
-          "closest_wet_bearing": 296.6,
-          "closest_wet_bearing_cardinal": "NW",
+          "closest_wet_km": 14.84,
+          "closest_wet_bearing": 290.2,
+          "closest_wet_bearing_cardinal": "W",
           "closest_wet_dbz": 22.5,
           "n_samples": 24,
           "n_in_image": 24,
@@ -420,11 +420,11 @@
               "lat": 42.481,
               "lon": 18.9924,
               "rgb": [
-                0,
-                150,
-                219
+                247,
+                230,
+                189
               ],
-              "dbz": 12.5
+              "dbz": null
             },
             {
               "bearing": 45.0,
@@ -432,21 +432,21 @@
               "lon": 19.0554,
               "rgb": [
                 0,
-                78,
-                128
+                150,
+                219
               ],
-              "dbz": 22.5
+              "dbz": 12.5
             },
             {
               "bearing": 60.0,
               "lat": 42.3985,
               "lon": 19.1037,
               "rgb": [
-                0,
-                150,
-                219
+                165,
+                165,
+                165
               ],
-              "dbz": 12.5
+              "dbz": null
             },
             {
               "bearing": 75.0,
@@ -563,9 +563,9 @@
               "lat": 42.1272,
               "lon": 18.6256,
               "rgb": [
-                189,
-                189,
-                255
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -575,10 +575,10 @@
               "lon": 18.5773,
               "rgb": [
                 0,
-                150,
-                219
+                78,
+                128
               ],
-              "dbz": 12.5
+              "dbz": 22.5
             },
             {
               "bearing": 255.0,
@@ -586,10 +586,10 @@
               "lon": 18.5467,
               "rgb": [
                 0,
-                150,
-                219
+                78,
+                128
               ],
-              "dbz": 12.5
+              "dbz": 22.5
             },
             {
               "bearing": 270.0,
@@ -597,10 +597,10 @@
               "lon": 18.5361,
               "rgb": [
                 0,
-                150,
-                219
+                192,
+                39
               ],
-              "dbz": 12.5
+              "dbz": 32.5
             },
             {
               "bearing": 285.0,
@@ -608,10 +608,10 @@
               "lon": 18.5462,
               "rgb": [
                 0,
-                150,
-                219
+                232,
+                10
               ],
-              "dbz": 12.5
+              "dbz": 37.5
             },
             {
               "bearing": 300.0,
@@ -619,10 +619,10 @@
               "lon": 18.5763,
               "rgb": [
                 0,
-                150,
+                232,
                 10
               ],
-              "dbz": 27.5
+              "dbz": 37.5
             },
             {
               "bearing": 315.0,
@@ -630,10 +630,10 @@
               "lon": 18.6246,
               "rgb": [
                 0,
-                78,
-                128
+                192,
+                39
               ],
-              "dbz": 22.5
+              "dbz": 32.5
             },
             {
               "bearing": 330.0,
@@ -665,21 +665,21 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 37,
           "n_pixels_in_annulus": 10968,
-          "n_valid_color": 5051,
-          "n_wet": 3040,
-          "n_wet_raw": 3108,
-          "n_echo": 5051,
-          "n_trace": 1943,
-          "frac_wet": 0.27717,
+          "n_valid_color": 5298,
+          "n_wet": 3515,
+          "n_wet_raw": 3581,
+          "n_echo": 5298,
+          "n_trace": 1717,
+          "frac_wet": 0.32048,
           "max_dbz": 52.5,
-          "mean_dbz": 25.2,
-          "strongest_bearing": 251.2,
-          "strongest_bearing_cardinal": "W",
+          "mean_dbz": 26.4,
+          "strongest_bearing": 296.2,
+          "strongest_bearing_cardinal": "NW",
           "strongest_dbz": 52.5,
           "closest_wet_km": 25.01,
           "closest_wet_bearing": 301.8,
           "closest_wet_bearing_cardinal": "NW",
-          "closest_wet_dbz": 27.5,
+          "closest_wet_dbz": 32.5,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -689,43 +689,43 @@
               "lon": 18.84,
               "rgb": [
                 0,
-                192,
-                39
+                232,
+                10
               ],
-              "dbz": 32.5
+              "dbz": 37.5
             },
             {
               "bearing": 15.0,
               "lat": 42.7206,
               "lon": 18.9984,
               "rgb": [
-                165,
-                165,
-                165
+                0,
+                150,
+                219
               ],
-              "dbz": null
+              "dbz": 12.5
             },
             {
               "bearing": 30.0,
               "lat": 42.6754,
               "lon": 19.1458,
               "rgb": [
-                165,
-                165,
-                165
+                0,
+                85,
+                190
               ],
-              "dbz": null
+              "dbz": 17.5
             },
             {
               "bearing": 45.0,
               "lat": 42.6036,
               "lon": 19.272,
               "rgb": [
-                0,
-                150,
-                219
+                165,
+                165,
+                165
               ],
-              "dbz": 12.5
+              "dbz": null
             },
             {
               "bearing": 60.0,
@@ -854,10 +854,10 @@
               "lon": 18.4124,
               "rgb": [
                 0,
-                85,
-                190
+                78,
+                128
               ],
-              "dbz": 17.5
+              "dbz": 22.5
             },
             {
               "bearing": 240.0,
@@ -865,10 +865,10 @@
               "lon": 18.3155,
               "rgb": [
                 0,
-                232,
+                150,
                 10
               ],
-              "dbz": 37.5
+              "dbz": 27.5
             },
             {
               "bearing": 255.0,
@@ -887,10 +887,10 @@
               "lon": 18.2322,
               "rgb": [
                 0,
-                85,
-                190
+                78,
+                128
               ],
-              "dbz": 17.5
+              "dbz": 22.5
             },
             {
               "bearing": 285.0,
@@ -898,10 +898,10 @@
               "lon": 18.2518,
               "rgb": [
                 0,
-                85,
-                190
+                150,
+                10
               ],
-              "dbz": 17.5
+              "dbz": 27.5
             },
             {
               "bearing": 300.0,
@@ -920,10 +920,10 @@
               "lon": 18.408,
               "rgb": [
                 0,
-                232,
-                10
+                192,
+                39
               ],
-              "dbz": 37.5
+              "dbz": 32.5
             },
             {
               "bearing": 330.0,
@@ -931,10 +931,10 @@
               "lon": 18.5342,
               "rgb": [
                 0,
-                192,
-                39
+                150,
+                10
               ],
-              "dbz": 32.5
+              "dbz": 27.5
             },
             {
               "bearing": 345.0,
@@ -955,21 +955,21 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 75,
           "n_pixels_in_annulus": 43896,
-          "n_valid_color": 18140,
-          "n_wet": 14678,
-          "n_wet_raw": 14763,
-          "n_echo": 18140,
-          "n_trace": 3377,
-          "frac_wet": 0.33438,
-          "max_dbz": 52.5,
-          "mean_dbz": 28.9,
-          "strongest_bearing": 303.9,
-          "strongest_bearing_cardinal": "NW",
-          "strongest_dbz": 52.5,
+          "n_valid_color": 18958,
+          "n_wet": 15149,
+          "n_wet_raw": 15237,
+          "n_echo": 18958,
+          "n_trace": 3721,
+          "frac_wet": 0.34511,
+          "max_dbz": 57.5,
+          "mean_dbz": 28.3,
+          "strongest_bearing": 229.5,
+          "strongest_bearing_cardinal": "SW",
+          "strongest_dbz": 57.5,
           "closest_wet_km": 50.0,
           "closest_wet_bearing": 325.1,
           "closest_wet_bearing_cardinal": "NW",
-          "closest_wet_dbz": 27.5,
+          "closest_wet_dbz": 32.5,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -979,21 +979,21 @@
               "lon": 18.84,
               "rgb": [
                 0,
-                150,
-                10
+                192,
+                39
               ],
-              "dbz": 27.5
+              "dbz": 32.5
             },
             {
               "bearing": 15.0,
               "lat": 43.1546,
               "lon": 19.1591,
               "rgb": [
-                165,
-                165,
-                165
+                0,
+                85,
+                190
               ],
-              "dbz": null
+              "dbz": 17.5
             },
             {
               "bearing": 30.0,
@@ -1055,11 +1055,11 @@
               "lat": 42.0477,
               "lon": 20.0098,
               "rgb": [
-                214,
-                214,
-                189
+                0,
+                150,
+                219
               ],
-              "dbz": null
+              "dbz": 12.5
             },
             {
               "bearing": 120.0,
@@ -1132,11 +1132,11 @@
               "lat": 41.506,
               "lon": 18.2396,
               "rgb": [
-                165,
-                165,
-                165
+                0,
+                150,
+                219
               ],
-              "dbz": null
+              "dbz": 12.5
             },
             {
               "bearing": 225.0,
@@ -1166,10 +1166,10 @@
               "lon": 17.6702,
               "rgb": [
                 0,
-                192,
-                39
+                232,
+                10
               ],
-              "dbz": 32.5
+              "dbz": 37.5
             },
             {
               "bearing": 270.0,
@@ -1177,10 +1177,10 @@
               "lon": 17.6244,
               "rgb": [
                 0,
-                78,
-                128
+                150,
+                219
               ],
-              "dbz": 22.5
+              "dbz": 12.5
             },
             {
               "bearing": 285.0,
@@ -1210,10 +1210,10 @@
               "lon": 17.9716,
               "rgb": [
                 0,
-                192,
-                39
+                232,
+                10
               ],
-              "dbz": 32.5
+              "dbz": 37.5
             },
             {
               "bearing": 330.0,
@@ -1245,15 +1245,15 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 186,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 24195,
-          "n_wet": 16250,
-          "n_wet_raw": 16399,
-          "n_echo": 24195,
-          "n_trace": 7796,
-          "frac_wet": 0.23855,
+          "n_valid_color": 23624,
+          "n_wet": 15801,
+          "n_wet_raw": 15948,
+          "n_echo": 23624,
+          "n_trace": 7676,
+          "frac_wet": 0.23196,
           "max_dbz": 57.5,
-          "mean_dbz": 24.8,
-          "strongest_bearing": 249.9,
+          "mean_dbz": 24.9,
+          "strongest_bearing": 249.6,
           "strongest_bearing_cardinal": "W",
           "strongest_dbz": 57.5,
           "closest_wet_km": 100.01,
@@ -1269,10 +1269,10 @@
               "lon": 18.84,
               "rgb": [
                 0,
-                78,
-                128
+                85,
+                190
               ],
-              "dbz": 22.5
+              "dbz": 17.5
             },
             {
               "bearing": 15.0,
@@ -1290,9 +1290,9 @@
               "lat": 43.4509,
               "lon": 19.7691,
               "rgb": [
-                165,
-                165,
-                165
+                255,
+                247,
+                189
               ],
               "dbz": null
             },
@@ -1411,9 +1411,9 @@
               "lat": 42.272,
               "lon": 17.0168,
               "rgb": [
-                189,
-                189,
-                255
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -1422,9 +1422,9 @@
               "lat": 42.622,
               "lon": 17.0691,
               "rgb": [
-                165,
-                165,
-                165
+                189,
+                189,
+                255
               ],
               "dbz": null
             },
@@ -1455,11 +1455,11 @@
               "lat": 43.4509,
               "lon": 17.9109,
               "rgb": [
-                0,
-                192,
-                39
+                255,
+                255,
+                0
               ],
-              "dbz": 32.5
+              "dbz": 42.5
             },
             {
               "bearing": 345.0,
@@ -1489,41 +1489,55 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260603_183000.gif",
-      "frame_timestamp": "2026-06-03T18:30:00",
+      "frame_path": "data/frames/opera/20260603_183500.gif",
+      "frame_timestamp": "2026-06-03T18:35:00",
       "motion": {
-        "dx_px": 0,
+        "dx_px": 1,
         "dy_px": 0,
-        "speed_px_per_frame": 0.0,
-        "confidence": 0.707,
-        "direction_deg": null,
-        "direction_cardinal": null,
+        "speed_px_per_frame": 1.0,
+        "confidence": 0.725,
+        "direction_deg": 90.0,
+        "direction_cardinal": "E",
         "px_per_km": 0.237,
-        "speed_kmh": 0.0,
+        "speed_kmh": 50.6,
         "confidence_band": "high"
       },
       "approaching": {
-        "is_approaching": false,
-        "eta_minutes": null,
+        "is_approaching": true,
+        "eta_minutes": 21.6,
         "any_rain_within_radii": true,
         "rain_at_location": false,
-        "closest_rain_km": 11.8,
+        "closest_rain_km": 16.102659125243328,
         "closest_rain_intensity_dbz": 34.0,
-        "closest_rain_bearing_cardinal": "NE",
+        "closest_rain_bearing_cardinal": "W",
         "closest_rain_intensity_label": "moderate rain",
-        "motion_speed_kmh": null,
-        "reason": "P_rain below threshold",
+        "motion_speed_kmh": 50.6,
+        "reason": "Probabilistic Nowcast P_rain: 1.0",
         "nowcast_details": {
-          "p_rain": 0.0,
-          "eta_minutes": null,
-          "n_cells_considered": 0,
-          "approaching": false,
-          "dominant": null,
+          "p_rain": 1.0,
+          "eta_minutes": 21.6,
+          "n_cells_considered": 2276,
+          "approaching": true,
+          "dominant": {
+            "track_id": "1ab534c3",
+            "p": 0.946,
+            "eta_minutes": 21.6,
+            "dist_km": 16.102659125243328,
+            "bearing_deg": 282.5288077091515,
+            "bearing_cardinal": "W",
+            "max_dbz": 34.0,
+            "cell_type": "stratiform",
+            "trend": "steady",
+            "speed_kmh": 50.6,
+            "direction_cardinal": "E",
+            "intensity_label": "moderate rain",
+            "on_location": false
+          },
           "p_by_lead": {
-            "15": 0.0,
-            "30": 0.0,
-            "60": 0.0,
-            "120": 0.0
+            "15": 0.081,
+            "30": 0.992,
+            "60": 1.0,
+            "120": 1.0
           }
         }
       },
@@ -1531,18 +1545,18 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 2278,
+        "n_cells": 2276,
         "n_convective": 309,
         "max_dbz": 50.0,
         "largest_area_km2": 243369.2
       },
       "scenario": {
-        "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: moderate rain (34 dBZ) at 11.8 km NE, P_rain below threshold.",
-        "action": "LIKELY_NO_RAIN",
+        "state": "LIKELY",
+        "narrative": "Rain likely: moderate rain (34 dBZ) at 16.1 km W, ETA ~22 min.",
+        "action": "LIKELY",
         "severe_present": false,
         "severe_detail": null,
-        "eta_min": null
+        "eta_min": 21.6
       },
       "zr_scenario": "convective",
       "rings": [
@@ -1551,17 +1565,17 @@
           "km_per_pixel": 4.224,
           "min_wet_threshold": 5,
           "n_pixels_in_annulus": 20,
-          "n_valid_color": 1,
+          "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
-          "n_echo": 1,
-          "n_trace": 1,
+          "n_echo": 0,
+          "n_trace": 0,
           "frac_wet": 0.0,
-          "max_dbz": 12.0,
-          "mean_dbz": 12.0,
-          "strongest_bearing": 26.6,
-          "strongest_bearing_cardinal": "NE",
-          "strongest_dbz": 12.0,
+          "max_dbz": null,
+          "mean_dbz": null,
+          "strongest_bearing": null,
+          "strongest_bearing_cardinal": null,
+          "strongest_dbz": null,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -1585,33 +1599,33 @@
               "lat": 42.3733,
               "lon": 18.8715,
               "rgb": [
-                5,
-                205,
-                170
+                80,
+                130,
+                51
               ],
-              "dbz": 12.0
+              "dbz": null
             },
             {
               "bearing": 30.0,
               "lat": 42.3643,
               "lon": 18.9009,
               "rgb": [
-                5,
-                205,
-                170
+                80,
+                130,
+                51
               ],
-              "dbz": 12.0
+              "dbz": null
             },
             {
               "bearing": 45.0,
               "lat": 42.35,
               "lon": 18.926,
               "rgb": [
-                5,
-                205,
-                170
+                80,
+                130,
+                51
               ],
-              "dbz": 12.0
+              "dbz": null
             },
             {
               "bearing": 60.0,
@@ -1841,19 +1855,19 @@
           "km_per_pixel": 4.224,
           "min_wet_threshold": 5,
           "n_pixels_in_annulus": 88,
-          "n_valid_color": 26,
-          "n_wet": 4,
-          "n_wet_raw": 11,
-          "n_echo": 24,
-          "n_trace": 13,
-          "frac_wet": 0.04545,
+          "n_valid_color": 21,
+          "n_wet": 3,
+          "n_wet_raw": 8,
+          "n_echo": 19,
+          "n_trace": 11,
+          "frac_wet": 0.03409,
           "max_dbz": 34.0,
-          "mean_dbz": 17.8,
-          "strongest_bearing": 45.0,
+          "mean_dbz": 17.3,
+          "strongest_bearing": 53.1,
           "strongest_bearing_cardinal": "NE",
           "strongest_dbz": 34.0,
-          "closest_wet_km": 15.23,
-          "closest_wet_bearing": 56.3,
+          "closest_wet_km": 21.12,
+          "closest_wet_bearing": 53.1,
           "closest_wet_bearing_cardinal": "NE",
           "closest_wet_dbz": 34.0,
           "n_samples": 24,
@@ -1864,55 +1878,55 @@
               "lat": 42.5112,
               "lon": 18.84,
               "rgb": [
-                5,
-                205,
-                170
+                80,
+                130,
+                51
               ],
-              "dbz": 12.0
+              "dbz": null
             },
             {
               "bearing": 15.0,
               "lat": 42.5035,
               "lon": 18.9189,
               "rgb": [
-                255,
-                150,
-                50
+                240,
+                240,
+                20
               ],
-              "dbz": 34.0
+              "dbz": 24.0
             },
             {
               "bearing": 30.0,
               "lat": 42.481,
               "lon": 18.9924,
               "rgb": [
-                5,
-                205,
-                170
+                140,
+                230,
+                20
               ],
-              "dbz": 12.0
+              "dbz": 18.0
             },
             {
               "bearing": 45.0,
               "lat": 42.4452,
               "lon": 19.0554,
               "rgb": [
-                140,
-                230,
+                240,
+                240,
                 20
               ],
-              "dbz": 18.0
+              "dbz": 24.0
             },
             {
               "bearing": 60.0,
               "lat": 42.3985,
               "lon": 19.1037,
               "rgb": [
-                140,
-                230,
+                255,
+                205,
                 20
               ],
-              "dbz": 18.0
+              "dbz": 30.0
             },
             {
               "bearing": 75.0,
@@ -2051,6 +2065,17 @@
               "lat": 42.2278,
               "lon": 18.5467,
               "rgb": [
+                255,
+                150,
+                50
+              ],
+              "dbz": 34.0
+            },
+            {
+              "bearing": 270.0,
+              "lat": 42.286,
+              "lon": 18.5361,
+              "rgb": [
                 5,
                 205,
                 170
@@ -2058,24 +2083,13 @@
               "dbz": 12.0
             },
             {
-              "bearing": 270.0,
-              "lat": 42.286,
-              "lon": 18.5361,
-              "rgb": [
-                140,
-                230,
-                20
-              ],
-              "dbz": 18.0
-            },
-            {
               "bearing": 285.0,
               "lat": 42.3442,
               "lon": 18.5462,
               "rgb": [
-                97,
-                160,
-                13
+                3,
+                143,
+                118
               ],
               "dbz": null
             },
@@ -2084,8 +2098,8 @@
               "lat": 42.3985,
               "lon": 18.5763,
               "rgb": [
-                97,
-                160,
+                178,
+                143,
                 13
               ],
               "dbz": null
@@ -2117,11 +2131,11 @@
               "lat": 42.5035,
               "lon": 18.7611,
               "rgb": [
-                10,
-                155,
-                180
+                140,
+                230,
+                20
               ],
-              "dbz": 0.0
+              "dbz": 18.0
             }
           ],
           "confidence": 1.0
@@ -2131,21 +2145,21 @@
           "km_per_pixel": 4.224,
           "min_wet_threshold": 5,
           "n_pixels_in_annulus": 328,
-          "n_valid_color": 142,
-          "n_wet": 51,
-          "n_wet_raw": 69,
-          "n_echo": 130,
-          "n_trace": 61,
-          "frac_wet": 0.15549,
+          "n_valid_color": 152,
+          "n_wet": 67,
+          "n_wet_raw": 88,
+          "n_echo": 142,
+          "n_trace": 54,
+          "frac_wet": 0.20427,
           "max_dbz": 50.0,
-          "mean_dbz": 22.2,
-          "strongest_bearing": 336.0,
-          "strongest_bearing_cardinal": "NW",
+          "mean_dbz": 24.6,
+          "strongest_bearing": 343.3,
+          "strongest_bearing_cardinal": "N",
           "strongest_dbz": 50.0,
-          "closest_wet_km": 26.72,
-          "closest_wet_bearing": 18.4,
-          "closest_wet_bearing_cardinal": "N",
-          "closest_wet_dbz": 34.0,
+          "closest_wet_km": 27.05,
+          "closest_wet_bearing": 38.7,
+          "closest_wet_bearing_cardinal": "NE",
+          "closest_wet_dbz": 24.0,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -2154,11 +2168,11 @@
               "lat": 42.7361,
               "lon": 18.84,
               "rgb": [
-                80,
-                130,
-                51
+                5,
+                205,
+                170
               ],
-              "dbz": null
+              "dbz": 12.0
             },
             {
               "bearing": 15.0,
@@ -2176,11 +2190,11 @@
               "lat": 42.6754,
               "lon": 19.1458,
               "rgb": [
-                10,
-                155,
-                180
+                255,
+                205,
+                20
               ],
-              "dbz": 0.0
+              "dbz": 30.0
             },
             {
               "bearing": 45.0,
@@ -2319,11 +2333,11 @@
               "lat": 41.9676,
               "lon": 18.4124,
               "rgb": [
-                250,
-                120,
-                255
+                255,
+                80,
+                60
               ],
-              "dbz": 45.0
+              "dbz": 40.0
             },
             {
               "bearing": 240.0,
@@ -2341,17 +2355,6 @@
               "lat": 42.1685,
               "lon": 18.254,
               "rgb": [
-                10,
-                185,
-                175
-              ],
-              "dbz": 8.0
-            },
-            {
-              "bearing": 270.0,
-              "lat": 42.2848,
-              "lon": 18.2322,
-              "rgb": [
                 240,
                 240,
                 20
@@ -2359,20 +2362,20 @@
               "dbz": 24.0
             },
             {
+              "bearing": 270.0,
+              "lat": 42.2848,
+              "lon": 18.2322,
+              "rgb": [
+                0,
+                75,
+                140
+              ],
+              "dbz": null
+            },
+            {
               "bearing": 285.0,
               "lat": 42.4013,
               "lon": 18.2518,
-              "rgb": [
-                255,
-                150,
-                50
-              ],
-              "dbz": 34.0
-            },
-            {
-              "bearing": 300.0,
-              "lat": 42.51,
-              "lon": 18.3117,
               "rgb": [
                 255,
                 80,
@@ -2381,13 +2384,24 @@
               "dbz": 40.0
             },
             {
+              "bearing": 300.0,
+              "lat": 42.51,
+              "lon": 18.3117,
+              "rgb": [
+                250,
+                120,
+                255
+              ],
+              "dbz": 45.0
+            },
+            {
               "bearing": 315.0,
               "lat": 42.6036,
               "lon": 18.408,
               "rgb": [
-                174,
-                83,
-                178
+                178,
+                55,
+                41
               ],
               "dbz": null
             },
@@ -2396,9 +2410,9 @@
               "lat": 42.6754,
               "lon": 18.5342,
               "rgb": [
-                174,
-                83,
-                178
+                178,
+                104,
+                34
               ],
               "dbz": null
             },
@@ -2407,11 +2421,11 @@
               "lat": 42.7206,
               "lon": 18.6816,
               "rgb": [
-                255,
-                80,
-                60
+                250,
+                120,
+                255
               ],
-              "dbz": 40.0
+              "dbz": 45.0
             }
           ],
           "confidence": 1.0
@@ -2421,21 +2435,21 @@
           "km_per_pixel": 4.224,
           "min_wet_threshold": 5,
           "n_pixels_in_annulus": 1320,
-          "n_valid_color": 491,
-          "n_wet": 322,
-          "n_wet_raw": 352,
-          "n_echo": 461,
+          "n_valid_color": 534,
+          "n_wet": 363,
+          "n_wet_raw": 396,
+          "n_echo": 505,
           "n_trace": 109,
-          "frac_wet": 0.24394,
+          "frac_wet": 0.275,
           "max_dbz": 50.0,
-          "mean_dbz": 27.6,
-          "strongest_bearing": 354.0,
+          "mean_dbz": 27.5,
+          "strongest_bearing": 346.0,
           "strongest_bearing_cardinal": "N",
           "strongest_dbz": 50.0,
           "closest_wet_km": 50.87,
-          "closest_wet_bearing": 274.8,
-          "closest_wet_bearing_cardinal": "W",
-          "closest_wet_dbz": 30.0,
+          "closest_wet_bearing": 355.2,
+          "closest_wet_bearing_cardinal": "N",
+          "closest_wet_dbz": 34.0,
           "n_samples": 24,
           "n_in_image": 24,
           "samples": [
@@ -2444,11 +2458,11 @@
               "lat": 43.1857,
               "lon": 18.84,
               "rgb": [
-                10,
-                155,
-                180
+                140,
+                230,
+                20
               ],
-              "dbz": 0.0
+              "dbz": 18.0
             },
             {
               "bearing": 15.0,
@@ -2587,22 +2601,22 @@
               "lat": 41.4173,
               "lon": 18.5296,
               "rgb": [
-                10,
-                185,
-                175
+                5,
+                205,
+                170
               ],
-              "dbz": 8.0
+              "dbz": 12.0
             },
             {
               "bearing": 210.0,
               "lat": 41.506,
               "lon": 18.2396,
               "rgb": [
-                5,
-                205,
-                170
+                140,
+                230,
+                20
               ],
-              "dbz": 12.0
+              "dbz": 18.0
             },
             {
               "bearing": 225.0,
@@ -2631,22 +2645,22 @@
               "lat": 42.0477,
               "lon": 17.6702,
               "rgb": [
-                140,
-                230,
-                20
+                5,
+                205,
+                170
               ],
-              "dbz": 18.0
+              "dbz": 12.0
             },
             {
               "bearing": 270.0,
               "lat": 42.28,
               "lon": 17.6244,
               "rgb": [
-                140,
-                230,
-                20
+                5,
+                205,
+                170
               ],
-              "dbz": 18.0
+              "dbz": 12.0
             },
             {
               "bearing": 285.0,
@@ -2654,19 +2668,19 @@
               "lon": 17.6615,
               "rgb": [
                 255,
-                150,
-                50
+                205,
+                20
               ],
-              "dbz": 34.0
+              "dbz": 30.0
             },
             {
               "bearing": 300.0,
               "lat": 42.7312,
               "lon": 17.7797,
               "rgb": [
-                167,
-                167,
-                13
+                178,
+                104,
+                34
               ],
               "dbz": null
             },
@@ -2676,10 +2690,10 @@
               "lon": 17.9716,
               "rgb": [
                 255,
-                205,
-                20
+                150,
+                50
               ],
-              "dbz": 30.0
+              "dbz": 34.0
             },
             {
               "bearing": 330.0,
@@ -2687,10 +2701,10 @@
               "lon": 18.2245,
               "rgb": [
                 255,
-                80,
-                60
+                150,
+                50
               ],
-              "dbz": 40.0
+              "dbz": 34.0
             },
             {
               "bearing": 345.0,
@@ -2698,8 +2712,8 @@
               "lon": 18.5209,
               "rgb": [
                 178,
-                55,
-                41
+                104,
+                34
               ],
               "dbz": null
             }
@@ -2711,15 +2725,15 @@
           "km_per_pixel": 4.224,
           "min_wet_threshold": 6,
           "n_pixels_in_annulus": 2212,
-          "n_valid_color": 810,
-          "n_wet": 397,
-          "n_wet_raw": 443,
-          "n_echo": 767,
-          "n_trace": 324,
-          "frac_wet": 0.17948,
+          "n_valid_color": 801,
+          "n_wet": 390,
+          "n_wet_raw": 436,
+          "n_echo": 763,
+          "n_trace": 327,
+          "frac_wet": 0.17631,
           "max_dbz": 50.0,
           "mean_dbz": 22.7,
-          "strongest_bearing": 329.0,
+          "strongest_bearing": 331.1,
           "strongest_bearing_cardinal": "NW",
           "strongest_dbz": 50.0,
           "closest_wet_km": 100.14,
@@ -2756,11 +2770,11 @@
               "lat": 43.4509,
               "lon": 19.7691,
               "rgb": [
-                80,
-                130,
-                51
+                10,
+                185,
+                175
               ],
-              "dbz": null
+              "dbz": 8.0
             },
             {
               "bearing": 45.0,
@@ -2877,11 +2891,11 @@
               "lat": 40.9824,
               "lon": 18.3775,
               "rgb": [
-                5,
-                205,
-                170
+                10,
+                185,
+                175
               ],
-              "dbz": 12.0
+              "dbz": 8.0
             },
             {
               "bearing": 210.0,
@@ -2911,10 +2925,10 @@
               "lon": 17.2777,
               "rgb": [
                 10,
-                185,
-                175
+                155,
+                180
               ],
-              "dbz": 8.0
+              "dbz": 0.0
             },
             {
               "bearing": 255.0,
@@ -2932,11 +2946,11 @@
               "lat": 42.272,
               "lon": 17.0168,
               "rgb": [
-                0,
-                75,
-                140
+                10,
+                130,
+                200
               ],
-              "dbz": null
+              "dbz": -6.0
             },
             {
               "bearing": 285.0,
@@ -3010,31 +3024,31 @@
   },
   "summary": {
     "scenario_state": "SEVERE",
-    "scenario_narrative": "Severe core approaching: extreme (hail core) (58 dBZ) at 34.8 km W, ETA ~76 min.",
+    "scenario_narrative": "Severe core approaching: extreme (hail core) (58 dBZ) at 29.1 km W, ETA ~50 min.",
     "scenario_source": "dhmz",
     "severe_present": false,
-    "scenario_eta_minutes": 75.6,
+    "scenario_eta_minutes": 21.6,
     "per_radar": {
       "dhmz": {
         "state": "SEVERE",
-        "narrative": "Severe core approaching: extreme (hail core) (58 dBZ) at 34.8 km W, ETA ~76 min.",
+        "narrative": "Severe core approaching: extreme (hail core) (58 dBZ) at 29.1 km W, ETA ~50 min.",
         "severe_present": false,
-        "eta_min": 75.6
+        "eta_min": 50.3
       },
       "opera": {
-        "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: moderate rain (34 dBZ) at 11.8 km NE, P_rain below threshold.",
+        "state": "LIKELY",
+        "narrative": "Rain likely: moderate rain (34 dBZ) at 16.1 km W, ETA ~22 min.",
         "severe_present": false,
-        "eta_min": null
+        "eta_min": 21.6
       }
     },
     "rain_approaching": true,
     "rain_at_location": false,
     "rain_in_vicinity": true,
-    "closest_eta_minutes": 75.6,
+    "closest_eta_minutes": 21.6,
     "lines": [
-      "DHMZ Uljenje: [SEVERE] Severe core approaching: extreme (hail core) (58 dBZ) at 34.8 km W, ETA ~76 min.",
-      "OPERA composite: [LIKELY_NO_RAIN] Rain present: moderate rain (34 dBZ) at 11.8 km NE, P_rain below threshold."
+      "DHMZ Uljenje: [SEVERE] Severe core approaching: extreme (hail core) (58 dBZ) at 29.1 km W, ETA ~50 min.",
+      "OPERA composite: [LIKELY] Rain likely: moderate rain (34 dBZ) at 16.1 km W, ETA ~22 min."
     ]
   }
 }
