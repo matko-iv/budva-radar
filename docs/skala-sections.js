@@ -5,6 +5,25 @@
 (function (global) {
   'use strict';
 
+  // Closest actual WET PIXEL near the point, from the precomputed rings. This is
+  // the LOCAL intensity at/around the location — the same thing radar-map.html's
+  // live pixel scan reports. We display THIS, not approaching.closest_rain_*,
+  // because the pipeline (interpret.py) sets closest_rain_intensity_dbz to the
+  // dominant CELL's peak max_dbz (the storm core, possibly far away). That peak
+  // is much higher than the local value and made Budva read a far stronger dBZ
+  // than any other clicked location.
+  function closestWet(src) {
+    var rings = (src && src.rings) || [];
+    var best = null;
+    for (var i = 0; i < rings.length; i++) {
+      var r = rings[i];
+      if (r.closest_wet_km != null && (best == null || r.closest_wet_km < best.km)) {
+        best = { km: r.closest_wet_km, cardinal: r.closest_wet_bearing_cardinal, dbz: r.closest_wet_dbz };
+      }
+    }
+    return best;
+  }
+
   // Build the normalized facts SKALA.interpret() expects from one source's
   // precomputed ring/approach data (same shape on both pages).
   function factsFromSource(src, loc) {
@@ -23,6 +42,10 @@
       cardinal: app.closest_rain_bearing_cardinal, eta: app.eta_minutes,
       label: app.closest_rain_intensity_label,
     } : null);
+    // Displayed km/intensity/dBZ = the LOCAL closest wet pixel (see closestWet),
+    // so Budva reads the same magnitude as any other point. The dominant cell
+    // (threat) is reserved for the SEVERE decision + its narrative.
+    const cw = closestWet(src);
     return {
       locationName: loc,
       rainAtLocation: !!app.rain_at_location,
@@ -30,9 +53,9 @@
       anyRain: !!app.any_rain_within_radii,
       anyWet: rings.some(r => (r.n_wet || 0) > 0),
       anyEcho: rings.some(r => (r.n_echo || 0) > 0),
-      km: app.closest_rain_km,
-      cardinal: app.closest_rain_bearing_cardinal,
-      dbz: app.closest_rain_intensity_dbz,
+      km: cw ? cw.km : app.closest_rain_km,
+      cardinal: cw ? cw.cardinal : app.closest_rain_bearing_cardinal,
+      dbz: cw ? cw.dbz : app.closest_rain_intensity_dbz,
       motionCardinal: app.motion_direction_cardinal || motion.direction_cardinal,
       eta: app.eta_minutes,
       threat: threat,
