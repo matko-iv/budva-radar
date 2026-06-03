@@ -66,34 +66,15 @@ function render(d) {
   document.getElementById('generated').textContent =
     'Generated: ' + gen.toLocaleString();
 
-  // Single source of truth: the composite scenario state. One headline,
-  // one detail line, one colour — no competing alert systems.
-  // Colours + headline mirror interpret.py:SCENARIO_STATES (worst -> best).
-  const locName = (d.location && d.location.name) || 'this location';
-
-  // ONE report per location — identical to radar-map.html. Read the SAME radar
-  // radar-map.html uses (DHMZ, the high-res local radar), NOT the OPERA-blended
-  // composite summary: that composite's probabilistic nowcast was reporting
-  // "approaching" on this page while radar-map showed rain bypassing the point.
-  // "Approaching" is then decided by the SAME live motion-vector geometry
-  // radar-map.html uses (SKALA_SECTIONS.assessApproach over the DHMZ motion
-  // vector + closest cell), not the pipeline's precomputed is_approaching flag,
-  // so both pages reach the same verdict + wording for the same location.
-  const sum = d.summary || {};
-  const srcId = (d.sources && d.sources.dhmz && d.sources.dhmz.ok)
-    ? 'dhmz' : (sum.scenario_source || Object.keys(d.sources || {})[0]);
-  const src = (d.sources || {})[srcId];
-  const compFacts = SKALA_SECTIONS.factsFromSource(src, locName);
-  const closest = SKALA_SECTIONS.closestCell(src);
-  const ap = SKALA_SECTIONS.assessApproach(
-    closest.bearingDeg, closest.km, (src && src.motion) || null);
-  compFacts.approaching = ap.approaching;
-  compFacts.eta = ap.eta;
-  // Use the same closest-cell figures radar-map.html narrates from.
-  if (closest.km != null) compFacts.km = closest.km;
-  if (closest.bearingDeg != null) compFacts.cardinal = SKALA_SECTIONS.cardinalFromDeg(closest.bearingDeg);
-  if (closest.dbz != null) compFacts.dbz = closest.dbz;
-  const res = SKALA.interpret(compFacts);
+  // ONE report per location — identical to radar-map.html. The shared
+  // budvaHeadline() reads the DHMZ probabilistic nowcast (the high-res local
+  // radar's cell-tracking forecast), the SAME data the per-source DHMZ line
+  // uses, so headline and detail agree. Deliberately NOT the OPERA-blended
+  // composite summary (whose coarse nowcast was over-triggering "approaching"
+  // here), and NOT single-frame motion geometry (whose 15 km gate dismissed a
+  // severe cell farther out but heading straight in). radar-map.html renders
+  // the same headline for Budva via the same function, so the pages can't differ.
+  const res = SKALA_SECTIONS.budvaHeadline(d);
   const meta = res.meta;
 
   const alert = document.getElementById('alert');

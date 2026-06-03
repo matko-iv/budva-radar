@@ -136,6 +136,8 @@ function finishBoot() {
   // Render the Budva overview sections (identical to index.html) from the
   // precomputed data, via the shared module.
   if (window.RADAR_DATA && window.SKALA_SECTIONS) {
+    // Open with the Budva headline so it matches index.html before any click.
+    if (SKALA_SECTIONS.budvaHeadline) setBanner(SKALA_SECTIONS.budvaHeadline(window.RADAR_DATA));
     SKALA_SECTIONS.renderSummaryLines(window.RADAR_DATA, document.getElementById('budva-summary-list'));
     SKALA_SECTIONS.renderImages(window.RADAR_DATA, document.getElementById('images-grid'));
     SKALA_SECTIONS.renderSources(window.RADAR_DATA, document.getElementById('sources-grid'));
@@ -513,22 +515,30 @@ function classifyScenario(result, label) {
   return res;
 }
 
-function renderOutput(label, cx, cy, result, ms) {
-  const sc = classifyScenario(result, label);
+// Paint the headline banner + state badge + narrative from an interpreter result.
+function setBanner(sc) {
   const meta = sc.meta;
-
-  // Headline banner (single source of truth — identical wording to index.html).
   const alertEl = document.getElementById('alert');
-  const alertText = document.getElementById('alert-text');
   alertEl.className = 'alert ' + meta.cls;
-  alertText.textContent = sc.headline;
-
-  // State badge + the one coherent narrative.
+  document.getElementById('alert-text').textContent = sc.headline;
   const badge = document.getElementById('scenario-badge');
   badge.textContent = sc.state;
   badge.style.background = meta.bg;
   badge.style.color = meta.fg;
   document.getElementById('scenario-reason').textContent = sc.narrative;
+}
+
+function renderOutput(label, cx, cy, result, ms) {
+  // For the canonical Budva location, show the SAME headline index.html shows —
+  // the shared DHMZ probabilistic nowcast (SKALA_SECTIONS.budvaHeadline) — so the
+  // two pages can never disagree. Any OTHER explored point has no precomputed
+  // nowcast, so it keeps this page's single-frame motion geometry (classifyScenario).
+  const isBudva = window.RADAR_DATA && window.RADAR_DATA.location
+    && label === window.RADAR_DATA.location.name;
+  const sc = (isBudva && window.SKALA_SECTIONS && SKALA_SECTIONS.budvaHeadline)
+    ? SKALA_SECTIONS.budvaHeadline(window.RADAR_DATA)
+    : classifyScenario(result, label);
+  setBanner(sc);
 
   // Details (NOT a competing interpretation — just the raw per-ring data).
   const list = document.getElementById('summary-list');
