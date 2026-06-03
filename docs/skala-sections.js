@@ -11,6 +11,18 @@
     const app = (src && src.approaching) || {};
     const rings = (src && src.rings) || [];
     const motion = (src && src.motion) || {};
+    // The dominant tracked storm cell the nowcast is following — this is the
+    // cell that may be a big storm BEHIND a lighter closest cell. SKALA.interpret
+    // uses it to flag SEVERE. Fall back to the closest cell when no track exists.
+    const dom = (app.nowcast_details && app.nowcast_details.dominant) || null;
+    const threat = dom ? {
+      dbz: dom.max_dbz, km: dom.dist_km, cardinal: dom.bearing_cardinal,
+      eta: dom.eta_minutes, label: dom.intensity_label,
+    } : (app.closest_rain_km != null ? {
+      dbz: app.closest_rain_intensity_dbz, km: app.closest_rain_km,
+      cardinal: app.closest_rain_bearing_cardinal, eta: app.eta_minutes,
+      label: app.closest_rain_intensity_label,
+    } : null);
     return {
       locationName: loc,
       rainAtLocation: !!app.rain_at_location,
@@ -23,6 +35,7 @@
       dbz: app.closest_rain_intensity_dbz,
       motionCardinal: app.motion_direction_cardinal || motion.direction_cardinal,
       eta: app.eta_minutes,
+      threat: threat,
     };
   }
 
