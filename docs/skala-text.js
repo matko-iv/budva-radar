@@ -69,6 +69,13 @@
     if (severeHere) {
       state = 'SEVERE';
       narrative = 'Severe storm overhead — ' + intensity + dbzTxt + '.';
+    } else if (facts.rainAtLocation) {
+      // Rain is already falling here → report the present (RAINING). We do NOT
+      // jump to an approaching severe cell that has not arrived: severe rain
+      // OVERHEAD already won above, and severe-approaching is reported below only
+      // while it is still dry at the location.
+      state = 'RAINING';
+      narrative = 'Raining now — ' + intensity + dbzTxt + '.';
     } else if (severeApproaching) {
       state = 'SEVERE';
       var tEta = (threat.eta != null && !isNaN(threat.eta)) ? ', ETA ~' + Math.round(threat.eta) + ' min' : '';
@@ -76,9 +83,6 @@
       var tDbz = (threat.dbz != null && !isNaN(threat.dbz)) ? ' (' + Math.round(threat.dbz) + ' dBZ)' : '';
       var tLabel = threat.label || skalaIntensity(threat.dbz);
       narrative = 'Severe storm approaching — ' + tLabel + tDbz + ', ' + tWhere + tEta + '.';
-    } else if (facts.rainAtLocation) {
-      state = 'RAINING';
-      narrative = 'Raining now — ' + intensity + dbzTxt + '.';
     } else if (facts.approaching) {
       state = 'APPROACHING';
       var eta = (facts.eta != null && !isNaN(facts.eta)) ? ', ETA ~' + Math.round(facts.eta) + ' min' : '';
