@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-04T04:59:02",
+  "generated": "2026-06-04T05:06:02",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -9,36 +9,50 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260604_045901_4f370db0e920.png",
-      "frame_timestamp": "2026-06-04T04:59:01",
+      "frame_path": "data/frames/dhmz/20260604_050601_f52dbdf0f2a7.png",
+      "frame_timestamp": "2026-06-04T05:06:01",
       "motion": {
         "dx_px": 0,
-        "dy_px": 0,
-        "speed_px_per_frame": 0.0,
-        "confidence": 0.659,
-        "direction_deg": null,
-        "direction_cardinal": null,
+        "dy_px": 2,
+        "speed_px_per_frame": 2.0,
+        "confidence": 0.55,
+        "direction_deg": 180.0,
+        "direction_cardinal": "S",
         "px_per_km": 1.365,
-        "speed_kmh": 0.0,
-        "confidence_band": "high"
+        "speed_kmh": 12.6,
+        "confidence_band": "low"
       },
       "approaching": {
         "is_approaching": false,
         "eta_minutes": null,
         "any_rain_within_radii": true,
         "rain_at_location": false,
-        "closest_rain_km": 103.2,
-        "closest_rain_intensity_dbz": 42.5,
+        "closest_rain_km": 101.4,
+        "closest_rain_intensity_dbz": 32.5,
         "closest_rain_bearing_cardinal": "W",
-        "closest_rain_intensity_label": "heavy rain",
-        "motion_speed_kmh": null,
+        "closest_rain_intensity_label": "moderate rain",
+        "motion_speed_kmh": 12.6,
         "reason": "P_rain below threshold",
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 0,
+          "n_cells_considered": 36,
           "approaching": false,
-          "dominant": null,
+          "dominant": {
+            "track_id": "68a112d5",
+            "p": 0.0,
+            "eta_minutes": null,
+            "dist_km": 357.9728927926833,
+            "bearing_deg": 334.3051531838607,
+            "bearing_cardinal": "NW",
+            "max_dbz": 37.5,
+            "cell_type": "stratiform",
+            "trend": "steady",
+            "speed_kmh": 12.6,
+            "direction_cardinal": "S",
+            "intensity_label": "moderate rain",
+            "on_location": false
+          },
           "p_by_lead": {
             "15": 0.0,
             "30": 0.0,
@@ -51,14 +65,14 @@
         "mode": "multicell cluster",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 33,
-        "n_convective": 10,
+        "n_cells": 36,
+        "n_convective": 7,
         "max_dbz": 67.5,
         "largest_area_km2": 921.3
       },
       "scenario": {
         "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: heavy rain (42 dBZ) at 103.2 km W, P_rain below threshold.",
+        "narrative": "Rain present: moderate rain (32 dBZ) at 101.4 km W, P_rain below threshold.",
         "action": "LIKELY_NO_RAIN",
         "severe_present": false,
         "severe_detail": null,
@@ -160,9 +174,9 @@
               "lat": 42.2863,
               "lon": 18.9616,
               "rgb": [
-                165,
-                165,
-                165
+                230,
+                222,
+                189
               ],
               "dbz": null
             },
@@ -696,9 +710,9 @@
               "lat": 42.6754,
               "lon": 19.1458,
               "rgb": [
-                165,
-                165,
-                165
+                239,
+                206,
+                181
               ],
               "dbz": null
             },
@@ -941,17 +955,17 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 75,
           "n_pixels_in_annulus": 43896,
-          "n_valid_color": 454,
+          "n_valid_color": 352,
           "n_wet": 0,
-          "n_wet_raw": 0,
-          "n_echo": 454,
-          "n_trace": 454,
+          "n_wet_raw": 1,
+          "n_echo": 352,
+          "n_trace": 351,
           "frac_wet": 0.0,
-          "max_dbz": 17.5,
+          "max_dbz": 22.5,
           "mean_dbz": 13.2,
-          "strongest_bearing": 13.3,
-          "strongest_bearing_cardinal": "N",
-          "strongest_dbz": 17.5,
+          "strongest_bearing": 252.1,
+          "strongest_bearing_cardinal": "W",
+          "strongest_dbz": 22.5,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -964,9 +978,9 @@
               "lat": 43.1857,
               "lon": 18.84,
               "rgb": [
-                222,
-                206,
-                189
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -1008,9 +1022,9 @@
               "lat": 42.7312,
               "lon": 19.9003,
               "rgb": [
-                165,
-                165,
-                165
+                255,
+                239,
+                181
               ],
               "dbz": null
             },
@@ -1030,9 +1044,9 @@
               "lat": 42.28,
               "lon": 20.0556,
               "rgb": [
-                247,
-                247,
-                189
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -1041,20 +1055,20 @@
               "lat": 42.0477,
               "lon": 20.0098,
               "rgb": [
-                0,
-                85,
-                190
+                165,
+                165,
+                165
               ],
-              "dbz": 17.5
+              "dbz": null
             },
             {
               "bearing": 120.0,
               "lat": 41.832,
               "lon": 19.8853,
               "rgb": [
-                165,
-                165,
-                165
+                206,
+                214,
+                189
               ],
               "dbz": null
             },
@@ -1129,9 +1143,9 @@
               "lat": 41.6473,
               "lon": 17.989,
               "rgb": [
-                189,
-                189,
-                255
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -1140,9 +1154,9 @@
               "lat": 41.832,
               "lon": 17.7947,
               "rgb": [
-                189,
-                189,
-                255
+                165,
+                165,
+                165
               ],
               "dbz": null
             },
@@ -1151,9 +1165,9 @@
               "lat": 42.0477,
               "lon": 17.6702,
               "rgb": [
-                165,
-                165,
-                165
+                189,
+                189,
+                255
               ],
               "dbz": null
             },
@@ -1231,19 +1245,19 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 186,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 1755,
-          "n_wet": 302,
+          "n_valid_color": 1563,
+          "n_wet": 297,
           "n_wet_raw": 308,
-          "n_echo": 1755,
-          "n_trace": 1447,
-          "frac_wet": 0.00443,
-          "max_dbz": 42.5,
+          "n_echo": 1563,
+          "n_trace": 1255,
+          "frac_wet": 0.00436,
+          "max_dbz": 32.5,
           "mean_dbz": 16.1,
-          "strongest_bearing": 254.7,
+          "strongest_bearing": 254.1,
           "strongest_bearing_cardinal": "W",
-          "strongest_dbz": 42.5,
-          "closest_wet_km": 102.47,
-          "closest_wet_bearing": 253.4,
+          "strongest_dbz": 32.5,
+          "closest_wet_km": 101.28,
+          "closest_wet_bearing": 252.7,
           "closest_wet_bearing_cardinal": "W",
           "closest_wet_dbz": 22.5,
           "n_samples": 24,
@@ -1398,10 +1412,10 @@
               "lon": 17.0168,
               "rgb": [
                 0,
-                85,
-                190
+                78,
+                128
               ],
-              "dbz": 17.5
+              "dbz": 22.5
             },
             {
               "bearing": 285.0,
@@ -1475,18 +1489,18 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260604_045000.gif",
-      "frame_timestamp": "2026-06-04T04:50:00",
+      "frame_path": "data/frames/opera/20260604_045500.gif",
+      "frame_timestamp": "2026-06-04T04:55:00",
       "motion": {
-        "dx_px": 1,
-        "dy_px": 1,
-        "speed_px_per_frame": 1.41,
-        "confidence": 0.586,
-        "direction_deg": 135.0,
-        "direction_cardinal": "SE",
+        "dx_px": 0,
+        "dy_px": 0,
+        "speed_px_per_frame": 0.0,
+        "confidence": 0.783,
+        "direction_deg": null,
+        "direction_cardinal": null,
         "px_per_km": 0.237,
-        "speed_kmh": 35.7,
-        "confidence_band": "low"
+        "speed_kmh": 0.0,
+        "confidence_band": "high"
       },
       "approaching": {
         "is_approaching": false,
@@ -1494,31 +1508,17 @@
         "any_rain_within_radii": true,
         "rain_at_location": false,
         "closest_rain_km": 104.5,
-        "closest_rain_intensity_dbz": 45.0,
+        "closest_rain_intensity_dbz": 40.0,
         "closest_rain_bearing_cardinal": "SW",
-        "closest_rain_intensity_label": "very heavy rain",
-        "motion_speed_kmh": 35.7,
+        "closest_rain_intensity_label": "heavy rain",
+        "motion_speed_kmh": null,
         "reason": "P_rain below threshold",
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 2127,
+          "n_cells_considered": 0,
           "approaching": false,
-          "dominant": {
-            "track_id": "e4cf96be",
-            "p": 0.0,
-            "eta_minutes": null,
-            "dist_km": 3082.7806881664224,
-            "bearing_deg": 16.09303006341264,
-            "bearing_cardinal": "N",
-            "max_dbz": 50.0,
-            "cell_type": "convective",
-            "trend": "steady",
-            "speed_kmh": 35.7,
-            "direction_cardinal": "SE",
-            "intensity_label": "severe (likely hail)",
-            "on_location": false
-          },
+          "dominant": null,
           "p_by_lead": {
             "15": 0.0,
             "30": 0.0,
@@ -1531,14 +1531,14 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 2127,
-        "n_convective": 170,
+        "n_cells": 2141,
+        "n_convective": 165,
         "max_dbz": 50.0,
         "largest_area_km2": 243369.2
       },
       "scenario": {
         "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: very heavy rain (45 dBZ) at 104.5 km SW, P_rain below threshold.",
+        "narrative": "Rain present: heavy rain (40 dBZ) at 104.5 km SW, P_rain below threshold.",
         "action": "LIKELY_NO_RAIN",
         "severe_present": false,
         "severe_detail": null,
@@ -2131,17 +2131,17 @@
           "km_per_pixel": 4.224,
           "min_wet_threshold": 5,
           "n_pixels_in_annulus": 328,
-          "n_valid_color": 0,
+          "n_valid_color": 1,
           "n_wet": 0,
           "n_wet_raw": 0,
           "n_echo": 0,
           "n_trace": 0,
           "frac_wet": 0.0,
-          "max_dbz": null,
-          "mean_dbz": null,
-          "strongest_bearing": null,
-          "strongest_bearing_cardinal": null,
-          "strongest_dbz": null,
+          "max_dbz": 0.0,
+          "mean_dbz": 0.0,
+          "strongest_bearing": 31.0,
+          "strongest_bearing_cardinal": "NE",
+          "strongest_dbz": 0.0,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -2176,11 +2176,11 @@
               "lat": 42.6754,
               "lon": 19.1458,
               "rgb": [
-                80,
-                130,
-                51
+                10,
+                155,
+                180
               ],
-              "dbz": null
+              "dbz": 0.0
             },
             {
               "bearing": 45.0,
@@ -2421,15 +2421,15 @@
           "km_per_pixel": 4.224,
           "min_wet_threshold": 5,
           "n_pixels_in_annulus": 1320,
-          "n_valid_color": 148,
+          "n_valid_color": 138,
           "n_wet": 0,
           "n_wet_raw": 0,
-          "n_echo": 89,
-          "n_trace": 89,
+          "n_echo": 81,
+          "n_trace": 81,
           "frac_wet": 0.0,
           "max_dbz": 18.0,
-          "mean_dbz": 6.3,
-          "strongest_bearing": 31.0,
+          "mean_dbz": 6.0,
+          "strongest_bearing": 25.2,
           "strongest_bearing_cardinal": "NE",
           "strongest_dbz": 18.0,
           "closest_wet_km": null,
@@ -2466,22 +2466,22 @@
               "lat": 43.0636,
               "lon": 19.4555,
               "rgb": [
-                80,
-                130,
-                51
+                10,
+                185,
+                175
               ],
-              "dbz": null
+              "dbz": 8.0
             },
             {
               "bearing": 45.0,
               "lat": 42.9191,
               "lon": 19.7084,
               "rgb": [
-                10,
-                185,
-                175
+                80,
+                130,
+                51
               ],
-              "dbz": 8.0
+              "dbz": null
             },
             {
               "bearing": 60.0,
@@ -2510,9 +2510,9 @@
               "lat": 42.28,
               "lon": 20.0556,
               "rgb": [
-                6,
-                129,
-                122
+                3,
+                143,
+                118
               ],
               "dbz": null
             },
@@ -2521,11 +2521,11 @@
               "lat": 42.0477,
               "lon": 20.0098,
               "rgb": [
-                80,
-                130,
-                51
+                10,
+                185,
+                175
               ],
-              "dbz": null
+              "dbz": 8.0
             },
             {
               "bearing": 120.0,
@@ -2711,17 +2711,17 @@
           "km_per_pixel": 4.224,
           "min_wet_threshold": 6,
           "n_pixels_in_annulus": 2212,
-          "n_valid_color": 265,
+          "n_valid_color": 250,
           "n_wet": 0,
-          "n_wet_raw": 3,
-          "n_echo": 173,
-          "n_trace": 170,
+          "n_wet_raw": 4,
+          "n_echo": 161,
+          "n_trace": 157,
           "frac_wet": 0.0,
-          "max_dbz": 45.0,
-          "mean_dbz": 7.5,
+          "max_dbz": 40.0,
+          "mean_dbz": 7.3,
           "strongest_bearing": 247.4,
           "strongest_bearing_cardinal": "SW",
-          "strongest_dbz": 45.0,
+          "strongest_dbz": 40.0,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -2921,33 +2921,33 @@
               "lat": 41.9239,
               "lon": 17.0886,
               "rgb": [
-                0,
-                75,
-                140
+                10,
+                130,
+                200
               ],
-              "dbz": null
+              "dbz": -6.0
             },
             {
               "bearing": 270.0,
               "lat": 42.272,
               "lon": 17.0168,
               "rgb": [
-                140,
-                230,
-                20
+                5,
+                205,
+                170
               ],
-              "dbz": 18.0
+              "dbz": 12.0
             },
             {
               "bearing": 285.0,
               "lat": 42.622,
               "lon": 17.0691,
               "rgb": [
-                10,
-                155,
-                180
+                0,
+                75,
+                140
               ],
-              "dbz": 0.0
+              "dbz": null
             },
             {
               "bearing": 300.0,
@@ -3010,20 +3010,20 @@
   },
   "summary": {
     "scenario_state": "LIKELY_NO_RAIN",
-    "scenario_narrative": "Rain present: heavy rain (42 dBZ) at 103.2 km W, P_rain below threshold.",
+    "scenario_narrative": "Rain present: moderate rain (32 dBZ) at 101.4 km W, P_rain below threshold.",
     "scenario_source": "dhmz",
     "severe_present": false,
     "scenario_eta_minutes": null,
     "per_radar": {
       "dhmz": {
         "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: heavy rain (42 dBZ) at 103.2 km W, P_rain below threshold.",
+        "narrative": "Rain present: moderate rain (32 dBZ) at 101.4 km W, P_rain below threshold.",
         "severe_present": false,
         "eta_min": null
       },
       "opera": {
         "state": "LIKELY_NO_RAIN",
-        "narrative": "Rain present: very heavy rain (45 dBZ) at 104.5 km SW, P_rain below threshold.",
+        "narrative": "Rain present: heavy rain (40 dBZ) at 104.5 km SW, P_rain below threshold.",
         "severe_present": false,
         "eta_min": null
       }
@@ -3033,8 +3033,8 @@
     "rain_in_vicinity": true,
     "closest_eta_minutes": null,
     "lines": [
-      "DHMZ Uljenje: [LIKELY_NO_RAIN] Rain present: heavy rain (42 dBZ) at 103.2 km W, P_rain below threshold.",
-      "OPERA composite: [LIKELY_NO_RAIN] Rain present: very heavy rain (45 dBZ) at 104.5 km SW, P_rain below threshold."
+      "DHMZ Uljenje: [LIKELY_NO_RAIN] Rain present: moderate rain (32 dBZ) at 101.4 km W, P_rain below threshold.",
+      "OPERA composite: [LIKELY_NO_RAIN] Rain present: heavy rain (40 dBZ) at 104.5 km SW, P_rain below threshold."
     ]
   }
 }
