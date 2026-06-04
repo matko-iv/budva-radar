@@ -30,14 +30,21 @@
     const app = (src && src.approaching) || {};
     const rings = (src && src.rings) || [];
     const motion = (src && src.motion) || {};
-    // The dominant tracked storm cell the nowcast is following — this is the
-    // cell that may be a big storm BEHIND a lighter closest cell. SKALA.interpret
-    // uses it to flag SEVERE. Fall back to the closest cell when no track exists.
+    // Cells beyond the outermost sampling ring (config.SAMPLE_RADII_KM max =
+    // 150 km) are NOT monitored — a storm 200 km away is not a local approaching
+    // or severe event. The pipeline's `dominant` cell + `is_approaching` are NOT
+    // distance-bounded (it once flagged a 68 dBZ cell 209 km away as "severe
+    // approaching"), so we bound them here.
+    const VICINITY_MAX_KM = 150;
+    // The dominant tracked storm cell the nowcast is following — may be a big cell
+    // BEHIND a lighter closest one. Used ONLY to flag SEVERE, and only when it is
+    // actually within the monitored vicinity.
     const dom = (app.nowcast_details && app.nowcast_details.dominant) || null;
-    const threat = dom ? {
+    const domInRange = !!(dom && dom.dist_km != null && dom.dist_km <= VICINITY_MAX_KM);
+    const threat = domInRange ? {
       dbz: dom.max_dbz, km: dom.dist_km, cardinal: dom.bearing_cardinal,
       eta: dom.eta_minutes, label: dom.intensity_label,
-    } : (app.closest_rain_km != null ? {
+    } : (app.closest_rain_km != null && app.closest_rain_km <= VICINITY_MAX_KM ? {
       dbz: app.closest_rain_intensity_dbz, km: app.closest_rain_km,
       cardinal: app.closest_rain_bearing_cardinal, eta: app.eta_minutes,
       label: app.closest_rain_intensity_label,
@@ -46,10 +53,14 @@
     // so Budva reads the same magnitude as any other point. The dominant cell
     // (threat) is reserved for the SEVERE decision + its narrative.
     const cw = closestWet(src);
+    // "Approaching" only counts if the driving cell is within the monitored
+    // vicinity: the dominant cell is in range, OR there is a wet pixel in the
+    // rings. Never approaching solely because of a cell beyond the rings.
+    const approaching = !!app.is_approaching && (domInRange || !!cw);
     return {
       locationName: loc,
       rainAtLocation: !!app.rain_at_location,
-      approaching: !!app.is_approaching,
+      approaching: approaching,
       anyRain: !!app.any_rain_within_radii,
       anyWet: rings.some(r => (r.n_wet || 0) > 0),
       anyEcho: rings.some(r => (r.n_echo || 0) > 0),
