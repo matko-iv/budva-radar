@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-04T10:07:02",
+  "generated": "2026-06-04T10:14:02",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -9,8 +9,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260604_100701_fe3b408199de.png",
-      "frame_timestamp": "2026-06-04T10:07:01",
+      "frame_path": "data/frames/dhmz/20260604_101401_13a2fd63e9ef.png",
+      "frame_timestamp": "2026-06-04T10:14:01",
       "motion": null,
       "approaching": {
         "is_approaching": false,
@@ -29,7 +29,7 @@
           "n_cells_considered": 7,
           "approaching": false,
           "dominant": {
-            "track_id": "5f2e0532",
+            "track_id": "30db2d30",
             "p": 0.0,
             "eta_minutes": null,
             "dist_km": 277.6051758193398,
@@ -164,9 +164,9 @@
               "lat": 42.2863,
               "lon": 18.9616,
               "rgb": [
-                165,
-                165,
-                165
+                230,
+                222,
+                189
               ],
               "dbz": null
             },
@@ -1235,17 +1235,17 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 186,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 10,
+          "n_valid_color": 1,
           "n_wet": 0,
-          "n_wet_raw": 1,
-          "n_echo": 10,
-          "n_trace": 9,
+          "n_wet_raw": 0,
+          "n_echo": 1,
+          "n_trace": 1,
           "frac_wet": 0.0,
-          "max_dbz": 22.5,
-          "mean_dbz": 14.0,
-          "strongest_bearing": 325.0,
+          "max_dbz": 12.5,
+          "mean_dbz": 12.5,
+          "strongest_bearing": 324.8,
           "strongest_bearing_cardinal": "NW",
-          "strongest_dbz": 22.5,
+          "strongest_dbz": 12.5,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -1479,19 +1479,9 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260604_095500.gif",
-      "frame_timestamp": "2026-06-04T09:55:00",
-      "motion": {
-        "dx_px": 0,
-        "dy_px": 0,
-        "speed_px_per_frame": 0.0,
-        "confidence": 0.812,
-        "direction_deg": null,
-        "direction_cardinal": null,
-        "px_per_km": 0.237,
-        "speed_kmh": 0.0,
-        "confidence_band": "high"
-      },
+      "frame_path": "data/frames/opera/20260604_100500.gif",
+      "frame_timestamp": "2026-06-04T10:05:00",
+      "motion": null,
       "approaching": {
         "is_approaching": false,
         "eta_minutes": null,
@@ -1501,14 +1491,28 @@
         "closest_rain_intensity_dbz": null,
         "closest_rain_bearing_cardinal": null,
         "closest_rain_intensity_label": "none",
-        "motion_speed_kmh": null,
+        "motion_speed_kmh": 0.0,
         "reason": "P_rain below threshold",
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 0,
+          "n_cells_considered": 2027,
           "approaching": false,
-          "dominant": null,
+          "dominant": {
+            "track_id": "dfc8d3be",
+            "p": 0.0,
+            "eta_minutes": null,
+            "dist_km": 3082.7806881664224,
+            "bearing_deg": 16.09303006341264,
+            "bearing_cardinal": "N",
+            "max_dbz": 50.0,
+            "cell_type": "convective",
+            "trend": "steady",
+            "speed_kmh": 0.0,
+            "direction_cardinal": null,
+            "intensity_label": "severe (likely hail)",
+            "on_location": false
+          },
           "p_by_lead": {
             "15": 0.0,
             "30": 0.0,
@@ -1521,8 +1525,8 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 1927,
-        "n_convective": 195,
+        "n_cells": 2027,
+        "n_convective": 207,
         "max_dbz": 50.0,
         "largest_area_km2": 243369.2
       },
