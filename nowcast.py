@@ -68,12 +68,24 @@ def _cell_arrival(summary, lat_c, lon_c):
 
     if "speed_kmh" not in summary or summary.get("direction_deg") is None:
         return None
-    speed = summary["speed_kmh"]
+    # Cap absurd speeds (e.g. a far cell that inherited a bad Europe-wide
+    # composite motion vector) to a physical storm maximum.
+    speed = min(float(summary["speed_kmh"] or 0.0), config.NOWCAST_MAX_SPEED_KMH)
     direction = summary["direction_deg"]
     if speed < 1.0:                       # near-stationary and not on us -> won't arrive
         return {"p": 0.0, "eta_min": None,
                 "p_by_lead": {b: 0.0 for b in LEAD_BUCKETS},
                 "tau_min": None, "stationary": True, "on_location": False}
+
+    # Physical reach gate: at the capped max speed a cell can travel at most
+    # (NOWCAST_MAX_SPEED_KMH * lead window) km. If its nearest edge is farther
+    # than that it CANNOT arrive in time, so it is not "approaching" — this
+    # kills absurd "hail 983 km away, ETA 103 min" cases.
+    max_reach_km = config.NOWCAST_MAX_SPEED_KMH * (config.NOWCAST_LEAD_MAX_MIN / 60.0)
+    if latest["edge_km"] > max_reach_km:
+        return {"p": 0.0, "eta_min": None,
+                "p_by_lead": {b: 0.0 for b in LEAD_BUCKETS},
+                "tau_min": None, "stationary": False, "on_location": False}
 
     # local km plane centred on the location (east +, north +)
     kx = 111.32 * math.cos(math.radians(lat_c))

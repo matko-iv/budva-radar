@@ -82,15 +82,24 @@ function render(d) {
   alert.className = 'alert ' + meta.cls;
   alertText.textContent = res.headline;
 
+  // Stale-image guard: if any radar source stopped publishing new frames, the
+  // verdict above is built on stale data — replace it with a plain technical-
+  // error notice (no emoji/decoration). Shared check keeps both pages identical.
+  const stale = SKALA_SECTIONS.stalenessNotice(d);
+  if (stale) {
+    alert.className = 'alert warn';
+    alertText.textContent = stale.message;
+  }
+
   // Scenario badge + narrative — optional (the section may be commented out).
   const badge = document.getElementById('scenario-badge');
   if (badge) {
-    badge.textContent = res.state;
-    badge.style.background = meta.bg;
-    badge.style.color = meta.fg;
+    badge.textContent = stale ? '' : res.state;
+    badge.style.background = stale ? '' : meta.bg;
+    badge.style.color = stale ? '' : meta.fg;
   }
   const reasonEl = document.getElementById('scenario-reason');
-  if (reasonEl) reasonEl.textContent = res.narrative;
+  if (reasonEl) reasonEl.textContent = stale ? '' : res.narrative;
 
   // Per-radar summary lines, image previews, and per-source tables — all
   // rendered by the SHARED module so radar-map.html shows identical sections.

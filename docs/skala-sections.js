@@ -195,11 +195,43 @@
     }
   }
 
+  // Stale-image technical-fault check. If ANY available source's latest frame is
+  // older than thresholdMin (default 20), the pipeline/images aren't updating, so
+  // the verdict (built from those frames) can't be trusted. Returns a plain
+  // one-line message (no emoji/decoration) naming the stale source(s), or null
+  // when every source is fresh. Frame timestamps carry no timezone, so they parse
+  // as LOCAL time — the same convention the "Generated:" line already uses; the
+  // HH:MM shown is sliced straight from the string so display is tz-proof.
+  function stalenessNotice(data, thresholdMin) {
+    thresholdMin = thresholdMin || 20;
+    var sources = (data && data.sources) || {};
+    var now = Date.now();
+    var stale = [];
+    for (var sid in sources) {
+      if (!Object.prototype.hasOwnProperty.call(sources, sid)) continue;
+      var info = sources[sid];
+      var name = sid.toUpperCase();
+      var ts = (info && info.frame_timestamp) ? new Date(info.frame_timestamp) : null;
+      var ageMin = ts ? (now - ts.getTime()) / 60000 : NaN;
+      if (!info || info.ok === false || !ts || isNaN(ageMin)) {
+        stale.push('Posljednja ' + name + ' slika: nedostupna');
+      } else if (ageMin > thresholdMin) {
+        var hhmm = String(info.frame_timestamp).slice(11, 16); // "HH:MM"
+        stale.push('Posljednja ' + name + ' slika: ' + hhmm
+          + ' (prije ' + Math.round(ageMin) + ' min)');
+      }
+    }
+    if (!stale.length) return null;
+    return { message: 'Tehnička greška — nema novih radarskih slika. '
+      + stale.join('. ') + '.' };
+  }
+
   global.SKALA_SECTIONS = {
     factsFromSource: factsFromSource,
     budvaHeadline: budvaHeadline,
     renderSummaryLines: renderSummaryLines,
     renderImages: renderImages,
     renderSources: renderSources,
+    stalenessNotice: stalenessNotice,
   };
 })(window);

@@ -51,7 +51,7 @@ SOURCES = {
 # ============================================================================
 # Fetch settings
 # ============================================================================
-FETCH_INTERVAL_MIN = 5            # Fetch every N minutes (OPERA updates every 5 min)
+FETCH_INTERVAL_MIN = 7            # Fetch every N minutes (OPERA updates every 5 min)
 KEEP_FRAMES = 16                  # Keep last N frames (16 = ~80 min of history)
 USER_AGENT = "budva-radar/0.1 (local precipitation analysis; non-commercial)"
 
@@ -90,6 +90,12 @@ NOWCAST_MIN_LIFETIME_MIN = 15.0  # Floor for decaying cell survival
 NOWCAST_REACH_BUFFER_KM = 5.0    # Spatial buffer around Budva for a "hit"
 P_APPROACH_THRESHOLD = 0.25      # Probability threshold to trigger 'approaching=True'
 CELL_CORE_DBZ = 40.0            # Threshold to distinguish convective cores from stratiform
+# Physical cap on storm motion (km/h). Real cells move ~10-90 km/h; squall lines
+# rarely exceed ~100. The Europe-wide OPERA composite occasionally yields an
+# absurd global motion vector (feature mismatch across the huge frame), which a
+# brand-new far cell inherits and "arrives" at 500+ km/h. Cap it, and gate cells
+# too far to reach within the lead window (see nowcast._cell_arrival).
+NOWCAST_MAX_SPEED_KMH = 120.0
 
 # Unscented Mini-Ensemble settings
 NOWCAST_SPEED_FACTORS = [0.8, 0.9, 1.0, 1.1, 1.2] 

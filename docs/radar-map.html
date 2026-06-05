@@ -517,15 +517,33 @@ function classifyScenario(result, label) {
 
 // Paint the headline banner + state badge + narrative from an interpreter result.
 function setBanner(sc) {
-  const meta = sc.meta;
   const alertEl = document.getElementById('alert');
+  const badge = document.getElementById('scenario-badge');
+  const reasonEl = document.getElementById('scenario-reason');
+
+  // Stale-image guard (shared with index.html): if any source's frames stopped
+  // updating, EVERY interpretation here is built on stale frames — so for any
+  // location show a plain technical-error notice instead of the verdict. This is
+  // the single choke point for the banner (boot + every map click).
+  const stale = window.SKALA_SECTIONS && SKALA_SECTIONS.stalenessNotice
+    ? SKALA_SECTIONS.stalenessNotice(window.RADAR_DATA) : null;
+  if (stale) {
+    alertEl.className = 'alert warn';
+    document.getElementById('alert-text').textContent = stale.message;
+    badge.textContent = '';
+    badge.style.background = '';
+    badge.style.color = '';
+    reasonEl.textContent = '';
+    return;
+  }
+
+  const meta = sc.meta;
   alertEl.className = 'alert ' + meta.cls;
   document.getElementById('alert-text').textContent = sc.headline;
-  const badge = document.getElementById('scenario-badge');
   badge.textContent = sc.state;
   badge.style.background = meta.bg;
   badge.style.color = meta.fg;
-  document.getElementById('scenario-reason').textContent = sc.narrative;
+  reasonEl.textContent = sc.narrative;
 }
 
 function renderOutput(label, cx, cy, result, ms) {
