@@ -99,6 +99,7 @@
 <script src="data.js"></script>
 <script src="skala-text.js"></script>
 <script src="skala-sections.js"></script>
+<script src="nowcast-browser.js"></script>
 <script>
 // ---------------------------------------------------------------------------
 // BOOT SEQUENCE
@@ -388,9 +389,6 @@ function classifyIntensity(dbz) {
 // frame (treat clusters above threshold as confirmed). The motion vector is
 // reused from data.js — it is global to the DHMZ field, valid for any point.
 // ---------------------------------------------------------------------------
-const MIN_MOTION_CONFIDENCE = 0.6;   // matches config.MOTION_MIN_CORRELATION
-const APPROACH_TOLERANCE_DEG = 10.0; // matches interpret.APPROACH_TOLERANCE_DEG
-const APPROACHING_MAX_KM = 15.0;     // matches interpret.APPROACHING_MAX_KM
 const SEVERE_THREAT_KM = 50.0;       // matches interpret.SEVERE_THREAT_KM
 
 const SCENARIO_PRIORITY = {
@@ -404,10 +402,6 @@ const SCENARIO_ACTION = {
   BIO_NOISE: 'Log only', CLEAR: 'No action',
 };
 
-function angularDiff(a, b) {
-  let d = Math.abs(a - b) % 360;
-  return d > 180 ? 360 - d : d;
-}
 
 function formatKm(km) {
   if (km == null) return '?';
@@ -452,55 +446,59 @@ function getMotion() {
           && window.RADAR_DATA.sources.dhmz.motion) || null;
 }
 
-// Approach assessment for a single cell (bearing in degrees toward the cell).
-function assessApproach(bearingDeg, distKm) {
-  const motion = getMotion();
-  if (!motion || motion.direction_deg == null) {
-    return { approaching: false, reason: 'no_motion_data', motion };
-  }
-  if ((motion.confidence || 0) < MIN_MOTION_CONFIDENCE) {
-    return { approaching: false, reason: 'no_reliable_motion', motion };
-  }
-  if (bearingDeg == null) return { approaching: false, reason: 'no_bearing', motion };
-  const reverse = (bearingDeg + 180) % 360;
-  const diff = angularDiff(motion.direction_deg, reverse);
-  const aligned = diff < APPROACH_TOLERANCE_DEG;
-  const withinRange = distKm != null && distKm <= APPROACHING_MAX_KM;
-  const approaching = aligned && withinRange;
-  let eta = null;
-  if (approaching && motion.speed_kmh != null && motion.speed_kmh > 1) {
-    eta = +(distKm / motion.speed_kmh * 60).toFixed(1);
-  }
-  let reason;
-  if (approaching) reason = 'approaching';
-  else if (aligned && !withinRange) reason = 'aligned_but_too_far';
-  else reason = 'motion_not_aligned';
-  return { approaching, reason, motion, eta, diff };
+// Replay the probabilistic cell-tracking nowcast (nowcast-browser.js) for a
+// clicked pixel — the SAME model Budva uses, fed by the shipped DHMZ cell
+// catalog. Reconstruct the point's lat/lon from its pixel via the DHMZ Budva
+// anchor + the isotropic PX_PER_KM the rings already use. Returns null if the
+// catalog/anchor isn't available (facts then fall back to no-approach).
+function cellNowcastAt(cx, cy) {
+  const d = window.RADAR_DATA || {};
+  const loc = d.location;
+  const dhmz = d.sources && d.sources.dhmz;
+  const anchor = dhmz && dhmz.budva_pixel;
+  if (!window.NOWCAST || !loc || !dhmz || !Array.isArray(dhmz.cells) || !anchor) return null;
+  if (cx == null || cy == null) return null;
+  const eKm = (cx - anchor.x) / PX_PER_KM;     // east of Budva
+  const nKm = (anchor.y - cy) / PX_PER_KM;     // image y grows down -> north up
+  const latP = loc.lat + nKm / 110.57;
+  const lonP = loc.lon + eKm / (111.32 * Math.cos(loc.lat * Math.PI / 180));
+  return NOWCAST.arrivalNowcast(dhmz.cells, latP, lonP);
 }
 
 // Per-location interpretation. Builds normalized facts, then defers ALL wording
 // to SKALA.interpret() (shared with index.html) so both pages read identically.
-function classifyScenario(result, label) {
+// "Approaching" now comes from the per-cell probabilistic nowcast above (per-cell
+// vectors, no single-frame / 15 km-gate blind spots) instead of single-vector
+// geometry; LOCAL intensity still comes from this point's live pixel scan.
+function classifyScenario(result, label, cx, cy) {
   const rainAtLoc = result.center_dbz != null && result.center_dbz >= RAIN_DBZ;
   const confirmedRings = result.rings.filter(
     r => (r.n_wet || 0) >= minWetForDistance(r.r_km));
   const hasRain = confirmedRings.length > 0 && result.closest != null;
 
-  const c = result.closest;  // {km, bearing(deg), dbz} | null
+  const c = result.closest;  // {km, bearing(deg), dbz} | null — LOCAL intensity
   const km = c ? c.km : null;
   const deg = c ? c.bearing : null;
   const dbz = c ? c.dbz : null;
 
-  const ap = c ? assessApproach(deg, km)
-               : { approaching: false, reason: 'no_motion_data', motion: getMotion() };
-  const motion = ap.motion;
-  const motionCardinal = motion && motion.direction_deg != null
-    ? cardinalFromDeg(motion.direction_deg) : null;
+  const nc = cellNowcastAt(cx, cy);
+  const dom = nc && nc.dominant;
+  // Bound the SEVERE-driving threat to the monitored vicinity (outermost ring).
+  const domInRange = !!(dom && dom.dist_km != null && dom.dist_km <= Math.max(...RADII_KM));
+  const threat = domInRange ? {
+    dbz: dom.max_dbz, km: dom.dist_km, cardinal: dom.bearing_cardinal,
+    eta: dom.eta_minutes, label: dom.intensity_label,
+  } : null;
+
+  // Motion shown = the dominant cell's own track (falls back to scene motion).
+  const motion = getMotion();
+  const motionCardinal = (dom && dom.direction_cardinal) ? dom.direction_cardinal
+    : (motion && motion.direction_deg != null ? cardinalFromDeg(motion.direction_deg) : null);
 
   const facts = {
     locationName: label,
     rainAtLocation: rainAtLoc,
-    approaching: ap.approaching,
+    approaching: !!(nc && nc.approaching),
     anyRain: hasRain,
     anyWet: result.rings.some(r => (r.n_wet || 0) > 0),
     anyEcho: result.rings.some(r => (r.n_echo || 0) > 0),
@@ -508,10 +506,11 @@ function classifyScenario(result, label) {
     cardinal: cardinalFromDeg(deg),
     dbz: dbz,
     motionCardinal: motionCardinal,
-    eta: ap.eta,
+    eta: nc ? nc.eta_minutes : null,
+    threat: threat,
   };
   const res = SKALA.interpret(facts);
-  res.eta_min = ap.approaching ? ap.eta : (rainAtLoc ? 0 : null);
+  res.eta_min = (nc && nc.approaching) ? nc.eta_minutes : (rainAtLoc ? 0 : null);
   return res;
 }
 
@@ -555,7 +554,7 @@ function renderOutput(label, cx, cy, result, ms) {
     && label === window.RADAR_DATA.location.name;
   const sc = (isBudva && window.SKALA_SECTIONS && SKALA_SECTIONS.budvaHeadline)
     ? SKALA_SECTIONS.budvaHeadline(window.RADAR_DATA)
-    : classifyScenario(result, label);
+    : classifyScenario(result, label, cx, cy);
   setBanner(sc);
 
   // Details (NOT a competing interpretation — just the raw per-ring data).

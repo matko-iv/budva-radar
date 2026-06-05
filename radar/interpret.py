@@ -132,6 +132,34 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
     except (ValueError, OSError):
         frame_path_rel = str(latest_path.name)
 
+    # Browser-side per-point nowcast (radar-map.html): ship the tracked cell
+    # catalog so docs/nowcast-browser.js can replay arrival_nowcast for ANY
+    # clicked point. Absolute lat/lon (location-independent) + each cell's own
+    # track velocity is all the JS port needs; it recomputes edge/bearing per
+    # point. ALL cells are shipped (NOT bounded to Budva's vicinity): a point
+    # clicked near the frame edge can have a relevant cell that is far from Budva
+    # but close to that point, and the nowcast's own reach gate (~240 km) handles
+    # distance. Only for DHMZ — radar-map is DHMZ-based and its cells are few and
+    # local; the OPERA composite is Europe-wide. Purely additive.
+    cells_catalog = []
+    if source_id == "dhmz":
+        for s in cell_summaries:
+            c = s.get("latest") or {}
+            if c.get("lat") is None or c.get("lon") is None:
+                continue
+            cells_catalog.append({
+                "id": s["id"],
+                "lat": round(c["lat"], 4),
+                "lon": round(c["lon"], 4),
+                "equiv_diam_km": round(c["equiv_diam_km"], 2),
+                "max_dbz": c["max_dbz"],
+                "cell_type": c["cell_type"],
+                "speed_kmh": s.get("speed_kmh"),
+                "direction_deg": s.get("direction_deg"),
+                "dbz_trend_per_min": s.get("dbz_trend_per_min"),
+                "trend": s.get("trend"),
+            })
+
     return {
         "source": source_id,
         "ok": True,
@@ -143,6 +171,7 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         "scenario": scenario,
         "zr_scenario": "convective" if storm_mode["n_convective"] > 0 else "stratiform",
         "rings": rings,
+        "cells": cells_catalog,
     }
 
 
