@@ -195,20 +195,23 @@
     }
   }
 
-  // Stale-image technical-fault check. If ANY available source's latest frame is
-  // older than thresholdMin (default 20), the pipeline/images aren't updating, so
-  // the verdict (built from those frames) can't be trusted. Returns a plain
-  // one-line message (no emoji/decoration) naming the stale source(s), or null
-  // when every source is fresh. Frame timestamps carry no timezone, so they parse
-  // as LOCAL time — the same convention the "Generated:" line already uses; the
-  // HH:MM shown is sliced straight from the string so display is tz-proof.
+  // Stale-image technical-fault check. Fires ONLY when EVERY available source
+  // (DHMZ AND OPERA) has a frame older than thresholdMin (default 30) — if at
+  // least one source is still fresh the page has usable radar, so no fault. The
+  // pipeline/images not updating means the verdict (built from those frames)
+  // can't be trusted. Returns a plain one-line message (no emoji/decoration)
+  // naming the stale sources, or null otherwise. Frame timestamps carry no
+  // timezone, so they parse as LOCAL time — the same convention the "Generated:"
+  // line uses; the HH:MM shown is sliced from the string so display is tz-proof.
   function stalenessNotice(data, thresholdMin) {
-    thresholdMin = thresholdMin || 20;
+    thresholdMin = thresholdMin || 30;
     var sources = (data && data.sources) || {};
     var now = Date.now();
     var stale = [];
+    var total = 0;
     for (var sid in sources) {
       if (!Object.prototype.hasOwnProperty.call(sources, sid)) continue;
+      total++;
       var info = sources[sid];
       var name = sid.toUpperCase();
       var ts = (info && info.frame_timestamp) ? new Date(info.frame_timestamp) : null;
@@ -221,7 +224,8 @@
           + ' (prije ' + Math.round(ageMin) + ' min)');
       }
     }
-    if (!stale.length) return null;
+    // Only a real fault when ALL sources are stale; a single fresh source clears it.
+    if (total === 0 || stale.length < total) return null;
     return { message: 'Tehnička greška — nema novih radarskih slika. '
       + stale.join('. ') + '.' };
   }
