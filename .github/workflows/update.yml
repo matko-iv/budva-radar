@@ -45,6 +45,7 @@ jobs:
           # Stage outputs: GH Pages serves docs/; output/ kept for archival
           git add docs/data.js docs/latest_dhmz.png docs/latest_opera.gif || true
           git add docs/radar_status.json || true
+          git add docs/skala_verification.json docs/skala_log_*.csv || true
           git add output/status.json || true
           # Keep recent cached frames in repo (small, ~16 files each)
           git add data/frames/dhmz/*.png data/frames/opera/*.gif || true
