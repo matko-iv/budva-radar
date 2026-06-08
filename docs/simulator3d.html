@@ -70,6 +70,14 @@
 
   <div class="panel">
     <div class="group">
+      <h2>Scenariji</h2>
+      <div class="seg" id="scen">
+        <button class="btn" data-scen="summer">☀ Ljeto: konvekcija nad planinama</button>
+        <button class="btn" data-scen="seabreeze">🌊 Povjetarac s mora</button>
+        <button class="btn" data-scen="bura">🌬 Bura (SI)</button>
+      </div>
+    </div>
+    <div class="group">
       <h2>Sinoptika — vjetar</h2>
       <label>Smjer (odakle) <input id="wdir" type="range" min="0" max="359" value="200"></label>
       <label>Brzina <span><b id="wspd">6</b> m/s</span></label>
@@ -83,6 +91,10 @@
       <input id="hum" type="range" min="0" max="100" value="65" style="width:100%">
       <label>Sunce <span><b id="sunv">90</b>%</span></label>
       <input id="sun" type="range" min="0" max="100" value="90" style="width:100%">
+      <label>Stabilnost <span><b id="stabv">40</b>%</span></label>
+      <input id="stab" type="range" min="0" max="100" value="40" style="width:100%">
+      <label>Toplina mora <span><b id="seawv">50</b>%</span></label>
+      <input id="seaw" type="range" min="0" max="100" value="50" style="width:100%">
       <div class="seg" style="margin-top:6px">
         <button class="btn on" id="coriolis">🌀 Coriolis</button>
         <button class="btn" id="auto">▶ Auto-tok vremena</button>
@@ -95,6 +107,17 @@
         <button class="btn on" id="lyrWind">↗ Vjetar</button>
         <button class="btn" id="lyrRain">🌧 Kiša</button>
       </div>
+    </div>
+    <div class="group">
+      <h2>Četkice — klikni/povuci po mapi</h2>
+      <div class="seg" id="brush">
+        <button class="btn on" data-brush="storm">⛈ Oluja</button>
+        <button class="btn" data-brush="heat">🔥 Toplina</button>
+        <button class="btn" data-brush="moist">💧 Vlaga</button>
+        <button class="btn" data-brush="cold">❄ Hladno</button>
+      </div>
+      <label>Veličina <span><b id="bradv">4</b></span></label>
+      <input id="brad" type="range" min="1" max="9" value="4" style="width:100%">
     </div>
     <div class="group">
       <h2>Tok</h2>
@@ -122,9 +145,10 @@
   var C = {
     LAND_DAY: 5.0, LAND_NIGHT: 4.0, SEA_DAY: 1.0, LAPSE: 0.0065,
     LAND_RELAX: 0.06, SEA_RELAX: 0.006,
-    QVS0: 12.0, COND: 0.5, QC_AUTO: 0.6, AUTO: 0.06, FALL: 0.10, REVAP: 0.03,
-    Lv_cp: 2.2, SEA_EVAP: 0.03, SEA_QV: 2.2, SEA_QV_CAP: 0.95, BUOY_CLOUD: 0.3,
+    QVS0: 12.0, COND: 0.5, QC_AUTO: 1.0, AUTO: 0.03, FALL: 0.10, REVAP: 0.03,
+    Lv_cp: 2.2, SEA_EVAP: 0.03, SEA_QV: 2.2, SEA_QV_CAP: 0.95, BUOY_CLOUD: 0.3, LAND_EVAP: 0.012,
     LAPSE_SAT: 7.0, MOIST_H: 2000,    // K/km cooling used for saturation; moisture scale height (m)
+    KMIN: 1.5, KMAX_PBL: 65, PBL_DAY: 1600, PBL_NIGHT: 250,   // Stage 4 K-theory PBL mixing
     DRAG_SEA: 0.002, DRAG_LAND: 0.012, DRAG_PER_M: 2e-5,
     SPONGE: 4, DAVIES: 4, DAVIES_RATE: 0.10, SPONGE_RATE: 0.10,
     PROJ_ITERS: 12, CFL: 0.45, DT_MAX: 4.0, MAXV: 50,
@@ -145,8 +169,10 @@
     var phi = F(NC), divv = F(NC), rain = F(nx * ny);
     var solid = new Uint8Array(NC), sea = new Uint8Array(nx * ny), hgt = F(nx * ny);
     var ksurf = new Int16Array(nx * ny), drag = F(nx * ny);
+    var KfCol = F(nz + 1), tmpCol = F(nz);     // scratch for the column PBL mixing
 
     var Usyn = 0, Vsyn = 0, hour = 13, sun = 0.9, humidity = 0.65, coriolisOn = !!cfg.coriolis, simTime = 0;
+    var stability = 0.4, seaWarmth = 0.5;
     var lastDt = 0, maxCfl = 0, residual = 0;
 
     function cI(i, j, k) { return (k * ny + j) * nx + i; }
@@ -196,6 +222,7 @@
     function setWind(dirDeg, spd) { var to = (dirDeg + 180) * Math.PI / 180; Usyn = spd * Math.sin(to); Vsyn = spd * Math.cos(to); }
     function setHour(h) { hour = h; } function setSun(s) { sun = clamp(s, 0, 1); }
     function setHumidity(h) { humidity = clamp(h, 0, 1); } function setCoriolis(b) { coriolisOn = !!b; }
+    function setStability(s) { stability = clamp(s, 0, 1); } function setSeaWarmth(s) { seaWarmth = clamp(s, 0, 1); }
     function solar() { var s = Math.sin(Math.PI * (hour - 6) / 12); return Math.max(0, s) * sun; }
 
     function applySolidBC() {
@@ -212,8 +239,8 @@
 
     function surfaceForcing(dt) {
       var sol = solar(), aL = 1 - Math.exp(-C.LAND_RELAX * dt), aS = 1 - Math.exp(-C.SEA_RELAX * dt);
-      var aE = 1 - Math.exp(-C.SEA_EVAP * dt);
-      var TeqLandBase = C.LAND_DAY * sol - C.LAND_NIGHT * (1 - sol), TeqSea = C.SEA_DAY * sol;
+      var aE = 1 - Math.exp(-C.SEA_EVAP * dt), aEl = 1 - Math.exp(-C.LAND_EVAP * dt);
+      var TeqLandBase = C.LAND_DAY * sol - C.LAND_NIGHT * (1 - sol), TeqSea = C.SEA_DAY * sol + (seaWarmth - 0.5) * 3;
       for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
         var c2 = j * nx + i, k = ksurf[c2], c = cI(i, j, k);
         if (sea[c2]) {
@@ -221,8 +248,15 @@
           var tgt = Math.min(bgQv() + C.SEA_QV, C.SEA_QV_CAP * C.QVS0);
           if (qv[c] < tgt) qv[c] += aE * (tgt - qv[c]);
         } else {
-          var TeqLand = TeqLandBase - C.LAPSE * hgt[c2];
+          // Elevated terrain is an ELEVATED HEAT SOURCE: in potential-temperature space the
+          // sun-heated peak is buoyant relative to the free air at its level, so do NOT subtract a
+          // lapse here (that would make peaks cold and kill mountain convection). A small height
+          // boost makes ridges slightly stronger trigger points for summer convective clouds.
+          var TeqLand = TeqLandBase * (1 + 0.15 * Math.min(1, hgt[c2] / 1200) * sol);
           th[c] += aL * (TeqLand - th[c]);
+          // summer land surface moisture (evapotranspiration) so heated inland/mountain air can convect
+          var tgtL = bgQv() * (0.65 + 0.35 * sol);
+          if (qv[c] < tgtL) qv[c] += aEl * (tgtL - qv[c]);
         }
       }
     }
@@ -307,6 +341,58 @@
       }
     }
 
+    // Stage 4: K-theory PBL vertical mixing of heat & moisture. Eddy diffusivity K(z) is a
+    // parabolic profile through a daytime-deep / nighttime-shallow boundary layer; the more
+    // unstable & sunny, the larger K -> daytime mixing lofts surface heat & moisture aloft
+    // (deepens the cloud layer, feeds convection). Explicit, column-by-column, no-flux top/bottom.
+    function verticalMixing(dt) {
+      var sol = solar(), idz2 = 1 / (dz * dz);
+      for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        var c2 = j * nx + i, ks = ksurf[c2]; if (ks >= nz - 1) continue;
+        // sun-heated LAND grows a deep convective boundary layer (lofts heat & moisture -> inland
+        // and mountain convection); the SEA keeps a shallow, ~stable marine layer (few clouds).
+        var isSea = sea[c2];
+        var instab = isSea ? sol * 0.12 : sol * (1 - stability);
+        var Kmax = C.KMIN + (C.KMAX_PBL - C.KMIN) * instab;
+        var h = isSea ? (C.PBL_NIGHT + 350 * sol) : (C.PBL_NIGHT + (C.PBL_DAY - C.PBL_NIGHT) * sol);
+        for (var k = ks + 1; k < nz; k++) { var zr = ((k - ks) * dz) / h; KfCol[k] = zr < 1 ? Kmax * 4 * zr * (1 - zr) : 0; }
+        KfCol[ks] = 0; KfCol[nz] = 0;
+        mixCol(th, i, j, ks, dt * idz2); mixCol(qv, i, j, ks, dt * idz2);
+      }
+    }
+    function mixCol(arr, i, j, ks, cdt) {
+      for (var k = ks; k < nz; k++) {
+        var c = cI(i, j, k);
+        var up = k < nz - 1 ? KfCol[k + 1] * (arr[cI(i, j, k + 1)] - arr[c]) : 0;
+        var dn = k > ks ? KfCol[k] * (arr[c] - arr[cI(i, j, k - 1)]) : 0;
+        tmpCol[k] = arr[c] + cdt * (up - dn);
+      }
+      for (var k2 = ks; k2 < nz; k2++) arr[cI(i, j, k2)] = tmpCol[k2];
+    }
+
+    // Interactive brush: inject a thermal/moist/cold blob in a column stack (for "add a storm" etc.)
+    function paint(ci, cj, kind, R) {
+      var dth = 0, dqv = 0, dqc = 0, depth = 4;
+      // storm = a tall, moist, slightly buoyant column SEEDED WITH CLOUD WATER -> an immediate,
+      // buoyant cloud that rises and sustains itself on the injected vapour (so PBL mixing can't
+      // dilute it away before it condenses).
+      if (kind === 'storm') { dth = 1.0; dqv = 7.0; dqc = 1.2; depth = 9; }
+      else if (kind === 'heat') { dth = 3.0; depth = 4; }
+      else if (kind === 'moist') { dqv = 5.0; depth = 6; }
+      else if (kind === 'cold') { dth = -5.0; depth = 2; }
+      var s = (R / 2 + 0.5);
+      for (var dj = -R; dj <= R; dj++) for (var di = -R; di <= R; di++) {
+        var i = ci + di, j = cj + dj; if (i < 0 || j < 0 || i >= nx || j >= ny) continue;
+        var wgt = Math.exp(-(di * di + dj * dj) / (2 * s * s)), ks = ksurf[j * nx + i];
+        for (var k = ks; k < Math.min(ks + depth, nz); k++) {
+          var c = cI(i, j, k); if (solid[c]) continue;
+          var vert = 1 - (k - ks) / depth;
+          th[c] += dth * wgt * vert; qv[c] += dqv * wgt * vert; qc[c] += dqc * wgt * vert;
+          if (qv[c] < 0) qv[c] = 0; if (qc[c] < 0) qc[c] = 0;
+        }
+      }
+    }
+
     function project() {
       var idx2 = 1 / (dx * dx), idy2 = 1 / (dy * dy), idz2 = 1 / (dz * dz);
       for (var k = 0; k < nz; k++) for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
@@ -381,6 +467,7 @@
       buoyancy(dt);
       coriolis(dt);
       surfaceDrag(dt);
+      verticalMixing(dt);
       microphysics(dt);
       relaxBoundaries(dt);
       applySolidBC();
@@ -417,6 +504,7 @@
       solid: solid, sea: sea, hgt: hgt, ksurf: ksurf, rain: rain,
       setTerrain: setTerrain, setWind: setWind, setHour: setHour, setSun: setSun,
       setHumidity: setHumidity, setCoriolis: setCoriolis, initState: initState,
+      setStability: setStability, setSeaWarmth: setSeaWarmth, paint: paint,
       get coriolis() { return coriolisOn; }, get simTime() { return simTime; }, get hour() { return hour; },
       get dt() { return lastDt; }, get maxCfl() { return maxCfl; }, get residual() { return residual; },
       step: step, initBubble: initBubble, _project: project, _C: C,
@@ -574,6 +662,49 @@
   $('hour').oninput = function (e) { autoTime = false; $('auto').classList.remove('on'); $('auto').textContent = '▶ Auto-tok vremena'; sim.setHour(+e.target.value); syncHour(+e.target.value); };
   $('hum').oninput = function (e) { $('humv').textContent = e.target.value; sim.setHumidity(+e.target.value / 100); };
   $('sun').oninput = function (e) { $('sunv').textContent = e.target.value; sim.setSun(+e.target.value / 100); };
+  $('stab').oninput = function (e) { $('stabv').textContent = e.target.value; sim.setStability(+e.target.value / 100); };
+  $('seaw').oninput = function (e) { $('seawv').textContent = e.target.value; sim.setSeaWarmth(+e.target.value / 100); };
+
+  // ---- brushes: click/drag on the map to inject a storm / heat / moisture / cold pool ----
+  var brush = 'storm', brushR = 4, painting = false;
+  $('brad').oninput = function (e) { $('bradv').textContent = e.target.value; brushR = +e.target.value; };
+  $('brush').addEventListener('click', function (e) {
+    var b = e.target.dataset.brush; if (!b) return; brush = b;
+    document.querySelectorAll('#brush .btn').forEach(function (x) { x.classList.toggle('on', x.dataset.brush === b); });
+  });
+  function paintAt(e) {
+    var r = view.getBoundingClientRect();
+    var fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+    var i = Math.round(fx * NX - 0.5), j = Math.round((1 - fy) * NY - 0.5);
+    i = Math.max(0, Math.min(NX - 1, i)); j = Math.max(0, Math.min(NY - 1, j));
+    sim.paint(i, j, brush, brushR); render();
+  }
+  view.addEventListener('pointerdown', function (e) { painting = true; paintAt(e); view.setPointerCapture(e.pointerId); });
+  view.addEventListener('pointermove', function (e) { if (painting) paintAt(e); });
+  view.addEventListener('pointerup', function () { painting = false; });
+  view.addEventListener('pointerleave', function () { painting = false; });
+
+  // ---- scenarios ----
+  var SCEN = {
+    summer:    { dir: 200, spd: 2,  hour: 14, sun: 100, hum: 78, stab: 12, seaw: 70 },
+    seabreeze: { dir: 200, spd: 2,  hour: 13, sun: 100, hum: 66, stab: 35, seaw: 66 },
+    bura:      { dir: 45,  spd: 16, hour: 10, sun: 55,  hum: 35, stab: 72, seaw: 45 },
+  };
+  $('scen').addEventListener('click', function (e) {
+    var k = e.target.dataset.scen, s = SCEN[k]; if (!s) return;
+    windDir = s.dir; windSpeed = s.spd;
+    $('wdir').value = s.dir; $('wspeed').value = s.spd; $('wspd').textContent = s.spd;
+    $('hour').value = s.hour; syncHour(s.hour);
+    $('sun').value = s.sun; $('sunv').textContent = s.sun;
+    $('hum').value = s.hum; $('humv').textContent = s.hum;
+    $('stab').value = s.stab; $('stabv').textContent = s.stab;
+    $('seaw').value = s.seaw; $('seawv').textContent = s.seaw;
+    sim.setWind(windDir, windSpeed); sim.setHour(s.hour); sim.setSun(s.sun / 100);
+    sim.setHumidity(s.hum / 100); sim.setStability(s.stab / 100); sim.setSeaWarmth(s.seaw / 100);
+    sim.initState();
+    autoTime = false; $('auto').classList.remove('on'); $('auto').textContent = '▶ Auto-tok vremena';
+    playing = true; $('play').textContent = '⏸ Pauza'; $('play').classList.add('on');
+  });
   $('coriolis').onclick = function () { var on = !sim.coriolis; sim.setCoriolis(on); this.classList.toggle('on', on); };
   $('auto').onclick = function () { autoTime = !autoTime; this.classList.toggle('on', autoTime); this.textContent = (autoTime ? '⏸' : '▶') + ' Auto-tok vremena'; };
   $('lyrClouds').onclick = function () { showClouds = !showClouds; this.classList.toggle('on', showClouds); };
