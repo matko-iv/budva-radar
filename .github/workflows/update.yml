@@ -1,14 +1,11 @@
 name: Update Budva Radar Status
 
 on:
-  schedule:
-    - cron: '*/8 * * * *'
-  workflow_dispatch:  # Manual trigger also available
+  workflow_dispatch:
 
 permissions:
   contents: write
 
-# Cancel any in-flight run if a new one starts (prevents stacking)
 concurrency:
   group: radar-update
   cancel-in-progress: false
