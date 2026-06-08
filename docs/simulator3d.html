@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Budva — 3D mezoskalni simulator (20 km)</title>
+<!--
+  Stage 3 of the PDF program: a multi-level 3-D non-hydrostatic Boussinesq model on the REAL
+  20 km Budva domain (more coastline). Top-down view over the satellite basemap (Esri World
+  Imagery tiles), with a W-E vertical cross-section.
+
+  Dynamical core (SIM3D): Arakawa C-grid in x-y-z.
+    u on x-faces, v on y-faces, w on z-faces, theta'/p/q* at cell centres.
+    d u/dt = -(v.grad)u - dP/dx + f v
+    d v/dt = -(v.grad)v - dP/dy - f u
+    d w/dt = -(v.grad)w - dP/dz + b
+    d th/dt = -(v.grad)th + surface heating
+    b = g(th'/theta0 + 0.61 q -? ) ; here b = g*(th' + BUOY_CLOUD*qc)/theta0
+    div v = 0  ->  lap(phi)=div(v*),  v -= grad(phi)   (immersed terrain: cells below the DEM
+    surface are solid, faces touching them carry no flow)
+  Forcing: f-plane Coriolis (42.29N), Davies lateral relaxation toward the synoptic wind, a
+  Rayleigh sponge near the model top, land/sea + diurnal surface heating, sea evaporation, and
+  warm-rain microphysics (qv,qc,qr) so clouds and rain appear on their own.
+
+  First working version: dynamics + terrain + clouds. Pure JS (CPU reference); a WebGPU port is
+  the planned performance follow-up. The 10 km toy lives in simulatorstandalone.html.
+-->
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0d1117;color:#e6edf3;font:13px/1.5 system-ui,sans-serif}
+  header{padding:9px 14px;border-bottom:1px solid #21262d}
+  header h1{margin:0;font-size:16px}
+  header p{margin:2px 0 0;font-size:12px;color:#8b949e;max-width:90ch}
+  a{color:#58a6ff}
+  .wrap{display:flex;flex-wrap:wrap;gap:14px;padding:14px;align-items:flex-start}
+  .stage{position:relative;display:flex;flex-direction:column;gap:10px}
+  #view{width:min(70vw,720px);height:min(70vw,720px);background:#07111d;border:1px solid #30363d;border-radius:6px;cursor:crosshair;touch-action:none}
+  #xsec{width:min(70vw,720px);height:170px;background:#07111d;border:1px solid #30363d;border-radius:6px}
+  .cap{font-size:11px;color:#8b949e;margin:-4px 2px 0}
+  .panel{width:300px;min-width:260px;display:flex;flex-direction:column;gap:11px}
+  .group{background:#161b22;border:1px solid #21262d;border-radius:6px;padding:9px 11px}
+  .group h2{margin:0 0 7px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#8b949e}
+  label{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:5px 0}
+  input[type=range]{width:150px}
+  .btn{display:inline-block;padding:5px 9px;margin:2px 3px 2px 0;background:#21262d;color:#e6edf3;border:1px solid #30363d;border-radius:5px;cursor:pointer;font-size:12px;user-select:none}
+  .btn:hover{background:#30363d}
+  .btn.on{background:#1f6feb;border-color:#388bfd;color:#fff}
+  .seg{display:flex;gap:4px;flex-wrap:wrap}
+  .readout{font-size:12px;color:#8b949e;margin:2px 0}
+  .readout b{color:#e6edf3}
+</style>
+</head>
+<body>
+<header>
+  <h1>Budva — 3D mezoskalni simulator <span style="color:#8b949e;font-weight:400">· 20 km · pravi teren</span></h1>
+  <p>Pravi višeslojni 3-D model (vjetar · teren · more · sunce · Coriolis · oblaci) na stvarnoj
+     20&nbsp;km topografiji Budve i primorja. Vrijeme — konvekcija, povjetarac s mora, oblaci nad
+     planinama — nastaje samo od fizike. ·
+     <a href="simulatorstandalone.html">2D (10 km)</a> · <a href="index.html">SKALA</a></p>
+</header>
+
+<div class="wrap">
+  <div class="stage">
+    <canvas id="view" width="720" height="720"></canvas>
+    <div class="cap">Pogled odozgo — satelitska podloga + oblaci (bijelo) + prizemni vjetar. Crvena tačka: Budva. Linija: presjek dolje.</div>
+    <canvas id="xsec" width="720" height="170"></canvas>
+    <div class="cap" id="xsecCap">Vertikalni presjek (Z–I kroz Budvu): θ′ / oblaci + vjetar (u,w). Teren je taman.</div>
+  </div>
+
+  <div class="panel">
+    <div class="group">
+      <h2>Sinoptika — vjetar</h2>
+      <label>Smjer (odakle) <input id="wdir" type="range" min="0" max="359" value="200"></label>
+      <label>Brzina <span><b id="wspd">6</b> m/s</span></label>
+      <input id="wspeed" type="range" min="0" max="25" value="6" style="width:100%">
+    </div>
+    <div class="group">
+      <h2>Atmosfera</h2>
+      <label>Sat <span><b id="hourv">13:00</b></span></label>
+      <input id="hour" type="range" min="0" max="24" step="0.25" value="13" style="width:100%">
+      <label>Vlažnost <span><b id="humv">65</b>%</span></label>
+      <input id="hum" type="range" min="0" max="100" value="65" style="width:100%">
+      <label>Sunce <span><b id="sunv">90</b>%</span></label>
+      <input id="sun" type="range" min="0" max="100" value="90" style="width:100%">
+      <div class="seg" style="margin-top:6px">
+        <button class="btn on" id="coriolis">🌀 Coriolis</button>
+        <button class="btn" id="auto">▶ Auto-tok vremena</button>
+      </div>
+    </div>
+    <div class="group">
+      <h2>Prikaz (odozgo)</h2>
+      <div class="seg">
+        <button class="btn on" id="lyrClouds">☁ Oblaci</button>
+        <button class="btn on" id="lyrWind">↗ Vjetar</button>
+        <button class="btn" id="lyrRain">🌧 Kiša</button>
+      </div>
+    </div>
+    <div class="group">
+      <h2>Tok</h2>
+      <div class="seg">
+        <button class="btn on" id="play">⏸ Pauza</button>
+        <button class="btn" id="reset">↺ Reset</button>
+      </div>
+      <div class="readout" style="margin-top:7px" id="ro1">—</div>
+      <div class="readout" id="ro2">—</div>
+    </div>
+  </div>
+</div>
+
+<script src="terrain-data-20km.js"></script>
+<script src="terrain-budva.js"></script>
+
+<!-- ===================== 3-D BOUSSINESQ C-GRID CORE (DOM-free, UMD) ===================== -->
+<script>
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.SIM3D = factory();
+}(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var G = 9.81, THETA0 = 300.0, OMEGA = 7.2921150e-5;
+  var C = {
+    LAND_DAY: 5.0, LAND_NIGHT: 4.0, SEA_DAY: 1.0, LAPSE: 0.0065,
+    LAND_RELAX: 0.06, SEA_RELAX: 0.006,
+    QVS0: 12.0, COND: 0.5, QC_AUTO: 0.6, AUTO: 0.06, FALL: 0.10, REVAP: 0.03,
+    Lv_cp: 2.2, SEA_EVAP: 0.03, SEA_QV: 2.2, SEA_QV_CAP: 0.95, BUOY_CLOUD: 0.3,
+    LAPSE_SAT: 7.0, MOIST_H: 2000,    // K/km cooling used for saturation; moisture scale height (m)
+    DRAG_SEA: 0.002, DRAG_LAND: 0.012, DRAG_PER_M: 2e-5,
+    SPONGE: 4, DAVIES: 4, DAVIES_RATE: 0.10, SPONGE_RATE: 0.10,
+    PROJ_ITERS: 12, CFL: 0.45, DT_MAX: 4.0, MAXV: 50,
+  };
+
+  function createSim3D(cfg) {
+    var nx = cfg.nx, ny = cfg.ny, nz = cfg.nz;
+    var Lx = cfg.Lx, Ly = cfg.Ly, Lz = cfg.Lz;
+    var dx = Lx / nx, dy = Ly / ny, dz = Lz / nz;
+    var lat = cfg.lat != null ? cfg.lat : 42.29;
+    var fCor = 2 * OMEGA * Math.sin(lat * Math.PI / 180);
+    var nu = cfg.nu || 0;
+
+    var NC = nx * ny * nz, NU = (nx + 1) * ny * nz, NV = nx * (ny + 1) * nz, NW = nx * ny * (nz + 1);
+    var F = function (n) { return new Float32Array(n); };
+    var u = F(NU), uT = F(NU), v = F(NV), vT = F(NV), w = F(NW), wT = F(NW);
+    var th = F(NC), thT = F(NC), qv = F(NC), qvT = F(NC), qc = F(NC), qcT = F(NC), qr = F(NC), qrT = F(NC);
+    var phi = F(NC), divv = F(NC), rain = F(nx * ny);
+    var solid = new Uint8Array(NC), sea = new Uint8Array(nx * ny), hgt = F(nx * ny);
+    var ksurf = new Int16Array(nx * ny), drag = F(nx * ny);
+
+    var Usyn = 0, Vsyn = 0, hour = 13, sun = 0.9, humidity = 0.65, coriolisOn = !!cfg.coriolis, simTime = 0;
+    var lastDt = 0, maxCfl = 0, residual = 0;
+
+    function cI(i, j, k) { return (k * ny + j) * nx + i; }
+    function uI(i, j, k) { return (k * ny + j) * (nx + 1) + i; }
+    function vI(i, j, k) { return (k * (ny + 1) + j) * nx + i; }
+    function wI(i, j, k) { return (k * ny + j) * nx + i; }
+    function clamp(x, a, b) { return x < a ? a : (x > b ? b : x); }
+    function bgQv() { return humidity * C.QVS0; }
+
+    function sample(Fld, fnx, fny, fnz, ox, oy, oz, x, y, z) {
+      var a = clamp(x / dx - ox, 0, fnx - 1.0001), b = clamp(y / dy - oy, 0, fny - 1.0001), c = clamp(z / dz - oz, 0, fnz - 1.0001);
+      var i0 = a | 0, j0 = b | 0, k0 = c | 0, fx = a - i0, fy = b - j0, fz = c - k0;
+      function g(i, j, k) { return Fld[(k * fny + j) * fnx + i]; }
+      var c00 = g(i0, j0, k0) * (1 - fx) + g(i0 + 1, j0, k0) * fx;
+      var c10 = g(i0, j0 + 1, k0) * (1 - fx) + g(i0 + 1, j0 + 1, k0) * fx;
+      var c01 = g(i0, j0, k0 + 1) * (1 - fx) + g(i0 + 1, j0, k0 + 1) * fx;
+      var c11 = g(i0, j0 + 1, k0 + 1) * (1 - fx) + g(i0 + 1, j0 + 1, k0 + 1) * fx;
+      return (c00 * (1 - fy) + c10 * fy) * (1 - fz) + (c01 * (1 - fy) + c11 * fy) * fz;
+    }
+    function sU(x, y, z) { return sample(u, nx + 1, ny, nz, 0, 0.5, 0.5, x, y, z); }
+    function sV(x, y, z) { return sample(v, nx, ny + 1, nz, 0.5, 0, 0.5, x, y, z); }
+    function sW(x, y, z) { return sample(w, nx, ny, nz + 1, 0.5, 0.5, 0, x, y, z); }
+
+    function advect(Fld, dst, fnx, fny, fnz, ox, oy, oz, dt) {
+      for (var k = 0; k < fnz; k++) for (var j = 0; j < fny; j++) for (var i = 0; i < fnx; i++) {
+        var px = (i + ox) * dx, py = (j + oy) * dy, pz = (k + oz) * dz;
+        var bx = px - dt * sU(px, py, pz), by = py - dt * sV(px, py, pz), bz = pz - dt * sW(px, py, pz);
+        dst[(k * fny + j) * fnx + i] = sample(Fld, fnx, fny, fnz, ox, oy, oz, bx, by, bz);
+      }
+    }
+
+    function setTerrain(height, seaMask) {
+      for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        var c2 = j * nx + i, h = height[c2];
+        hgt[c2] = h; sea[c2] = seaMask ? seaMask[c2] : (h <= 0 ? 1 : 0);
+        drag[c2] = sea[c2] ? C.DRAG_SEA : (C.DRAG_LAND + C.DRAG_PER_M * Math.max(0, h));
+        var ks = nz - 1;
+        for (var k = 0; k < nz; k++) {
+          var zc = (k + 0.5) * dz, s = zc < h ? 1 : 0;
+          solid[cI(i, j, k)] = s;
+          if (!s && ks === nz - 1 && (k === 0 || solid[cI(i, j, k - 1)])) ks = k;
+        }
+        ksurf[c2] = ks;
+      }
+    }
+
+    function setWind(dirDeg, spd) { var to = (dirDeg + 180) * Math.PI / 180; Usyn = spd * Math.sin(to); Vsyn = spd * Math.cos(to); }
+    function setHour(h) { hour = h; } function setSun(s) { sun = clamp(s, 0, 1); }
+    function setHumidity(h) { humidity = clamp(h, 0, 1); } function setCoriolis(b) { coriolisOn = !!b; }
+    function solar() { var s = Math.sin(Math.PI * (hour - 6) / 12); return Math.max(0, s) * sun; }
+
+    function applySolidBC() {
+      // zero any face that touches a solid cell (no flow into terrain); also kill solid-cell scalars
+      for (var k = 0; k < nz; k++) for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        if (!solid[cI(i, j, k)]) continue;
+        u[uI(i, j, k)] = 0; u[uI(i + 1, j, k)] = 0;
+        v[vI(i, j, k)] = 0; v[vI(i, j + 1, k)] = 0;
+        w[wI(i, j, k)] = 0; w[wI(i, j, k + 1)] = 0;
+        th[cI(i, j, k)] = 0; qv[cI(i, j, k)] = 0; qc[cI(i, j, k)] = 0; qr[cI(i, j, k)] = 0;
+      }
+      for (var jj = 0; jj < ny; jj++) for (var ii = 0; ii < nx; ii++) { w[wI(ii, jj, 0)] = 0; w[wI(ii, jj, nz)] = 0; }
+    }
+
+    function surfaceForcing(dt) {
+      var sol = solar(), aL = 1 - Math.exp(-C.LAND_RELAX * dt), aS = 1 - Math.exp(-C.SEA_RELAX * dt);
+      var aE = 1 - Math.exp(-C.SEA_EVAP * dt);
+      var TeqLandBase = C.LAND_DAY * sol - C.LAND_NIGHT * (1 - sol), TeqSea = C.SEA_DAY * sol;
+      for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        var c2 = j * nx + i, k = ksurf[c2], c = cI(i, j, k);
+        if (sea[c2]) {
+          th[c] += aS * (TeqSea - th[c]);
+          var tgt = Math.min(bgQv() + C.SEA_QV, C.SEA_QV_CAP * C.QVS0);
+          if (qv[c] < tgt) qv[c] += aE * (tgt - qv[c]);
+        } else {
+          var TeqLand = TeqLandBase - C.LAPSE * hgt[c2];
+          th[c] += aL * (TeqLand - th[c]);
+        }
+      }
+    }
+
+    function buoyancy(dt) {
+      var cc = G / THETA0;
+      for (var k = 1; k < nz; k++) for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        if (solid[cI(i, j, k)] || solid[cI(i, j, k - 1)]) continue;
+        var b = 0.5 * ((th[cI(i, j, k - 1)] + C.BUOY_CLOUD * qc[cI(i, j, k - 1)]) + (th[cI(i, j, k)] + C.BUOY_CLOUD * qc[cI(i, j, k)]));
+        w[wI(i, j, k)] += dt * cc * b;
+      }
+    }
+
+    function coriolis(dt) {
+      if (!coriolisOn || fCor === 0) return;
+      for (var k = 0; k < nz; k++) for (var j = 0; j < ny; j++) for (var i = 1; i < nx; i++) {
+        var vf = 0.25 * (v[vI(i - 1, j, k)] + v[vI(i, j, k)] + v[vI(i - 1, j + 1, k)] + v[vI(i, j + 1, k)]);
+        u[uI(i, j, k)] += dt * fCor * vf;
+      }
+      for (var k2 = 0; k2 < nz; k2++) for (var j2 = 1; j2 < ny; j2++) for (var i2 = 0; i2 < nx; i2++) {
+        var uf = 0.25 * (u[uI(i2, j2 - 1, k2)] + u[uI(i2 + 1, j2 - 1, k2)] + u[uI(i2, j2, k2)] + u[uI(i2 + 1, j2, k2)]);
+        v[vI(i2, j2, k2)] += -dt * fCor * uf;
+      }
+    }
+
+    function microphysics(dt) {
+      var cr = 1 - Math.exp(-C.COND * dt), ac = 1 - Math.exp(-C.AUTO * dt);
+      var fa = 1 - Math.exp(-C.FALL * dt), re = 1 - Math.exp(-C.REVAP * dt);
+      for (var k = 0; k < nz; k++) for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        var c = cI(i, j, k); if (solid[c]) continue;
+        var qvs = C.QVS0 * Math.exp(0.07 * (th[c] - C.LAPSE_SAT * (k + 0.5) * dz / 1000));
+        if (qv[c] > qvs) { var dq = (qv[c] - qvs) * cr; qv[c] -= dq; qc[c] += dq; th[c] += C.Lv_cp * dq; }
+        else if (qc[c] > 0) { var ev = Math.min(qc[c], (qvs - qv[c]) * cr); if (ev > 0) { qc[c] -= ev; qv[c] += ev; th[c] -= C.Lv_cp * ev; } }
+        if (qc[c] > C.QC_AUTO) { var a2 = (qc[c] - C.QC_AUTO) * ac; qc[c] -= a2; qr[c] += a2; }
+        if (qr[c] > 0) {
+          var fall = qr[c] * fa; qr[c] -= fall;
+          if (k === ksurf[j * nx + i]) rain[j * nx + i] += fall;     // reached the ground
+          else { var below = cI(i, j, k - 1 >= 0 ? k - 1 : 0); if (k > 0 && !solid[below]) qr[below] += fall; else rain[j * nx + i] += fall; }
+          var qvs2 = C.QVS0 * Math.exp(0.07 * (th[c] - C.LAPSE_SAT * (k + 0.5) * dz / 1000));
+          if (qv[c] < qvs2) { var r2 = Math.min(qr[c], (qvs2 - qv[c]) * re); qr[c] -= r2; qv[c] += r2; th[c] -= C.Lv_cp * r2; }
+        }
+      }
+    }
+
+    // Davies lateral relaxation toward the synoptic state + Rayleigh sponge near the top.
+    function relaxBoundaries(dt) {
+      var nb = C.DAVIES, ns = C.SPONGE, bq = bgQv();
+      for (var k = 0; k < nz; k++) for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        var c = cI(i, j, k); if (solid[c]) continue;
+        var dEdge = Math.min(i, nx - 1 - i, j, ny - 1 - j);
+        var fLat = dEdge < nb ? C.DAVIES_RATE * (1 - dEdge / nb) : 0;
+        var kTop = nz - 1 - k, fTop = kTop < ns ? C.SPONGE_RATE * (1 - kTop / ns) : 0;
+        var f = Math.max(fLat, fTop), a = 1 - Math.exp(-f * dt);
+        if (a > 0) {
+          var bqk = bq * Math.exp(-(k + 0.5) * dz / C.MOIST_H);
+          th[c] += a * (0 - th[c]); qv[c] += a * (bqk - qv[c]); qc[c] += a * (0 - qc[c]); qr[c] += a * (0 - qr[c]);
+        }
+        // sponge also damps w
+        if (fTop > 0) { var aw = 1 - Math.exp(-fTop * dt); w[wI(i, j, k)] *= (1 - aw); }
+      }
+      // relax near-edge velocities toward the synoptic wind (drag included near surface)
+      for (var k2 = 0; k2 < nz; k2++) for (var j2 = 0; j2 < ny; j2++) for (var i2 = 0; i2 <= nx; i2++) {
+        var dE = Math.min(i2, nx - i2, j2, ny - 1 - j2);
+        var fL = dE < nb ? C.DAVIES_RATE * (1 - dE / nb) : 0; if (fL <= 0) continue;
+        var a3 = 1 - Math.exp(-fL * dt); u[uI(i2, j2, k2)] += a3 * (Usyn - u[uI(i2, j2, k2)]);
+      }
+      for (var k3 = 0; k3 < nz; k3++) for (var j3 = 0; j3 <= ny; j3++) for (var i3 = 0; i3 < nx; i3++) {
+        var dE2 = Math.min(i3, nx - 1 - i3, j3, ny - j3);
+        var fL2 = dE2 < nb ? C.DAVIES_RATE * (1 - dE2 / nb) : 0; if (fL2 <= 0) continue;
+        var a4 = 1 - Math.exp(-fL2 * dt); v[vI(i3, j3, k3)] += a4 * (Vsyn - v[vI(i3, j3, k3)]);
+      }
+    }
+
+    // light surface drag through the boundary layer (slows wind over rough/high terrain)
+    function surfaceDrag(dt) {
+      for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        var c2 = j * nx + i, ks = ksurf[c2], a = 1 - Math.exp(-drag[c2] * dt);
+        for (var k = ks; k < Math.min(ks + 2, nz); k++) {
+          u[uI(i, j, k)] *= (1 - a); u[uI(i + 1, j, k)] *= (1 - a);
+          v[vI(i, j, k)] *= (1 - a); v[vI(i, j + 1, k)] *= (1 - a);
+        }
+      }
+    }
+
+    function project() {
+      var idx2 = 1 / (dx * dx), idy2 = 1 / (dy * dy), idz2 = 1 / (dz * dz);
+      for (var k = 0; k < nz; k++) for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        var c = cI(i, j, k);
+        if (solid[c]) { divv[c] = 0; phi[c] = 0; continue; }
+        divv[c] = (u[uI(i + 1, j, k)] - u[uI(i, j, k)]) / dx + (v[vI(i, j + 1, k)] - v[vI(i, j, k)]) / dy + (w[wI(i, j, k + 1)] - w[wI(i, j, k)]) / dz;
+        phi[c] = 0;
+      }
+      function valid(i, j, k) { return i >= 0 && i < nx && j >= 0 && j < ny && k >= 0 && k < nz && !solid[cI(i, j, k)]; }
+      for (var it = 0; it < C.PROJ_ITERS; it++)
+        for (var col = 0; col < 2; col++)
+          for (var k2 = 0; k2 < nz; k2++) for (var j2 = 0; j2 < ny; j2++) for (var i2 = 0; i2 < nx; i2++) {
+            if (((i2 + j2 + k2) & 1) !== col) continue;
+            var c2 = cI(i2, j2, k2); if (solid[c2]) continue;
+            var aw = valid(i2 - 1, j2, k2) ? idx2 : 0, ae = valid(i2 + 1, j2, k2) ? idx2 : 0;
+            var as = valid(i2, j2 - 1, k2) ? idy2 : 0, an = valid(i2, j2 + 1, k2) ? idy2 : 0;
+            var ab = valid(i2, j2, k2 - 1) ? idz2 : 0, at = valid(i2, j2, k2 + 1) ? idz2 : 0;
+            var diag = aw + ae + as + an + ab + at; if (diag === 0) continue;
+            var s = aw * phi[cI(i2 > 0 ? i2 - 1 : i2, j2, k2)] + ae * phi[cI(i2 < nx - 1 ? i2 + 1 : i2, j2, k2)]
+                  + as * phi[cI(i2, j2 > 0 ? j2 - 1 : j2, k2)] + an * phi[cI(i2, j2 < ny - 1 ? j2 + 1 : j2, k2)]
+                  + ab * phi[cI(i2, j2, k2 > 0 ? k2 - 1 : k2)] + at * phi[cI(i2, j2, k2 < nz - 1 ? k2 + 1 : k2)];
+            phi[c2] = (s - divv[c2]) / diag;
+          }
+      // velocity correction on faces between two fluid cells
+      for (var k3 = 0; k3 < nz; k3++) for (var j3 = 0; j3 < ny; j3++) for (var i3 = 1; i3 < nx; i3++)
+        if (valid(i3 - 1, j3, k3) && valid(i3, j3, k3)) u[uI(i3, j3, k3)] -= (phi[cI(i3, j3, k3)] - phi[cI(i3 - 1, j3, k3)]) / dx;
+      for (var k4 = 0; k4 < nz; k4++) for (var j4 = 1; j4 < ny; j4++) for (var i4 = 0; i4 < nx; i4++)
+        if (valid(i4, j4 - 1, k4) && valid(i4, j4, k4)) v[vI(i4, j4, k4)] -= (phi[cI(i4, j4, k4)] - phi[cI(i4, j4 - 1, k4)]) / dy;
+      for (var k5 = 1; k5 < nz; k5++) for (var j5 = 0; j5 < ny; j5++) for (var i5 = 0; i5 < nx; i5++)
+        if (valid(i5, j5, k5 - 1) && valid(i5, j5, k5)) w[wI(i5, j5, k5)] -= (phi[cI(i5, j5, k5)] - phi[cI(i5, j5, k5 - 1)]) / dz;
+    }
+
+    function computeDt() {
+      var s = 1e-6, kk;
+      for (kk = 0; kk < NU; kk++) { var a = Math.abs(u[kk]); if (a > s) s = a; }
+      for (kk = 0; kk < NV; kk++) { var b = Math.abs(v[kk]); if (b > s) s = b; }
+      for (kk = 0; kk < NW; kk++) { var c = Math.abs(w[kk]); if (c > s) s = c; }
+      var dmin = Math.min(dx, dy, dz), dt = Math.min(C.CFL * dmin / s, C.DT_MAX);
+      maxCfl = s * dt / dmin; return dt;
+    }
+    function clampV() {
+      var m2 = C.MAXV * C.MAXV, kk;
+      for (kk = 0; kk < NU; kk++) { if (!(u[kk] === u[kk])) u[kk] = 0; }
+      for (kk = 0; kk < NV; kk++) { if (!(v[kk] === v[kk])) v[kk] = 0; }
+      for (kk = 0; kk < NW; kk++) { var ww = w[kk]; if (!(ww === ww)) w[kk] = 0; else if (ww * ww > m2) w[kk] = ww > 0 ? C.MAXV : -C.MAXV; }
+      for (kk = 0; kk < NC; kk++) { if (qv[kk] < 0) qv[kk] = 0; if (qc[kk] < 0) qc[kk] = 0; if (qr[kk] < 0) qr[kk] = 0; }
+    }
+    function residualDiv() {
+      var m = 0;
+      for (var k = 0; k < nz; k++) for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        if (solid[cI(i, j, k)]) continue;
+        var d = (u[uI(i + 1, j, k)] - u[uI(i, j, k)]) / dx + (v[vI(i, j + 1, k)] - v[vI(i, j, k)]) / dy + (w[wI(i, j, k + 1)] - w[wI(i, j, k)]) / dz;
+        var a = Math.abs(d); if (a > m) m = a;
+      }
+      return m;
+    }
+
+    function step() {
+      var dt = computeDt(); lastDt = dt; simTime += dt;
+      advect(u, uT, nx + 1, ny, nz, 0, 0.5, 0.5, dt);
+      advect(v, vT, nx, ny + 1, nz, 0.5, 0, 0.5, dt);
+      advect(w, wT, nx, ny, nz + 1, 0.5, 0.5, 0, dt);
+      advect(th, thT, nx, ny, nz, 0.5, 0.5, 0.5, dt);
+      advect(qv, qvT, nx, ny, nz, 0.5, 0.5, 0.5, dt);
+      advect(qc, qcT, nx, ny, nz, 0.5, 0.5, 0.5, dt);
+      advect(qr, qrT, nx, ny, nz, 0.5, 0.5, 0.5, dt);
+      var t;
+      t = u; u = uT; uT = t; t = v; v = vT; vT = t; t = w; w = wT; wT = t;
+      t = th; th = thT; thT = t; t = qv; qv = qvT; qvT = t; t = qc; qc = qcT; qcT = t; t = qr; qr = qrT; qrT = t;
+      applySolidBC();
+      surfaceForcing(dt);
+      buoyancy(dt);
+      coriolis(dt);
+      surfaceDrag(dt);
+      microphysics(dt);
+      relaxBoundaries(dt);
+      applySolidBC();
+      project();
+      clampV();
+      residual = residualDiv();
+      return dt;
+    }
+
+    // Initialise from the large-scale state: synoptic wind everywhere + a realistic moisture
+    // profile (RH ~ constant with height), so the flow is alive from t=0 and clouds form by lifting.
+    function initState() {
+      u.fill(Usyn); v.fill(Vsyn); w.fill(0);
+      for (var k = 0; k < nz; k++) for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        var c = cI(i, j, k); th[c] = 0; qc[c] = 0; qr[c] = 0;
+        qv[c] = solid[c] ? 0 : bgQv() * Math.exp(-(k + 0.5) * dz / C.MOIST_H);
+      }
+      applySolidBC();
+    }
+
+    function initBubble(amp, cx, cy, cz, R) {     // for the headless 3-D validation
+      for (var k = 0; k < nz; k++) for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        var x = (i + 0.5) * dx - cx, y = (j + 0.5) * dy - cy, z = (k + 0.5) * dz - cz;
+        var r = Math.sqrt(x * x + y * y + z * z) / R;
+        th[cI(i, j, k)] = r <= 1 ? amp * Math.cos(Math.PI * r / 2) * Math.cos(Math.PI * r / 2) : 0;
+      }
+    }
+
+    return {
+      nx: nx, ny: ny, nz: nz, dx: dx, dy: dy, dz: dz, Lx: Lx, Ly: Ly, Lz: Lz, f: fCor,
+      cI: cI, uI: uI, vI: vI, wI: wI,
+      get u() { return u; }, get v() { return v; }, get w() { return w; }, get th() { return th; },
+      get qc() { return qc; }, get qr() { return qr; }, get qv() { return qv; },
+      solid: solid, sea: sea, hgt: hgt, ksurf: ksurf, rain: rain,
+      setTerrain: setTerrain, setWind: setWind, setHour: setHour, setSun: setSun,
+      setHumidity: setHumidity, setCoriolis: setCoriolis, initState: initState,
+      get coriolis() { return coriolisOn; }, get simTime() { return simTime; }, get hour() { return hour; },
+      get dt() { return lastDt; }, get maxCfl() { return maxCfl; }, get residual() { return residual; },
+      step: step, initBubble: initBubble, _project: project, _C: C,
+    };
+  }
+  return { createSim3D: createSim3D };
+}));
+</script>
+
+<!-- ===================== PAGE: terrain + Esri basemap + render + UI ===================== -->
+<script>
+(function () {
+  'use strict';
+  var view = document.getElementById('view'), ctx = view.getContext('2d');
+  var xsec = document.getElementById('xsec'), xctx = xsec.getContext('2d');
+  var off = document.createElement('canvas'), octx;
+
+  // 20 km domain on the real Budva DEM
+  var DEM = window.TERRAIN_DEM;                       // from terrain-data-20km.js (l=20000)
+  var L = DEM.l, LAT0 = DEM.lat, LON0 = DEM.lon, ZB = DEM.zoom || 12;
+  var NX = 56, NY = 56, NZ = 16, LZ = 3600;
+  var terr = TERRAIN_BUDVA.build(NX, L);              // resample DEM -> NX x NY height + sea
+  var sim = SIM3D.createSim3D({ nx: NX, ny: NY, nz: NZ, Lx: L, Ly: L, Lz: LZ, lat: LAT0, coriolis: true });
+  sim.setTerrain(terr.height, terr.sea);
+  off.width = NX; off.height = NY; octx = off.getContext('2d');
+
+  var playing = true, showClouds = true, showWind = true, showRain = false, autoTime = false;
+  var windDir = 200, windSpeed = 6;
+  sim.setWind(windDir, windSpeed); sim.setHumidity(0.65); sim.initState();
+
+  // ---- Esri World Imagery basemap (slippy tiles for the 20 km box) ----
+  function lonLatPx(lon, lat) {
+    var n = Math.pow(2, ZB);
+    var x = (lon + 180) / 360 * n * 256;
+    var r = lat * Math.PI / 180, y = (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n * 256;
+    return [x, y];
+  }
+  var cosLat = Math.cos(LAT0 * Math.PI / 180);
+  var lonW = LON0 - (L / 2) / (111320 * cosLat), lonE = LON0 + (L / 2) / (111320 * cosLat);
+  var latS = LAT0 - (L / 2) / 111320, latN = LAT0 + (L / 2) / 111320;
+  var pTL = lonLatPx(lonW, latN), pBR = lonLatPx(lonE, latS);    // top-left(NW), bottom-right(SE)
+  var tiles = {}, tilesReady = 0, tilesTotal = 0;
+  (function loadTiles() {
+    var tx0 = Math.floor(pTL[0] / 256), tx1 = Math.floor(pBR[0] / 256);
+    var ty0 = Math.floor(pTL[1] / 256), ty1 = Math.floor(pBR[1] / 256);
+    for (var tx = tx0; tx <= tx1; tx++) for (var ty = ty0; ty <= ty1; ty++) {
+      tilesTotal++;
+      var img = new Image();   // no crossOrigin: we only draw the tiles, never read their pixels
+      img.src = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + ZB + '/' + ty + '/' + tx;
+      img.onload = (function (im) { return function () { tilesReady++; }; })(img);
+      tiles[tx + '_' + ty] = { img: img, tx: tx, ty: ty };
+    }
+  })();
+  function drawBasemap() {
+    var W = view.width, H = view.height, bw = pBR[0] - pTL[0], bh = pBR[1] - pTL[1];
+    ctx.fillStyle = '#07111d'; ctx.fillRect(0, 0, W, H);
+    for (var key in tiles) {
+      var t = tiles[key]; if (!t.img.complete || t.img.naturalWidth === 0) continue;
+      var gx = t.tx * 256, gy = t.ty * 256;
+      var sx = (gx - pTL[0]) / bw * W, sy = (gy - pTL[1]) / bh * H;
+      var sw = 256 / bw * W, sh = 256 / bh * H;
+      ctx.drawImage(t.img, sx, sy, sw, sh);
+    }
+  }
+
+  // map sim cell (i east, j north) -> canvas. North up: canvas y = (1-(j+0.5)/NY)*H
+  function cellX(i) { return (i + 0.5) / NX * view.width; }
+  function cellY(j) { return (1 - (j + 0.5) / NY) * view.height; }
+
+  function colMaxQc(i, j) { var m = 0; for (var k = 0; k < NZ; k++) { var q = sim.qc[sim.cI(i, j, k)]; if (q > m) m = q; } return m; }
+  function colMaxQr(i, j) { var m = 0; for (var k = 0; k < NZ; k++) { var q = sim.qr[sim.cI(i, j, k)]; if (q > m) m = q; } return m; }
+
+  function render() {
+    drawBasemap();
+    var W = view.width, H = view.height;
+    if (showClouds || showRain) {
+      var img = octx.createImageData(NX, NY), d = img.data;
+      for (var j = 0; j < NY; j++) for (var i = 0; i < NX; i++) {
+        var row = (NY - 1 - j), p = (row * NX + i) * 4, a = 0, r = 255, g = 255, b = 255;
+        if (showClouds) { var qcv = colMaxQc(i, j); a = Math.max(a, Math.min(1, qcv / 0.6) * 0.85); }
+        if (showRain) { var qrv = colMaxQr(i, j); if (qrv > 0.02) { var ra = Math.min(1, qrv / 0.5) * 0.7; if (ra > a) { a = ra; r = 90; g = 140; b = 230; } } }
+        d[p] = r; d[p + 1] = g; d[p + 2] = b; d[p + 3] = (a * 255) | 0;
+      }
+      octx.putImageData(img, 0, 0);
+      ctx.imageSmoothingEnabled = true; ctx.drawImage(off, 0, 0, W, H);
+    }
+    if (showWind) {
+      var step = Math.max(3, Math.round(NX / 26));
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1; ctx.beginPath();
+      for (var jj = step >> 1; jj < NY; jj += step) for (var ii = step >> 1; ii < NX; ii += step) {
+        var ks = sim.ksurf[jj * NX + ii], c = sim.cI(ii, jj, ks);
+        var uu = 0.5 * (sim.u[sim.uI(ii, jj, ks)] + sim.u[sim.uI(ii + 1, jj, ks)]);
+        var vv = 0.5 * (sim.v[sim.vI(ii, jj, ks)] + sim.v[sim.vI(ii, jj + 1, ks)]);
+        var x = cellX(ii), y = cellY(jj), sc = 2.2;
+        ctx.moveTo(x, y); ctx.lineTo(x + uu * sc, y - vv * sc);     // -vv: north(+v) is up on canvas
+      }
+      ctx.stroke();
+    }
+    // Budva marker + cross-section line
+    var bx = cellX(NX / 2 - 0.5), by = cellY(NY / 2 - 0.5);
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, by); ctx.lineTo(W, by); ctx.stroke();
+    ctx.fillStyle = '#e5484d'; ctx.beginPath(); ctx.arc(bx, by, 4, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = '11px system-ui'; ctx.fillText('Budva', bx + 7, by - 6);
+  }
+
+  function renderXsec() {
+    var W = xsec.width, H = xsec.height, jm = NY / 2 | 0;
+    var imgC = xsec.width;
+    xctx.fillStyle = '#07111d'; xctx.fillRect(0, 0, W, H);
+    // theta'/cloud field in the W-E plane through Budva
+    var cw = W / NX, ch = H / NZ;
+    for (var k = 0; k < NZ; k++) for (var i = 0; i < NX; i++) {
+      var c = sim.cI(i, jm, k), x = i * cw, y = H - (k + 1) * ch;
+      if (sim.solid[c]) { xctx.fillStyle = '#2b2b33'; xctx.fillRect(x, y, cw + 1, ch + 1); continue; }
+      var qcv = sim.qc[c];
+      if (qcv > 0.02) { var a = Math.min(1, qcv / 0.6); xctx.fillStyle = 'rgba(245,245,245,' + (0.25 + 0.7 * a) + ')'; xctx.fillRect(x, y, cw + 1, ch + 1); continue; }
+      var th = sim.th[c], t = Math.max(-1, Math.min(1, th / 4));
+      var r = t > 0 ? 200 : 40, g = 60 + 40 * (1 - Math.abs(t)), b = t < 0 ? 200 : 60;
+      xctx.fillStyle = 'rgba(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ',' + (0.10 + 0.45 * Math.abs(t)) + ')';
+      xctx.fillRect(x, y, cw + 1, ch + 1);
+    }
+    // (u,w) vectors
+    xctx.strokeStyle = 'rgba(255,255,255,.55)'; xctx.lineWidth = 1; xctx.beginPath();
+    var st = Math.max(2, Math.round(NX / 28));
+    for (var k2 = 0; k2 < NZ; k2 += Math.max(1, st >> 1)) for (var i2 = st >> 1; i2 < NX; i2 += st) {
+      if (sim.solid[sim.cI(i2, jm, k2)]) continue;
+      var uu = 0.5 * (sim.u[sim.uI(i2, jm, k2)] + sim.u[sim.uI(i2 + 1, jm, k2)]);
+      var ww = 0.5 * (sim.w[sim.wI(i2, jm, k2)] + sim.w[sim.wI(i2, jm, k2 + 1)]);
+      var x = (i2 + 0.5) * cw, y = H - (k2 + 0.5) * ch, sc = 2.4;
+      xctx.moveTo(x, y); xctx.lineTo(x + uu * sc, y - ww * sc);
+    }
+    xctx.stroke();
+  }
+
+  var last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0;
+  function frame(now) {
+    if (autoTime) { var h = sim.hour + (now - last) / 1000 * 0.12; if (h >= 24) h -= 24; sim.setHour(h); syncHour(h); }
+    if (playing) sim.step();
+    render(); renderXsec();
+    fpsAcc += now - last; fpsN++; last = now;
+    if (fpsN >= 15) {
+      fps = 1000 / (fpsAcc / fpsN); fpsAcc = 0; fpsN = 0;
+      document.getElementById('ro1').innerHTML = 'mreža ' + NX + '×' + NY + '×' + NZ + ' · ' + Math.round(fps) + ' fps · t=' + (sim.simTime / 60).toFixed(0) + ' min';
+      document.getElementById('ro2').innerHTML = 'CFL ' + sim.maxCfl.toFixed(2) + ' · ∇·v ' + sim.residual.toExponential(1) + ' · podloga ' + tilesReady + '/' + tilesTotal + ' pločica';
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---- UI ----
+  function $(id) { return document.getElementById(id); }
+  function syncHour(h) { var hh = Math.floor(h), mm = Math.round((h - hh) * 60); $('hourv').textContent = hh + ':' + (mm < 10 ? '0' : '') + mm; $('hour').value = h; }
+  $('wdir').oninput = function (e) { windDir = +e.target.value; sim.setWind(windDir, windSpeed); };
+  $('wspeed').oninput = function (e) { windSpeed = +e.target.value; $('wspd').textContent = windSpeed; sim.setWind(windDir, windSpeed); };
+  $('hour').oninput = function (e) { autoTime = false; $('auto').classList.remove('on'); $('auto').textContent = '▶ Auto-tok vremena'; sim.setHour(+e.target.value); syncHour(+e.target.value); };
+  $('hum').oninput = function (e) { $('humv').textContent = e.target.value; sim.setHumidity(+e.target.value / 100); };
+  $('sun').oninput = function (e) { $('sunv').textContent = e.target.value; sim.setSun(+e.target.value / 100); };
+  $('coriolis').onclick = function () { var on = !sim.coriolis; sim.setCoriolis(on); this.classList.toggle('on', on); };
+  $('auto').onclick = function () { autoTime = !autoTime; this.classList.toggle('on', autoTime); this.textContent = (autoTime ? '⏸' : '▶') + ' Auto-tok vremena'; };
+  $('lyrClouds').onclick = function () { showClouds = !showClouds; this.classList.toggle('on', showClouds); };
+  $('lyrWind').onclick = function () { showWind = !showWind; this.classList.toggle('on', showWind); };
+  $('lyrRain').onclick = function () { showRain = !showRain; this.classList.toggle('on', showRain); };
+  $('play').onclick = function () { playing = !playing; this.textContent = playing ? '⏸ Pauza' : '▶ Pusti'; this.classList.toggle('on', playing); };
+  $('reset').onclick = function () {
+    var cor = sim.coriolis;
+    sim = SIM3D.createSim3D({ nx: NX, ny: NY, nz: NZ, Lx: L, Ly: L, Lz: LZ, lat: LAT0, coriolis: cor });
+    sim.setTerrain(terr.height, terr.sea); sim.setWind(windDir, windSpeed);
+    sim.setHour(+$('hour').value); sim.setSun(+$('sun').value / 100); sim.setHumidity(+$('hum').value / 100);
+    sim.initState();
+  };
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
