@@ -2,7 +2,7 @@ name: Update Budva Radar Status
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/8 * * * *'
   workflow_dispatch:  # Manual trigger also available
 
 permissions:
