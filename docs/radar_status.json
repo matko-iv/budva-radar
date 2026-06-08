@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-08T05:52:10",
+  "generated": "2026-06-08T07:29:03",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -9,8 +9,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260608_055208_605fcd82fffe.png",
-      "frame_timestamp": "2026-06-08T05:52:08",
+      "frame_path": "data/frames/dhmz/20260608_072901_c8e22de8d66c.png",
+      "frame_timestamp": "2026-06-08T07:29:01",
       "motion": null,
       "approaching": {
         "is_approaching": false,
@@ -29,7 +29,7 @@
           "n_cells_considered": 7,
           "approaching": false,
           "dominant": {
-            "track_id": "8bc4a101",
+            "track_id": "780a6352",
             "p": 0.0,
             "eta_minutes": null,
             "dist_km": 277.6051758193398,
@@ -1235,15 +1235,15 @@
           "km_per_pixel": 0.733,
           "min_wet_threshold": 186,
           "n_pixels_in_annulus": 68119,
-          "n_valid_color": 3,
+          "n_valid_color": 7,
           "n_wet": 0,
           "n_wet_raw": 0,
-          "n_echo": 3,
-          "n_trace": 3,
+          "n_echo": 7,
+          "n_trace": 7,
           "frac_wet": 0.0,
           "max_dbz": 12.5,
           "mean_dbz": 12.5,
-          "strongest_bearing": 324.7,
+          "strongest_bearing": 324.3,
           "strongest_bearing_cardinal": "NW",
           "strongest_dbz": 12.5,
           "closest_wet_km": null,
@@ -1468,7 +1468,7 @@
       ],
       "cells": [
         {
-          "id": "8bc4a101",
+          "id": "780a6352",
           "lat": 40.6585,
           "lon": 16.0675,
           "equiv_diam_km": 18.8,
@@ -1480,7 +1480,7 @@
           "trend": "steady"
         },
         {
-          "id": "81cc221c",
+          "id": "a288eb46",
           "lat": 40.6588,
           "lon": 16.293,
           "equiv_diam_km": 2.74,
@@ -1492,7 +1492,7 @@
           "trend": "steady"
         },
         {
-          "id": "2dd6e230",
+          "id": "4f1ccbd8",
           "lat": 40.6595,
           "lon": 17.0192,
           "equiv_diam_km": 34.25,
@@ -1504,7 +1504,7 @@
           "trend": "steady"
         },
         {
-          "id": "6e76f0b1",
+          "id": "5dd054ed",
           "lat": 40.6608,
           "lon": 18.4355,
           "equiv_diam_km": 34.03,
@@ -1516,7 +1516,7 @@
           "trend": "steady"
         },
         {
-          "id": "af54e060",
+          "id": "ce7664de",
           "lat": 40.6617,
           "lon": 19.3782,
           "equiv_diam_km": 19.96,
@@ -1528,7 +1528,7 @@
           "trend": "steady"
         },
         {
-          "id": "4f2ef956",
+          "id": "1814fd32",
           "lat": 40.6622,
           "lon": 19.8518,
           "equiv_diam_km": 19.39,
@@ -1540,7 +1540,7 @@
           "trend": "steady"
         },
         {
-          "id": "7e0b621a",
+          "id": "93b1f8d1",
           "lat": 40.6627,
           "lon": 20.3163,
           "equiv_diam_km": 19.58,
@@ -1565,8 +1565,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260608_054500.gif",
-      "frame_timestamp": "2026-06-08T05:45:00",
+      "frame_path": "data/frames/opera/20260608_072000.gif",
+      "frame_timestamp": "2026-06-08T07:20:00",
       "motion": null,
       "approaching": {
         "is_approaching": false,
@@ -1582,14 +1582,14 @@
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 1165,
+          "n_cells_considered": 1163,
           "approaching": false,
           "dominant": {
-            "track_id": "4e4961bf",
+            "track_id": "837f5c20",
             "p": 0.0,
             "eta_minutes": null,
-            "dist_km": 3082.7667277663977,
-            "bearing_deg": 16.09321240727911,
+            "dist_km": 3082.7806881664224,
+            "bearing_deg": 16.09303006341264,
             "bearing_cardinal": "N",
             "max_dbz": 50.0,
             "cell_type": "convective",
@@ -1611,10 +1611,10 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 1165,
-        "n_convective": 102,
+        "n_cells": 1163,
+        "n_convective": 87,
         "max_dbz": 50.0,
-        "largest_area_km2": 243351.4
+        "largest_area_km2": 243369.2
       },
       "scenario": {
         "state": "CLEAR",
