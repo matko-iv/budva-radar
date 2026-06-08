@@ -13,7 +13,7 @@
   header p { margin: 2px 0 0; font-size: 12px; color: #8b949e; }
   .wrap { display: flex; flex-wrap: wrap; gap: 14px; padding: 14px; align-items: flex-start; }
   .stage { position: relative; }
-  #view { width: min(72vw, 660px); height: min(72vw, 660px); background: #07111d; border: 1px solid #30363d; border-radius: 6px; cursor: crosshair; touch-action: none; }
+  #view { width: min(82vw, 860px); height: min(82vw, 860px); background: #07111d; border: 1px solid #30363d; border-radius: 6px; cursor: crosshair; touch-action: none; }
   #legend { position: absolute; left: 8px; bottom: 8px; background: rgba(13,17,23,.72); border: 1px solid #30363d; border-radius: 5px; padding: 4px 7px; font-size: 11px; pointer-events: none; }
   .panel { width: 288px; min-width: 250px; display: flex; flex-direction: column; gap: 11px; }
   .group { background: #161b22; border: 1px solid #21262d; border-radius: 6px; padding: 9px 11px; }
@@ -39,7 +39,7 @@
 
 <div class="wrap">
   <div class="stage">
-    <canvas id="view" width="660" height="660"></canvas>
+    <canvas id="view" width="860" height="860"></canvas>
     <div id="legend">—</div>
   </div>
 
@@ -3410,7 +3410,11 @@ window.TERRAIN_DEM = {
     MAX_WIND: 60,          // m/s hard speed cap (stability/display guard)
     MAX_DIV: 0.05,         // 1/s cap on target divergence
     // --- terrain coupling ---
-    SOLID_HEIGHT_M: 950,   // hard no-penetration obstacle only for high ridges
+    SOLID_HEIGHT_M: 3000,  // hard no-penetration obstacle threshold. Set above the domain's
+                           // peaks (~1850 m) so mountains are NOT dead-wind walls: in a single-layer
+                           // model the honest surrogate for terrain is strong elevation-scaled DRAG
+                           // (DRAG_PER_M below), which slows but never kills the wind over ridges.
+                           // (The hard-solid path remains for any future >3 km obstacle.)
     DRAG_SEA: 0.004,       // 1/s surface drag over sea (smooth)
     DRAG_LAND: 0.022,      // 1/s base drag over land
     DRAG_PER_M: 7e-5,      // 1/s extra drag per metre of elevation (mountains slow wind)

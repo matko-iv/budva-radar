@@ -115,10 +115,23 @@
         <button class="btn on" data-view="theta">θ′ (potential temp)</button>
         <button class="btn" data-view="speed">|v| speed</button>
         <button class="btn" data-view="p">p′ pressure</button>
+        <button class="btn" data-view="vy">v⊥ (out-of-plane)</button>
       </div>
       <div class="row">
         <button class="btn on" id="vec">↗ Velocity vectors</button>
       </div>
+    </div>
+
+    <div class="panel">
+      <h2>Stage 2 — rotation (Coriolis)</h2>
+      <div class="row">
+        <button class="btn" id="coriolis">🌀 Coriolis (f-plane 42.29°N)</button>
+        <span id="fval" style="color:var(--dim)"></span>
+      </div>
+      <div class="hint">The benchmarks are non-rotating reference cases (Coriolis off). Turn it on and
+        watch the <code>v⊥</code> view: the wind develops an out-of-plane component and veers
+        clockwise (Northern Hemisphere) — the rotation payoff that drives sea-breeze veering in
+        Stage&nbsp;3's 3-D model.</div>
     </div>
 
     <div class="panel diag">
@@ -166,6 +179,10 @@
     var projIters = cfg.projIters || 40;
     var cfl = cfg.cfl || 0.4;
     var dtMax = cfg.dtMax || 6.0;
+    // Stage 2: f-plane Coriolis. f = 2*Omega*sin(lat); IERS Omega; 42.29N -> ~9.78e-5 /s.
+    var OMEGA = 7.2921150e-5, latRad = (cfg.lat != null ? cfg.lat : 42.29) * Math.PI / 180;
+    var fCor = 2 * OMEGA * Math.sin(latRad);
+    var coriolisOn = !!cfg.coriolis;
 
     var nc = nx * nz;
     var nu_sz = (nx + 1) * nz;     // u
@@ -175,6 +192,7 @@
     var w = new Float32Array(nw_sz), wT = new Float32Array(nw_sz);
     var th = new Float32Array(nc), thT = new Float32Array(nc);
     var phi = new Float32Array(nc), divv = new Float32Array(nc);
+    var vy = new Float32Array(nc), vyT = new Float32Array(nc);  // out-of-plane (y) velocity, cell centres
 
     var simTime = 0, lastDt = 0, maxCfl = 0, residual = 0;
 
@@ -215,6 +233,21 @@
       for (var j = 1; j < nz; j++) for (var i = 0; i < nx; i++) {
         var thf = 0.5 * (th[cI(i, j - 1)] + th[cI(i, j)]);
         w[wI(i, j)] += dt * c * thf;
+      }
+    }
+
+    // Stage 2: f-plane Coriolis on the horizontal wind. du/dt += f*v, dv/dt += -f*u.
+    // In the Northern Hemisphere this veers the wind vector clockwise (inertial oscillation).
+    // u lives on x-faces, the out-of-plane v at centres, so each is averaged onto the other.
+    function coriolis(dt) {
+      if (!coriolisOn || fCor === 0) return;
+      for (var j = 0; j < nz; j++) for (var i = 1; i < nx; i++) {
+        var vf = 0.5 * (vy[cI(i - 1, j)] + vy[cI(i, j)]);
+        u[uI(i, j)] += dt * fCor * vf;
+      }
+      for (var jj = 0; jj < nz; jj++) for (var ii = 0; ii < nx; ii++) {
+        var uc = 0.5 * (u[uI(ii, jj)] + u[uI(ii + 1, jj)]);
+        vy[cI(ii, jj)] += -dt * fCor * uc;
       }
     }
 
@@ -282,20 +315,23 @@
 
     function step() {
       var dt = computeDt(); lastDt = dt;
-      // 1. advect momentum + scalar (all read the pre-advection velocity)
+      // 1. advect momentum + scalars (all read the pre-advection velocity)
       advect(u, uT, nx + 1, nz, 0.0, 0.5, dt);
       advect(w, wT, nx, nz + 1, 0.5, 0.0, dt);
       advect(th, thT, nx, nz, 0.5, 0.5, dt);
+      advect(vy, vyT, nx, nz, 0.5, 0.5, dt);
       var t;
-      t = u; u = uT; uT = t; t = w; w = wT; wT = t; t = th; th = thT; thT = t;
+      t = u; u = uT; uT = t; t = w; w = wT; wT = t; t = th; th = thT; thT = t; t = vy; vy = vyT; vyT = t;
       applyVelBC();
-      // 2. buoyancy into the vertical momentum equation
+      // 2. buoyancy into the vertical momentum equation, then Coriolis on the horizontal wind
       addBuoyancy(dt);
+      coriolis(dt);
       // 3. explicit diffusion (nu>0 only; e.g. Straka nu=75)
       if (nu > 0) {
         diffuse(u, uT, nx + 1, nz, dt); t = u; u = uT; uT = t;
         diffuse(w, wT, nx, nz + 1, dt); t = w; w = wT; wT = t;
         diffuse(th, thT, nx, nz, dt); t = th; th = thT; thT = t;
+        diffuse(vy, vyT, nx, nz, dt); t = vy; vy = vyT; vyT = t;
         applyVelBC();
       }
       // 4. pressure projection -> div-free
@@ -310,19 +346,22 @@
         th[cI(i, j)] = fn((i + 0.5) * dx, (j + 0.5) * dz);
     }
     function reset() {
-      u.fill(0); w.fill(0); th.fill(0); phi.fill(0); divv.fill(0);
+      u.fill(0); w.fill(0); th.fill(0); phi.fill(0); divv.fill(0); vy.fill(0);
       simTime = 0; lastDt = 0; maxCfl = 0; residual = 0;
     }
 
     return {
       // arrays + geometry (live references; u/w get swapped, so read via getters)
       get u() { return u; }, get w() { return w; }, get th() { return th; }, get phi() { return phi; },
-      nx: nx, nz: nz, dx: dx, dz: dz, Lx: Lx, Lz: Lz,
+      get vy() { return vy; },
+      nx: nx, nz: nz, dx: dx, dz: dz, Lx: Lx, Lz: Lz, f: fCor,
       cI: cI, uI: uI, wI: wI, sampleU: sampleU, sampleW: sampleW,
       step: step, reset: reset, initTheta: initTheta,
       get simTime() { return simTime; }, get dt() { return lastDt; },
       get maxCfl() { return maxCfl; }, get residual() { return residual; },
+      get coriolis() { return coriolisOn; }, setCoriolis: function (b) { coriolisOn = !!b; },
       setNu: function (x) { nu = x; },
+      _coriolis: coriolis,     // exposed for the isolated inertial-oscillation unit test
     };
   }
 
@@ -332,7 +371,7 @@
       name: 'Rising thermal bubble',
       hint: 'Warm +2 K bubble (r=2 km) at 2 km in a neutral 20×10 km box, inviscid. ' +
             'Correct core: it rises and rolls into a left–right-symmetric mushroom by t≈1000 s.',
-      cfg: { nx: 200, nz: 100, Lx: 20000, Lz: 10000, nu: 0, dtMax: 4 },
+      cfg: { nx: 200, nz: 100, Lx: 20000, Lz: 10000, nu: 0, dtMax: 4, coriolis: false },
       target: 1000, thetaScale: 2.0,
       init: function (sim) {
         var xc = 10000, zc = 2000, R = 2000, A = 2.0;
@@ -364,7 +403,7 @@
       hint: 'Cold −15 K bubble at 3 km in a neutral 51.2×6.4 km box, ν=75 m²/s. ' +
             'Correct core: the cold pool drops, surges along the floor and rolls into K–H rotors; ' +
             'gust front ≈15.5 km from centre at t=900 s (tolerance widened for the lab grid).',
-      cfg: { nx: 256, nz: 64, Lx: 51200, Lz: 6400, nu: 75, dtMax: 5 },
+      cfg: { nx: 256, nz: 64, Lx: 51200, Lz: 6400, nu: 75, dtMax: 5, coriolis: false },
       target: 900, thetaScale: 15.0,
       init: function (sim) {
         var xc = 25600, zc = 3000, xr = 4000, zr = 2000, A = -15.0;
@@ -430,6 +469,7 @@
     var c = sim.cI(i, j);
     if (viewMode === 'theta') return sim.th[c];
     if (viewMode === 'p') return sim.phi[c];
+    if (viewMode === 'vy') return sim.vy[c];
     // speed: average the surrounding faces
     var uu = 0.5 * (sim.u[sim.uI(i, j)] + sim.u[sim.uI(i + 1, j)]);
     var ww = 0.5 * (sim.w[sim.wI(i, j)] + sim.w[sim.wI(i, j + 1)]);
@@ -448,10 +488,12 @@
     $('presetHint').textContent = preset.hint;
     $('dTarget').textContent = preset.target + ' s';
     $('dGrid').textContent = sim.nx + '×' + sim.nz + ', ' + Math.round(sim.dx) + ' m';
+    $('coriolis').classList.toggle('on', sim.coriolis);
+    $('fval').textContent = 'f = ' + sim.f.toExponential(2) + ' s⁻¹';
     document.querySelectorAll('#presets .btn').forEach(function (b) {
       b.classList.toggle('on', b.dataset.preset === key);
     });
-    $('legName').textContent = viewMode === 'theta' ? "θ′ (K)" : (viewMode === 'p' ? "p′" : "|v| (m/s)");
+    $('legName').textContent = viewMode === 'theta' ? "θ′ (K)" : (viewMode === 'p' ? "p′" : (viewMode === 'vy' ? "v⊥ (m/s)" : "|v| (m/s)"));
   }
 
   function render() {
@@ -479,7 +521,7 @@
     if (showVec) drawVectors();
 
     // legend
-    $('legName').textContent = viewMode === 'theta' ? "θ′ (K)" : (viewMode === 'p' ? "p′" : "|v| (m/s)");
+    $('legName').textContent = viewMode === 'theta' ? "θ′ (K)" : (viewMode === 'p' ? "p′" : (viewMode === 'vy' ? "v⊥ (m/s)" : "|v| (m/s)"));
     if (viewMode === 'speed') { $('legLo').textContent = '0'; $('legHi').textContent = maxV.toFixed(1); }
     else { $('legLo').textContent = (-maxAbs).toFixed(2); $('legHi').textContent = (maxAbs).toFixed(2); }
   }
@@ -564,6 +606,7 @@
     document.querySelectorAll('#views .btn').forEach(function (b) { b.classList.toggle('on', b.dataset.view === m); });
   });
   $('vec').onclick = function () { showVec = !showVec; this.classList.toggle('on', showVec); };
+  $('coriolis').onclick = function () { var on = !sim.coriolis; sim.setCoriolis(on); this.classList.toggle('on', on); };
   $('play').onclick = function () {
     if (frozen) return; playing = !playing;
     this.textContent = playing ? '⏸ Pause' : '▶ Play'; this.classList.toggle('on', playing);
