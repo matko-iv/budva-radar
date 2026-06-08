@@ -106,6 +106,7 @@
         <button class="btn on" id="lyrClouds">☁ Oblaci</button>
         <button class="btn on" id="lyrWind">↗ Vjetar</button>
         <button class="btn" id="lyrRain">🌧 Kiša</button>
+        <button class="btn" id="lyrTemp">🌡 Tlo (temp.)</button>
       </div>
     </div>
     <div class="group">
@@ -149,6 +150,10 @@
     Lv_cp: 2.2, SEA_EVAP: 0.03, SEA_QV: 2.2, SEA_QV_CAP: 0.95, BUOY_CLOUD: 0.3, LAND_EVAP: 0.012,
     LAPSE_SAT: 7.0, MOIST_H: 2000,    // K/km cooling used for saturation; moisture scale height (m)
     KMIN: 1.5, KMAX_PBL: 65, PBL_DAY: 1600, PBL_NIGHT: 250,   // Stage 4 K-theory PBL mixing
+    // Stage 5 surface energy balance (force-restore slab): shortwave in, longwave out, bulk H & LE
+    SW: 0.13, LW_BASE: 0.035, LW_T: 0.010, CH: 0.011, EVAP_SEA: 0.006, EVAP_LAND: 0.0035,
+    RESTORE: 0.004, CLOUD_REF: 2.0, CLOUD_SHADE: 0.7, CLOUD_LW: 0.6, WINDFLUX: 0.06,
+    ALBEDO_LAND: 0.20, ALBEDO_SEA: 0.07, INVCG_LAND: 1.0, INVCG_SEA: 0.04, SOIL_DEFAULT: 0.42,
     DRAG_SEA: 0.002, DRAG_LAND: 0.012, DRAG_PER_M: 2e-5,
     SPONGE: 4, DAVIES: 4, DAVIES_RATE: 0.10, SPONGE_RATE: 0.10,
     PROJ_ITERS: 12, CFL: 0.45, DT_MAX: 4.0, MAXV: 50,
@@ -169,6 +174,7 @@
     var phi = F(NC), divv = F(NC), rain = F(nx * ny);
     var solid = new Uint8Array(NC), sea = new Uint8Array(nx * ny), hgt = F(nx * ny);
     var ksurf = new Int16Array(nx * ny), drag = F(nx * ny);
+    var Ts = F(nx * ny), soilW = F(nx * ny);   // Stage 5: skin/soil temperature anomaly + soil moisture
     var KfCol = F(nz + 1), tmpCol = F(nz);     // scratch for the column PBL mixing
 
     var Usyn = 0, Vsyn = 0, hour = 13, sun = 0.9, humidity = 0.65, coriolisOn = !!cfg.coriolis, simTime = 0;
@@ -216,6 +222,7 @@
           if (!s && ks === nz - 1 && (k === 0 || solid[cI(i, j, k - 1)])) ks = k;
         }
         ksurf[c2] = ks;
+        soilW[c2] = sea[c2] ? 1 : C.SOIL_DEFAULT;
       }
     }
 
@@ -237,27 +244,31 @@
       for (var jj = 0; jj < ny; jj++) for (var ii = 0; ii < nx; ii++) { w[wI(ii, jj, 0)] = 0; w[wI(ii, jj, nz)] = 0; }
     }
 
-    function surfaceForcing(dt) {
-      var sol = solar(), aL = 1 - Math.exp(-C.LAND_RELAX * dt), aS = 1 - Math.exp(-C.SEA_RELAX * dt);
-      var aE = 1 - Math.exp(-C.SEA_EVAP * dt), aEl = 1 - Math.exp(-C.LAND_EVAP * dt);
-      var TeqLandBase = C.LAND_DAY * sol - C.LAND_NIGHT * (1 - sol), TeqSea = C.SEA_DAY * sol + (seaWarmth - 0.5) * 3;
+    // Stage 5: surface energy balance (force-restore slab). A prognostic skin temperature Ts per
+    // column: shortwave heating (minus albedo, shaded by overhead cloud) - net longwave loss
+    // (reduced by cloud greenhouse) - sensible heat flux H to the air - latent heat of evaporation
+    // - restore toward a deep-soil/sea temperature. Land has a small heat capacity (fast, big swing),
+    // the sea a large one (slow). The fluxes H & LE heat & moisten the lowest air cell, so the
+    // surface now responds to clouds and wind (real cloud-radiation feedback) instead of a script.
+    function surfaceEnergyBalance(dt) {
+      var sol = solar();
       for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
-        var c2 = j * nx + i, k = ksurf[c2], c = cI(i, j, k);
-        if (sea[c2]) {
-          th[c] += aS * (TeqSea - th[c]);
-          var tgt = Math.min(bgQv() + C.SEA_QV, C.SEA_QV_CAP * C.QVS0);
-          if (qv[c] < tgt) qv[c] += aE * (tgt - qv[c]);
-        } else {
-          // Elevated terrain is an ELEVATED HEAT SOURCE: in potential-temperature space the
-          // sun-heated peak is buoyant relative to the free air at its level, so do NOT subtract a
-          // lapse here (that would make peaks cold and kill mountain convection). A small height
-          // boost makes ridges slightly stronger trigger points for summer convective clouds.
-          var TeqLand = TeqLandBase * (1 + 0.15 * Math.min(1, hgt[c2] / 1200) * sol);
-          th[c] += aL * (TeqLand - th[c]);
-          // summer land surface moisture (evapotranspiration) so heated inland/mountain air can convect
-          var tgtL = bgQv() * (0.65 + 0.35 * sol);
-          if (qv[c] < tgtL) qv[c] += aEl * (tgtL - qv[c]);
-        }
+        var col = j * nx + i, ks = ksurf[col]; if (ks >= nz) continue;
+        var c = cI(i, j, ks), isSea = sea[col];
+        var albedo = isSea ? C.ALBEDO_SEA : C.ALBEDO_LAND, invCg = isSea ? C.INVCG_SEA : C.INVCG_LAND;
+        var Tdeep = isSea ? (seaWarmth - 0.5) * 3 : 0, moist = isSea ? 1 : soilW[col];
+        var cl = 0; for (var k = ks; k < nz; k++) cl += qc[cI(i, j, k)];
+        var cloudCol = cl > C.CLOUD_REF ? 1 : cl / C.CLOUD_REF;
+        var uu = 0.5 * (u[uI(i, j, ks)] + u[uI(i + 1, j, ks)]), vv = 0.5 * (v[vI(i, j, ks)] + v[vI(i, j + 1, ks)]);
+        var windFac = 1 + C.WINDFLUX * Math.sqrt(uu * uu + vv * vv);
+        var qsatS = C.QVS0 * Math.exp(0.07 * Ts[col]);
+        var Evap = (isSea ? C.EVAP_SEA : C.EVAP_LAND) * windFac * moist * Math.max(0, qsatS - qv[c]);
+        var Hsens = C.CH * windFac * (Ts[col] - th[c]);
+        var SWnet = C.SW * sol * (1 - albedo) * (1 - C.CLOUD_SHADE * cloudCol);
+        var LWnet = (C.LW_BASE + C.LW_T * Ts[col]) * (1 - C.CLOUD_LW * cloudCol);
+        Ts[col] += dt * invCg * (SWnet - LWnet - Hsens - C.Lv_cp * Evap - C.RESTORE * (Ts[col] - Tdeep));
+        th[c] += dt * Hsens;              // sensible heat warms the air
+        qv[c] += dt * Evap; if (qv[c] < 0) qv[c] = 0;   // evaporation moistens the air
       }
     }
 
@@ -463,7 +474,7 @@
       t = u; u = uT; uT = t; t = v; v = vT; vT = t; t = w; w = wT; wT = t;
       t = th; th = thT; thT = t; t = qv; qv = qvT; qvT = t; t = qc; qc = qcT; qcT = t; t = qr; qr = qrT; qrT = t;
       applySolidBC();
-      surfaceForcing(dt);
+      surfaceEnergyBalance(dt);
       buoyancy(dt);
       coriolis(dt);
       surfaceDrag(dt);
@@ -485,6 +496,7 @@
         var c = cI(i, j, k); th[c] = 0; qc[c] = 0; qr[c] = 0;
         qv[c] = solid[c] ? 0 : bgQv() * Math.exp(-(k + 0.5) * dz / C.MOIST_H);
       }
+      for (var col = 0; col < nx * ny; col++) { Ts[col] = 0; soilW[col] = sea[col] ? 1 : C.SOIL_DEFAULT; }
       applySolidBC();
     }
 
@@ -501,7 +513,7 @@
       cI: cI, uI: uI, vI: vI, wI: wI,
       get u() { return u; }, get v() { return v; }, get w() { return w; }, get th() { return th; },
       get qc() { return qc; }, get qr() { return qr; }, get qv() { return qv; },
-      solid: solid, sea: sea, hgt: hgt, ksurf: ksurf, rain: rain,
+      solid: solid, sea: sea, hgt: hgt, ksurf: ksurf, rain: rain, Ts: Ts, soilW: soilW,
       setTerrain: setTerrain, setWind: setWind, setHour: setHour, setSun: setSun,
       setHumidity: setHumidity, setCoriolis: setCoriolis, initState: initState,
       setStability: setStability, setSeaWarmth: setSeaWarmth, paint: paint,
@@ -531,7 +543,7 @@
   sim.setTerrain(terr.height, terr.sea);
   off.width = NX; off.height = NY; octx = off.getContext('2d');
 
-  var playing = true, showClouds = true, showWind = true, showRain = false, autoTime = false;
+  var playing = true, showClouds = true, showWind = true, showRain = false, showTemp = false, autoTime = false;
   var windDir = 200, windSpeed = 6;
   sim.setWind(windDir, windSpeed); sim.setHumidity(0.65); sim.initState();
 
@@ -577,8 +589,19 @@
   function colMaxQc(i, j) { var m = 0; for (var k = 0; k < NZ; k++) { var q = sim.qc[sim.cI(i, j, k)]; if (q > m) m = q; } return m; }
   function colMaxQr(i, j) { var m = 0; for (var k = 0; k < NZ; k++) { var q = sim.qr[sim.cI(i, j, k)]; if (q > m) m = q; } return m; }
 
+  function renderTemp() {                 // Stage 5 skin/soil temperature heatmap overlay
+    var W = view.width, H = view.height, cw = W / NX, ch = H / NY;
+    for (var j = 0; j < NY; j++) for (var i = 0; i < NX; i++) {
+      var tt = Math.max(-1, Math.min(1, sim.Ts[j * NX + i] / 6)), a = Math.abs(tt) * 0.6;
+      if (a < 0.03) continue;
+      var r = tt > 0 ? 230 : 40, g = tt > 0 ? 90 : 110, b = tt > 0 ? 40 : 220;
+      ctx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a.toFixed(2) + ')';
+      ctx.fillRect(i * cw, H - (j + 1) * ch, cw + 1, ch + 1);
+    }
+  }
   function render() {
     drawBasemap();
+    if (showTemp) renderTemp();
     var W = view.width, H = view.height;
     if (showClouds || showRain) {
       var img = octx.createImageData(NX, NY), d = img.data;
@@ -710,6 +733,7 @@
   $('lyrClouds').onclick = function () { showClouds = !showClouds; this.classList.toggle('on', showClouds); };
   $('lyrWind').onclick = function () { showWind = !showWind; this.classList.toggle('on', showWind); };
   $('lyrRain').onclick = function () { showRain = !showRain; this.classList.toggle('on', showRain); };
+  $('lyrTemp').onclick = function () { showTemp = !showTemp; this.classList.toggle('on', showTemp); };
   $('play').onclick = function () { playing = !playing; this.textContent = playing ? '⏸ Pauza' : '▶ Pusti'; this.classList.toggle('on', playing); };
   $('reset').onclick = function () {
     var cor = sim.coriolis;
