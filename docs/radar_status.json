@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-09T08:09:25",
+  "generated": "2026-06-09T08:16:25",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -9,8 +9,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260609_080923_b1bda2639ed4.png",
-      "frame_timestamp": "2026-06-09T08:09:23",
+      "frame_path": "data/frames/dhmz/20260609_081623_df0b86ebe80a.png",
+      "frame_timestamp": "2026-06-09T08:16:23",
       "motion": null,
       "approaching": {
         "is_approaching": false,
@@ -26,15 +26,15 @@
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 9,
+          "n_cells_considered": 12,
           "approaching": false,
           "dominant": {
-            "track_id": "342faa55",
+            "track_id": "593e2865",
             "p": 0.0,
             "eta_minutes": null,
-            "dist_km": 364.46869749488394,
-            "bearing_deg": 338.5389364166523,
-            "bearing_cardinal": "N",
+            "dist_km": 372.10471355776014,
+            "bearing_deg": 336.25462602345215,
+            "bearing_cardinal": "NW",
             "max_dbz": 32.5,
             "cell_type": "stratiform",
             "trend": "steady",
@@ -55,7 +55,7 @@
         "mode": "multicell cluster",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 9,
+        "n_cells": 12,
         "n_convective": 4,
         "max_dbz": 67.5,
         "largest_area_km2": 921.3
@@ -1468,10 +1468,10 @@
       ],
       "cells": [
         {
-          "id": "342faa55",
-          "lat": 45.3481,
-          "lon": 17.2463,
-          "equiv_diam_km": 4.05,
+          "id": "593e2865",
+          "lat": 45.3512,
+          "lon": 17.0479,
+          "equiv_diam_km": 1.85,
           "max_dbz": 32.5,
           "cell_type": "stratiform",
           "speed_kmh": 0.0,
@@ -1480,10 +1480,46 @@
           "trend": "steady"
         },
         {
-          "id": "946a8eae",
-          "lat": 43.5387,
-          "lon": 20.848,
-          "equiv_diam_km": 2.48,
+          "id": "66e9e1a6",
+          "lat": 45.2034,
+          "lon": 15.6672,
+          "equiv_diam_km": 1.65,
+          "max_dbz": 22.5,
+          "cell_type": "stratiform",
+          "speed_kmh": 0.0,
+          "direction_deg": 0.0,
+          "dbz_trend_per_min": 0.0,
+          "trend": "steady"
+        },
+        {
+          "id": "0952cba3",
+          "lat": 44.534,
+          "lon": 20.6629,
+          "equiv_diam_km": 2.19,
+          "max_dbz": 22.5,
+          "cell_type": "stratiform",
+          "speed_kmh": 0.0,
+          "direction_deg": 0.0,
+          "dbz_trend_per_min": 0.0,
+          "trend": "steady"
+        },
+        {
+          "id": "483db825",
+          "lat": 44.5306,
+          "lon": 15.6479,
+          "equiv_diam_km": 1.65,
+          "max_dbz": 22.5,
+          "cell_type": "stratiform",
+          "speed_kmh": 0.0,
+          "direction_deg": 0.0,
+          "dbz_trend_per_min": 0.0,
+          "trend": "steady"
+        },
+        {
+          "id": "925c97df",
+          "lat": 42.9333,
+          "lon": 20.8322,
+          "equiv_diam_km": 2.03,
           "max_dbz": 32.5,
           "cell_type": "stratiform",
           "speed_kmh": 0.0,
@@ -1492,7 +1528,7 @@
           "trend": "steady"
         },
         {
-          "id": "6fad5e0e",
+          "id": "78aae745",
           "lat": 40.6585,
           "lon": 16.0675,
           "equiv_diam_km": 18.8,
@@ -1504,7 +1540,7 @@
           "trend": "steady"
         },
         {
-          "id": "4cca9952",
+          "id": "f6be817f",
           "lat": 40.6588,
           "lon": 16.293,
           "equiv_diam_km": 2.74,
@@ -1516,7 +1552,7 @@
           "trend": "steady"
         },
         {
-          "id": "69609c0c",
+          "id": "5163324c",
           "lat": 40.6595,
           "lon": 17.0192,
           "equiv_diam_km": 34.25,
@@ -1528,7 +1564,7 @@
           "trend": "steady"
         },
         {
-          "id": "0ea35de5",
+          "id": "bf873f12",
           "lat": 40.6608,
           "lon": 18.4355,
           "equiv_diam_km": 34.03,
@@ -1540,7 +1576,7 @@
           "trend": "steady"
         },
         {
-          "id": "4487bf9d",
+          "id": "09e72f7c",
           "lat": 40.6617,
           "lon": 19.3782,
           "equiv_diam_km": 19.96,
@@ -1552,7 +1588,7 @@
           "trend": "steady"
         },
         {
-          "id": "e8250a81",
+          "id": "d41dc909",
           "lat": 40.6622,
           "lon": 19.8518,
           "equiv_diam_km": 19.39,
@@ -1564,7 +1600,7 @@
           "trend": "steady"
         },
         {
-          "id": "d0a2b534",
+          "id": "2544e10f",
           "lat": 40.6627,
           "lon": 20.3163,
           "equiv_diam_km": 19.58,
@@ -1589,8 +1625,8 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260609_080000.gif",
-      "frame_timestamp": "2026-06-09T08:00:00",
+      "frame_path": "data/frames/opera/20260609_080500.gif",
+      "frame_timestamp": "2026-06-09T08:05:00",
       "motion": null,
       "approaching": {
         "is_approaching": false,
@@ -1606,14 +1642,14 @@
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 1616,
+          "n_cells_considered": 1623,
           "approaching": false,
           "dominant": {
-            "track_id": "a0644332",
+            "track_id": "f7e018bb",
             "p": 0.0,
             "eta_minutes": null,
-            "dist_km": 3082.7806881664224,
-            "bearing_deg": 16.09303006341264,
+            "dist_km": 3082.7667277663977,
+            "bearing_deg": 16.09321240727911,
             "bearing_cardinal": "N",
             "max_dbz": 50.0,
             "cell_type": "convective",
@@ -1635,10 +1671,10 @@
         "mode": "embedded convection",
         "confidence": "medium",
         "flags": [],
-        "n_cells": 1616,
-        "n_convective": 183,
+        "n_cells": 1623,
+        "n_convective": 177,
         "max_dbz": 50.0,
-        "largest_area_km2": 243369.2
+        "largest_area_km2": 243351.4
       },
       "scenario": {
         "state": "CLEAR",
