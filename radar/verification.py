@@ -36,11 +36,40 @@ LOG_FIELDS = [
     "closest_eta_minutes", "severe_present",
     "dhmz_rain_at_location", "opera_rain_at_location",
     "closest_rain_km", "closest_rain_dbz", "motion_speed_kmh", "p_rain",
+    # Continuous nowcast probabilities (added 2026-06-11). `p_rain` above is
+    # only the categorical STATE_PROB mapping; these are the actual model
+    # outputs, so future threshold tuning can replay the log empirically.
+    "nowcast_p_rain",   # 120-min cumulative P(rain) from the driving source
+    "nowcast_p60",      # 60-min bucket — what the approaching verdict keys off
 ]
 
 
 def _log_path(docs_dir, year):
     return Path(docs_dir) / f"skala_log_{year}.csv"
+
+
+def _ensure_header(path):
+    """One-time, in-place migration when LOG_FIELDS gains columns: rewrite the
+    file with the new header, padding old rows with ''. No-op when the header
+    already matches. Atomic (tmp + replace) so a crash can't truncate the log."""
+    try:
+        with open(path, newline="", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            header = next(reader, None)
+        if header == LOG_FIELDS:
+            return
+        with open(path, newline="", encoding="utf-8") as f:
+            old_rows = list(csv.DictReader(f))
+        tmp = path.with_suffix(".csv.tmp")
+        with open(tmp, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=LOG_FIELDS, extrasaction="ignore")
+            w.writeheader()
+            for r in old_rows:
+                w.writerow({k: (r.get(k) if r.get(k) is not None else "") for k in LOG_FIELDS})
+        tmp.replace(path)
+        print(f"  [verify] migrated {path.name} header to {len(LOG_FIELDS)} columns")
+    except Exception as e:
+        print(f"  [verify] header migration failed: {e}")
 
 
 def append_log(status, docs_dir):
@@ -60,6 +89,8 @@ def append_log(status, docs_dir):
         app = (drv.get("approaching") or {}) if drv else {}
         state = summary.get("scenario_state", "CLEAR")
         prob = STATE_PROB.get(state)
+        nd = app.get("nowcast_details") or {}
+        p_by_lead = nd.get("p_by_lead") or {}
 
         row = {
             "generated": status.get("generated"),
@@ -76,12 +107,16 @@ def append_log(status, docs_dir):
             "closest_rain_dbz": app.get("closest_rain_intensity_dbz"),
             "motion_speed_kmh": app.get("motion_speed_kmh"),
             "p_rain": prob,
+            "nowcast_p_rain": nd.get("p_rain"),
+            "nowcast_p60": p_by_lead.get("60"),
         }
         gen = row["generated"] or datetime.datetime.now().isoformat()
         year = str(gen)[:4]
         path = _log_path(docs_dir, year)
         path.parent.mkdir(exist_ok=True)
         new_file = not path.exists()
+        if not new_file:
+            _ensure_header(path)
         with open(path, "a", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=LOG_FIELDS)
             if new_file:
@@ -125,6 +160,8 @@ def score_log(docs_dir, horizon_min=VERIFY_HORIZON_MIN):
         H = M = F = C = 0
         brier_sum = 0.0
         brier_n = 0
+        nc_brier_sum = 0.0
+        nc_brier_n = 0
         n_eval = 0
         for i, r in enumerate(rows):
             # Only score scans whose horizon has fully matured.
@@ -163,6 +200,16 @@ def score_log(docs_dir, horizon_min=VERIFY_HORIZON_MIN):
                     brier_n += 1
                 except ValueError:
                     pass
+            # Brier from the continuous 60-min nowcast probability (the value
+            # the approaching verdict keys off; column exists from 2026-06-11).
+            p60 = r.get("nowcast_p60")
+            if p60 not in (None, "", "None"):
+                try:
+                    pv60 = float(p60)
+                    nc_brier_sum += (pv60 - (1.0 if observed else 0.0)) ** 2
+                    nc_brier_n += 1
+                except ValueError:
+                    pass
 
         pod = H / (H + M) if (H + M) else None
         far = F / (H + F) if (H + F) else None
@@ -186,6 +233,8 @@ def score_log(docs_dir, horizon_min=VERIFY_HORIZON_MIN):
             "HSS": round(hss, 3) if hss is not None else None,
             "brier": round(brier_sum / brier_n, 4) if brier_n else None,
             "brier_n": brier_n,
+            "brier_nowcast_p60": round(nc_brier_sum / nc_brier_n, 4) if nc_brier_n else None,
+            "brier_nowcast_p60_n": nc_brier_n,
         }
         with open(docs / "skala_verification.json", "w", encoding="utf-8") as f:
             json.dump(metrics, f, indent=2, ensure_ascii=False)

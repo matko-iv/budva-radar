@@ -23,18 +23,39 @@ def extract_cells(rgb_array, source_id, lat_c, lon_c):
     dbz_flat = colormap.pixels_to_dbz(flat, source_id)
     dbz = dbz_flat.reshape(H, W)
 
-    # 1. Base binary mask for measurable rain
-    mask = (~np.isnan(dbz)) & (dbz >= config.RAIN_DBZ_THRESHOLD)
-    labeled_array, num_features = ndimage.label(mask)
-
-    # 2. Calibration for spatial metrics
+    # Calibration for spatial metrics
     cal = calibration.get_calibration(source_id)
     bx, by = cal.latlon_to_pixel(lat_c, lon_c)
-    
+
     px_n, py_n = cal.latlon_to_pixel(lat_c + 1.0, lon_c)
     km_per_deg = 111.32
     px_per_deg = math.hypot(px_n - bx, py_n - by)
     km_per_px = km_per_deg / max(px_per_deg, 1e-6)
+
+    # 1. Base binary mask for measurable rain
+    mask = (~np.isnan(dbz)) & (dbz >= config.RAIN_DBZ_THRESHOLD)
+
+    # Restrict to the per-source valid_area (sampling.py and motion.py already
+    # do this; without it the legend bar / frame text become fake "cells").
+    src_cfg = config.SOURCES.get(source_id, {})
+    va = src_cfg.get("valid_area")
+    if va:
+        vx0, vy0, vx1, vy1 = va
+        bounded = np.zeros_like(mask)
+        bounded[vy0:vy1, vx0:vx1] = mask[vy0:vy1, vx0:vx1]
+        mask = bounded
+
+    # Restrict to the radar's coverage disc: pixels outside it are basemap
+    # (darker terrain), never echo — they only produce colour misreads.
+    site = src_cfg.get("radar_site")
+    if site:
+        s_lat, s_lon, range_km = site
+        sx, sy = cal.latlon_to_pixel(s_lat, s_lon)
+        r_px = range_km / km_per_px
+        yy, xx = np.ogrid[:H, :W]
+        mask &= ((xx - sx) ** 2 + (yy - sy) ** 2) <= r_px ** 2
+
+    labeled_array, num_features = ndimage.label(mask)
 
     cells = []
     for i in range(1, num_features + 1):
@@ -185,7 +206,7 @@ def update_summaries(current_cells, previous_summaries, scene_motion):
                 "vx_km_min": gx_km_min,
                 "vy_km_min": gy_km_min,
                 "speed_kmh": scene_motion.get("speed_kmh", 0.0) if scene_motion else 0.0,
-                "direction_deg": scene_motion.get("direction_deg") if scene_motion else 0.0,
+                "direction_deg": scene_motion.get("direction_deg") if scene_motion else None,
                 "direction_cardinal": scene_motion.get("direction_cardinal") if scene_motion else None,
                 "dbz_trend_per_min": 0.0,
                 "trend": "steady",

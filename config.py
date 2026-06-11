@@ -33,6 +33,11 @@ SOURCES = {
         # Cuts the noisy top strip and the dBZ scale column on the right.
         # Format: (x_min, y_min, x_max, y_max).
         "valid_area": (3, 96, 657, 716),
+        # The radar's own coverage disc — everything drawn OUTSIDE it on the
+        # image is basemap/frame, never echo. Site coords + range read from the
+        # station's ODIM PVOL metadata (MeteoGate ORD, hrulj: 623 bins x 400 m
+        # = 249.2 km; we clip 1 km inside so the drawn rim line can't leak in).
+        "radar_site": (42.8944, 17.4783, 248.0),  # (lat, lon, range_km)
         "calibration": None,
     },
     "opera": {
@@ -44,6 +49,7 @@ SOURCES = {
         # OPERA legend is in upper-right corner; date/timestamp upper-right.
         # The main map area excludes those.
         "valid_area": (10, 50, 900, 1080),
+        "radar_site": None,  # composite of many radars — no single coverage disc
         "calibration": None,
     },
 }
@@ -89,6 +95,15 @@ RAIN_DBZ_THRESHOLD = 20.0       # dBZ edge to define rain onset
 NOWCAST_MIN_LIFETIME_MIN = 15.0  # Floor for decaying cell survival
 NOWCAST_REACH_BUFFER_KM = 5.0    # Spatial buffer around Budva for a "hit"
 P_APPROACH_THRESHOLD = 0.25      # Probability threshold to trigger 'approaching=True'
+# 'approaching' verdict horizon + distance gate, tuned on the verification log
+# (2026-06-11 replay of 1133 matured scans / 73 onsets, _far_sweep.py):
+#   * the verdict is scored on a 60-min horizon, so it must use the 60-min
+#     cumulative bucket, NOT the 120-min p_rain (built-in over-trigger);
+#   * gating on the dominant cell being <= 50 km kept POD 0.973 while cutting
+#     FAR 0.721 -> 0.601 (median dominant distance: hits 11 km vs FA 43 km).
+# Re-tune both as the log grows.
+APPROACH_LEAD_MIN = 60           # Lead bucket (min) the approaching verdict keys off
+APPROACH_MAX_DIST_KM = 50.0      # Dominant cell farther than this is "watch", not "approaching"
 CELL_CORE_DBZ = 40.0            # Threshold to distinguish convective cores from stratiform
 # Physical cap on storm motion (km/h). Real cells move ~10-90 km/h; squall lines
 # rarely exceed ~100. The Europe-wide OPERA composite occasionally yields an

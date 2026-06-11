@@ -18,6 +18,11 @@ SURVIVAL model:
     1 - prod(1 - p_i). Reported per lead bucket (15/30/60/120 min) so the UI
     can show a confidence curve and the 60-min number lines up with
     verification.py's horizon.
+  * The `approaching` verdict keys off the APPROACH_LEAD_MIN (60-min) bucket —
+    NOT the 120-min cumulative p_rain — and additionally requires the dominant
+    cell to be within APPROACH_MAX_DIST_KM of the assessed point. Both gates
+    were tuned empirically on the verification log (see config.py). p_rain
+    (120 min) is still reported for a softer "watch" tier.
 
 classify_storm_mode() names the scene morphology from REFLECTIVITY ALONE.
 Severe-convective modes (squall line/QLCS, bow echo, supercell) are flagged as
@@ -199,11 +204,21 @@ def arrival_nowcast(summaries, lat_c, lon_c):
         "intensity_label": colormap.classify_intensity(c["max_dbz"]),
         "on_location": dom_a.get("on_location", False),
     }
+    # Approaching verdict: 60-min bucket probability + dominant-distance gate.
+    # The distance is recomputed relative to the ASSESSED point (c["edge_km"]
+    # is extraction-relative, which differs for non-Budva points — the JS port
+    # gates per-point too, so this keeps parity).
+    p_lead = agg.get(str(config.APPROACH_LEAD_MIN), p_rain)
+    kx = 111.32 * math.cos(math.radians(lat_c))
+    dxe = (c["lon"] - lon_c) * kx
+    dyn = (c["lat"] - lat_c) * 110.57
+    dom_edge_pt = max(0.0, math.hypot(dxe, dyn) - c["equiv_diam_km"] / 2.0)
     return {
         "p_rain": p_rain,
         "eta_minutes": dom_a["eta_min"],
         "n_cells_considered": len(per),
-        "approaching": bool(p_rain >= config.P_APPROACH_THRESHOLD),
+        "approaching": bool(p_lead >= config.P_APPROACH_THRESHOLD
+                            and dom_edge_pt <= config.APPROACH_MAX_DIST_KM),
         "dominant": dominant,
         "p_by_lead": agg,
     }
