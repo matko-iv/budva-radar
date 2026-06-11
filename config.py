@@ -55,6 +55,16 @@ SOURCES = {
 }
 
 # ============================================================================
+# MeteoGate ORD (raw ODIM volumes) — Stage 4
+# ============================================================================
+# When True, the dhmz source's cells + rings come from the hrulj (Uljenje)
+# raw polar volume on MeteoGate ORD (anonymous S3, 5-min cadence, RHOHV
+# clutter-filtered) instead of colour-classifying the PNG. The PNG is still
+# fetched: it stays the display layer and the automatic fallback whenever the
+# ORD fetch/decode fails. See radar/ord.py.
+ORD_ENABLED = True
+
+# ============================================================================
 # Fetch settings
 # ============================================================================
 FETCH_INTERVAL_MIN = 7            # Fetch every N minutes (OPERA updates every 5 min)

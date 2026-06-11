@@ -15,7 +15,7 @@ from radar import colormap, calibration
 
 def extract_cells(rgb_array, source_id, lat_c, lon_c):
     """
-    Extract contiguous storm cells from the radar image.
+    Extract contiguous storm cells from the radar IMAGE (colour-classified).
     Returns a list of 'cells' formatted for nowcast.py.
     """
     H, W = rgb_array.shape[:2]
@@ -32,7 +32,7 @@ def extract_cells(rgb_array, source_id, lat_c, lon_c):
     px_per_deg = math.hypot(px_n - bx, py_n - by)
     km_per_px = km_per_deg / max(px_per_deg, 1e-6)
 
-    # 1. Base binary mask for measurable rain
+    # Base binary mask for measurable rain
     mask = (~np.isnan(dbz)) & (dbz >= config.RAIN_DBZ_THRESHOLD)
 
     # Restrict to the per-source valid_area (sampling.py and motion.py already
@@ -55,6 +55,13 @@ def extract_cells(rgb_array, source_id, lat_c, lon_c):
         yy, xx = np.ogrid[:H, :W]
         mask &= ((xx - sx) ** 2 + (yy - sy) ** 2) <= r_px ** 2
 
+    return cells_from_dbz(dbz, mask, cal.pixel_to_latlon, bx, by, km_per_px)
+
+
+def cells_from_dbz(dbz, mask, pixel_to_latlon, bx, by, km_per_px):
+    """Core cell extraction from a dBZ field + rain mask. Shared by the
+    colour-classified image path (extract_cells) and the raw ODIM grid path
+    (radar/ord.py), so both produce identical cell dicts."""
     labeled_array, num_features = ndimage.label(mask)
 
     cells = []
@@ -72,7 +79,8 @@ def extract_cells(rgb_array, source_id, lat_c, lon_c):
 
         # Spatial properties
         cy, cx = ndimage.center_of_mass(cell_mask)
-        lat, lon = cal.pixel_to_latlon(cx, cy)
+        cx, cy = float(cx), float(cy)
+        lat, lon = pixel_to_latlon(cx, cy)
         
         dx_km = (cx - bx) * km_per_px
         dy_km = (cy - by) * km_per_px
@@ -113,8 +121,8 @@ def extract_cells(rgb_array, source_id, lat_c, lon_c):
             eccentricity = 0.0
 
         cells.append({
-            "lat": lat,
-            "lon": lon,
+            "lat": float(lat),
+            "lon": float(lon),
             "cx": cx,
             "cy": cy,
             "area_km2": area_km2,
@@ -132,13 +140,15 @@ def extract_cells(rgb_array, source_id, lat_c, lon_c):
         
     return cells
 
-def update_summaries(current_cells, previous_summaries, scene_motion):
+def update_summaries(current_cells, previous_summaries, scene_motion, dt_min=None):
     """
     Matches current cells to previous frames to calculate speed and trends.
     Returns a list of 'summaries' formatted for nowcast.py.
+    dt_min: actual minutes between the two frames; falls back to the nominal
+    fetch interval when the caller can't compute it.
     """
     summaries = []
-    dt_min = float(config.FETCH_INTERVAL_MIN)
+    dt_min = float(dt_min) if dt_min else float(config.FETCH_INTERVAL_MIN)
 
     # Derive global motion vector as a fallback prior
     gx_km_min, gy_km_min = 0.0, 0.0

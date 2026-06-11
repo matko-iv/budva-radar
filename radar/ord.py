@@ -1,0 +1,309 @@
+"""MeteoGate ORD (EUMETNET Open Radar Data) — raw ODIM HDF5 polar volumes for
+the DHMZ Uljenje radar (NOD:hrulj), replacing colour-classified PNG pixels with
+the radar's actual dBZ measurements.
+
+Access is anonymous (rate-limited) via the CloudFerro S3 bucket behind the
+MeteoGate gateway; verified live 2026-06-11. hrulj publishes a full polar
+volume every 5 minutes (~4 min latency): 9 elevations, 400 m gates, with
+DBZH + RHOHV + TH + VRADH + ZDR.
+
+What this module provides:
+  fetch_latest()     - list + download the newest PVOL into data/frames/ord/
+  load_grid(path)    - lowest-sweep DBZH -> cartesian dBZ grid around the site,
+                       with RHOHV-based non-meteorological echo removed (the
+                       principled clutter filter the PNG path can never have)
+  GridCal            - latlon<->pixel mapping for that grid (calibration-like)
+  sample_rings(...)  - same annulus statistics sampling.sample_concentric
+                       produces, computed from raw dBZ instead of colours
+
+Only h5py + numpy + requests beyond the stdlib.
+"""
+
+import datetime
+import math
+import re
+import urllib.parse
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+import numpy as np
+import requests
+
+import config
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+ORD_FRAMES_DIR = BASE_DIR / "data" / "frames" / "ord"
+
+S3_BASE = "https://s3.waw3-1.cloudferro.com/openradar-24h"
+NODE_PREFIX = "{date}/HR/hrulj/PVOL/"
+
+# RHOHV (co-polar correlation) below this is non-meteorological echo (clutter,
+# chaff, birds/insects, sea spikes). Rain/snow sit at 0.97+; hail can dip to
+# ~0.85, so 0.80 keeps every hydrometeor and drops the junk.
+RHOHV_MIN = 0.80
+
+GRID_KM = 1.0  # cartesian grid resolution (km/pixel)
+
+_TS_RE = re.compile(r"@(\d{8}T\d{4})@")
+
+
+def _utc_date_str(offset_days=0):
+    d = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=offset_days)
+    return d.strftime("%Y/%m/%d")
+
+
+def _list_keys(prefix):
+    """Anonymous S3 ListObjectsV2; returns sorted object keys for a prefix."""
+    url = f"{S3_BASE}?list-type=2&prefix={urllib.parse.quote(prefix)}&max-keys=1000"
+    r = requests.get(url, timeout=30, headers={"User-Agent": config.USER_AGENT})
+    r.raise_for_status()
+    root = ET.fromstring(r.content)
+    ns = root.tag.split("}")[0] + "}" if root.tag.startswith("{") else ""
+    keys = [el.text for el in root.iter(f"{ns}Key") if el.text]
+    return sorted(keys)
+
+
+def nominal_time_utc(key_or_name):
+    """Parse the nominal scan time (UTC) from an ORD key/filename."""
+    m = _TS_RE.search(str(key_or_name))
+    if not m:
+        return None
+    return datetime.datetime.strptime(m.group(1), "%Y%m%dT%H%M").replace(
+        tzinfo=datetime.timezone.utc)
+
+
+def fetch_latest():
+    """Download the newest hrulj PVOL (skipping if already cached).
+    Returns the local Path, or None when nothing is listed. Raises on
+    network/HTTP errors so the caller can fall back to the PNG path."""
+    keys = _list_keys(NODE_PREFIX.format(date=_utc_date_str()))
+    if not keys:  # just after 00 UTC the new day's prefix may be empty
+        keys = _list_keys(NODE_PREFIX.format(date=_utc_date_str(-1)))
+    if not keys:
+        return None
+    latest = keys[-1]
+    ORD_FRAMES_DIR.mkdir(parents=True, exist_ok=True)
+    local = ORD_FRAMES_DIR / latest.rsplit("/", 1)[-1]
+    if not local.exists():
+        r = requests.get(f"{S3_BASE}/{urllib.parse.quote(latest)}", timeout=60,
+                         headers={"User-Agent": config.USER_AGENT})
+        r.raise_for_status()
+        if len(r.content) < 10000 or r.content[:4] != b"\x89HDF":
+            raise ValueError(f"ORD object is not an HDF5 volume ({len(r.content)} B)")
+        local.write_bytes(r.content)
+        # prune old volumes
+        vols = sorted(ORD_FRAMES_DIR.glob("*.h5"))
+        for old in vols[:-config.KEEP_FRAMES]:
+            try:
+                old.unlink()
+            except Exception:
+                pass
+    return local
+
+
+def _unpack(ds_group):
+    """ODIM data group -> float array with gain/offset applied, nodata/undetect
+    as NaN."""
+    a = ds_group["what"].attrs
+    raw = ds_group["data"][:].astype(np.float64)
+    out = raw * float(a["gain"]) + float(a["offset"])
+    out[(raw == float(a["nodata"])) | (raw == float(a["undetect"]))] = np.nan
+    return out
+
+
+class GridCal:
+    """latlon<->pixel for the cartesian dBZ grid (equirectangular around the
+    radar site — the same local-plane convention the rest of the repo uses)."""
+
+    def __init__(self, site_lat, site_lon, half_px, km_per_px):
+        self.site_lat = float(site_lat)
+        self.site_lon = float(site_lon)
+        self.half = half_px
+        self.km_per_px = km_per_px
+        self._kx = 111.32 * math.cos(math.radians(self.site_lat))
+
+    def latlon_to_pixel(self, lat, lon):
+        e_km = (lon - self.site_lon) * self._kx
+        n_km = (lat - self.site_lat) * 110.57
+        return (self.half + e_km / self.km_per_px,
+                self.half - n_km / self.km_per_px)
+
+    def pixel_to_latlon(self, x, y):
+        e_km = (x - self.half) * self.km_per_px
+        n_km = (self.half - y) * self.km_per_px
+        return (self.site_lat + n_km / 110.57,
+                self.site_lon + e_km / self._kx)
+
+
+def load_grid(path):
+    """Lowest-sweep DBZH -> cartesian grid. Returns
+    {dbz, cal, km_per_px, nominal_utc, frame_timestamp_local, site, elangle}.
+    RHOHV < RHOHV_MIN gates are removed before gridding."""
+    import h5py
+    with h5py.File(path, "r") as f:
+        where = f["where"].attrs
+        site_lat, site_lon = float(where["lat"]), float(where["lon"])
+        # pick the sweep with the lowest elevation angle
+        best, best_el = None, 1e9
+        for k in f.keys():
+            if k.startswith("dataset"):
+                el = float(f[k]["where"].attrs["elangle"])
+                if el < best_el:
+                    best, best_el = k, el
+        ds = f[best]
+        dw = ds["where"].attrs
+        nbins, nrays = int(dw["nbins"]), int(dw["nrays"])
+        rscale_km = float(dw["rscale"]) / 1000.0
+        rstart_km = float(dw.get("rstart", 0.0))
+        dbz_polar = None
+        rhohv = None
+        for dk in ds.keys():
+            if not dk.startswith("data"):
+                continue
+            q = ds[dk]["what"].attrs["quantity"]
+            q = q.decode() if isinstance(q, bytes) else str(q)
+            if q == "DBZH":
+                dbz_polar = _unpack(ds[dk])
+            elif q == "RHOHV":
+                rhohv = _unpack(ds[dk])
+        if dbz_polar is None:
+            raise ValueError("volume has no DBZH quantity")
+
+    if rhohv is not None and rhohv.shape == dbz_polar.shape:
+        dbz_polar = dbz_polar.copy()
+        dbz_polar[(~np.isnan(rhohv)) & (rhohv < RHOHV_MIN)] = np.nan
+
+    # polar -> cartesian (nearest-neighbour; rays assumed uniform from north,
+    # the ODIM PVOL row convention)
+    range_km = rstart_km + nbins * rscale_km
+    half = int(math.ceil(range_km / GRID_KM))
+    size = 2 * half + 1
+    ys, xs = np.mgrid[0:size, 0:size]
+    dx_km = (xs - half) * GRID_KM
+    dy_km = (half - ys) * GRID_KM  # north up
+    r_km = np.hypot(dx_km, dy_km)
+    az = (np.degrees(np.arctan2(dx_km, dy_km)) + 360.0) % 360.0
+    ray = np.round(az / (360.0 / nrays)).astype(int) % nrays
+    bin_idx = np.floor((r_km - rstart_km) / rscale_km).astype(int)
+    ok = (bin_idx >= 0) & (bin_idx < nbins) & (r_km > 0.5)
+    dbz = np.full((size, size), np.nan)
+    dbz[ok] = dbz_polar[ray[ok], bin_idx[ok]]
+
+    nominal = nominal_time_utc(path)
+    local_naive = (nominal.astimezone().replace(tzinfo=None)
+                   if nominal else None)
+    return {
+        "dbz": dbz,
+        "cal": GridCal(site_lat, site_lon, half, GRID_KM),
+        "km_per_px": GRID_KM,
+        "nominal_utc": nominal,
+        # naive LOCAL time, same convention as PNG frame timestamps, so the
+        # frontend stalenessNotice keeps working unchanged
+        "frame_timestamp_local": local_naive.isoformat(timespec="seconds") if local_naive else None,
+        "site": {"lat": site_lat, "lon": site_lon},
+        "elangle": best_el,
+        "range_km": range_km,
+        "n_gates_wet": int(np.nansum(dbz >= config.RAIN_DBZ_THRESHOLD)),
+    }
+
+
+def cells_from_grid(grid, lat_c, lon_c):
+    """Storm cells from the raw dBZ grid — same cell dicts as
+    tracking.extract_cells, but from measured reflectivity instead of
+    colour classification (and already RHOHV-filtered in load_grid)."""
+    import tracking
+    dbz = grid["dbz"]
+    cal = grid["cal"]
+    bx, by = cal.latlon_to_pixel(lat_c, lon_c)
+    mask = (~np.isnan(dbz)) & (dbz >= config.RAIN_DBZ_THRESHOLD)
+    return tracking.cells_from_dbz(dbz, mask, cal.pixel_to_latlon,
+                                   bx, by, grid["km_per_px"])
+
+
+def sample_rings(grid, lat_c, lon_c, radii_km):
+    """Annulus ring statistics around (lat_c, lon_c) from the raw dBZ grid —
+    the same fields sampling.sample_concentric returns from PNG colours, so
+    every downstream consumer (facts, UI table) works unchanged."""
+    from radar import calibration, sampling
+
+    dbz = grid["dbz"]
+    cal = grid["cal"]
+    km_per_px = grid["km_per_px"]
+    H, W = dbz.shape
+    bx, by = cal.latlon_to_pixel(lat_c, lon_c)
+
+    ys = np.arange(0, H)
+    xs = np.arange(0, W)
+    XX, YY = np.meshgrid(xs, ys)
+    DX = (XX - bx)
+    DY = (YY - by)
+    DIST_KM = np.sqrt(DX * DX + DY * DY) * km_per_px
+    BRG = (np.degrees(np.arctan2(DX, -DY)) + 360) % 360
+
+    valid = ~np.isnan(dbz)
+    wet_raw = valid & (dbz >= config.RAIN_DBZ_THRESHOLD)
+    wet = sampling._apply_speckle_filter(wet_raw)
+
+    results = []
+    prev_r = 0.0
+    for r_km in radii_km:
+        ann = (DIST_KM > prev_r) & (DIST_KM <= r_km)
+        n_pix = int(ann.sum())
+        if n_pix == 0:
+            results.append({"radius_km": r_km, "n_samples": 0, "out_of_image": True})
+            prev_r = r_km
+            continue
+        ann_dbz = dbz[ann]
+        ann_brg = BRG[ann]
+        ann_dist = DIST_KM[ann]
+        ann_wet = wet[ann]
+        v = ~np.isnan(ann_dbz)
+        n_valid = int(v.sum())
+        echo = v & (ann_dbz >= config.NOISE_DBZ)
+        trace = echo & (ann_dbz < config.RAIN_DBZ_THRESHOLD)
+        wet_raw_ann = v & (ann_dbz >= config.RAIN_DBZ_THRESHOLD)
+        n_wet = int(ann_wet.sum())
+        if n_valid > 0:
+            max_dbz = float(np.nanmax(ann_dbz))
+            mean_dbz = float(np.nanmean(ann_dbz))
+            bi = int(np.nanargmax(ann_dbz))
+            sb, sd = float(ann_brg[bi]), float(ann_dbz[bi])
+        else:
+            max_dbz = mean_dbz = float("nan")
+            sb, sd = None, float("nan")
+        if n_wet > 0:
+            wd = ann_dist[ann_wet]
+            wb = ann_brg[ann_wet]
+            wz = ann_dbz[ann_wet]
+            ci = int(np.argmin(wd))
+            cw_km, cw_brg, cw_dbz = float(wd[ci]), float(wb[ci]), float(wz[ci])
+        else:
+            cw_km = cw_brg = cw_dbz = None
+        results.append({
+            "radius_km": r_km,
+            "km_per_pixel": round(km_per_px, 3),
+            "min_wet_threshold": sampling.min_wet_for_distance(r_km, km_per_px),
+            "n_pixels_in_annulus": n_pix,
+            "n_valid_color": n_valid,
+            "n_wet": n_wet,
+            "n_wet_raw": int(wet_raw_ann.sum()),
+            "n_echo": int(echo.sum()),
+            "n_trace": int(trace.sum()),
+            "frac_wet": round(n_wet / max(n_pix, 1), 5),
+            "max_dbz": None if np.isnan(max_dbz) else round(max_dbz, 1),
+            "mean_dbz": None if np.isnan(mean_dbz) else round(mean_dbz, 1),
+            "strongest_bearing": round(sb, 1) if sb is not None else None,
+            "strongest_bearing_cardinal": (calibration.bearing_to_cardinal(sb)
+                                           if sb is not None else None),
+            "strongest_dbz": None if (isinstance(sd, float) and np.isnan(sd)) else round(sd, 1),
+            "closest_wet_km": round(cw_km, 2) if cw_km is not None else None,
+            "closest_wet_bearing": round(cw_brg, 1) if cw_brg is not None else None,
+            "closest_wet_bearing_cardinal": (calibration.bearing_to_cardinal(cw_brg)
+                                             if cw_brg is not None else None),
+            "closest_wet_dbz": round(cw_dbz, 1) if cw_dbz is not None else None,
+            "n_samples": 0,
+            "n_in_image": 0,
+            "samples": [],
+        })
+        prev_r = r_km
+    return results

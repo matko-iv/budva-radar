@@ -58,6 +58,13 @@ def _add_budva_pixel(status_dict):
             info["budva_pixel"] = {"x": round(px, 1), "y": round(py, 1)}
             info["image_size"] = list(config.SOURCES[source_id]["expected_size"])
             info["px_per_km"] = round(px_per_km, 4)
+            # Ship the valid drawing zone so the browser cell-layer (shared
+            # skala-cells-viz.js) can clip to the radar's coverage disc.
+            va = config.SOURCES[source_id].get("valid_area")
+            info["valid_area"] = list(va) if va else None
+            rs = config.SOURCES[source_id].get("radar_site")
+            info["radar_site"] = ({"lat": rs[0], "lon": rs[1], "range_km": rs[2]}
+                                  if rs else None)
         except Exception:
             pass
 

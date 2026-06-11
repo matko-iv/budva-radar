@@ -1,6 +1,7 @@
 """Top-level interpretation: combines sampling + motion + tracking -> human-readable status."""
 
 import datetime
+import json
 from pathlib import Path
 from PIL import Image
 import numpy as np
@@ -10,8 +11,42 @@ from radar import fetch, calibration, colormap, sampling, motion
 import nowcast
 import tracking
 
-# Memory cache for track histories between runs
-_TRACK_CACHE = {}
+# Track histories between runs. Persisted to disk so per-cell velocities work
+# in ONE-SHOT runs too (GH Actions / cron run a fresh process each time; a
+# memory-only cache meant every cell looked brand new and fell back to the
+# scene-motion prior).
+_TRACK_CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "track_cache.json"
+_TRACK_CACHE = None
+
+
+def _track_cache():
+    global _TRACK_CACHE
+    if _TRACK_CACHE is None:
+        try:
+            with open(_TRACK_CACHE_PATH, encoding="utf-8") as f:
+                _TRACK_CACHE = json.load(f)
+        except Exception:
+            _TRACK_CACHE = {}
+    return _TRACK_CACHE
+
+
+def _track_cache_put(source_id, frame_key, frame_time, summaries):
+    cache = _track_cache()
+    cache[source_id] = {"frame_key": frame_key, "frame_time": frame_time,
+                        "summaries": summaries}
+    try:
+        _TRACK_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(_TRACK_CACHE_PATH, "w", encoding="utf-8") as f:
+            json.dump(cache, f, default=float)
+    except Exception as e:
+        print(f"  [track-cache] save failed: {e}")
+
+
+def _parse_iso(s):
+    try:
+        return datetime.datetime.fromisoformat(str(s))
+    except Exception:
+        return None
 
 def _load_rgb(path) -> np.ndarray:
     img = Image.open(path).convert("RGB")
@@ -62,24 +97,64 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         except Exception as e:
             motion_info = {"error": str(e)}
 
-    # 2. STAGE 2: Object Extraction & Tracking
-    current_cells = tracking.extract_cells(latest_rgb, source_id, location["lat"], location["lon"])
+    # STAGE 4: raw ODIM volume (MeteoGate ORD) is the primary DATA source for
+    # the dhmz/Uljenje interpretation — measured dBZ + RHOHV clutter filter
+    # instead of colour classification. The PNG stays the display layer and
+    # the automatic fallback whenever ORD fetch/decode fails.
+    ord_grid = None
+    if source_id == "dhmz" and getattr(config, "ORD_ENABLED", False):
+        try:
+            from radar import ord as ord_mod
+            vol_path = ord_mod.fetch_latest()
+            if vol_path is not None:
+                ord_grid = ord_mod.load_grid(vol_path)
+        except Exception as e:
+            print(f"  [{source_id}] ORD unavailable, PNG fallback: {e}")
 
-    # Concentric-ring sampling for the transparent per-source detail table.
-    # (The cell/nowcast path above is the brain; these rings are the raw view
-    # the UI table shows.) Annotate the beam-overshoot range-confidence taper.
-    try:
-        rings = sampling.sample_concentric(latest_rgb, source_id, location["lat"], location["lon"], radii_km)
-        for r in rings:
-            r["confidence"] = _range_confidence(r.get("radius_km"))
-    except Exception as e:
-        rings = []
-        print(f"  [{source_id}] ring sampling failed: {e}")
-    
-    # Load history, update, and save back to cache
-    prev_summaries = _TRACK_CACHE.get(source_id, [])
-    cell_summaries = tracking.update_summaries(current_cells, prev_summaries, motion_info)
-    _TRACK_CACHE[source_id] = cell_summaries
+    # 2. STAGE 2: Object Extraction & ring sampling (ORD raw-dBZ or PNG colours)
+    if ord_grid is not None:
+        data_source = "ord_pvol"
+        current_cells = ord_mod.cells_from_grid(ord_grid, location["lat"], location["lon"])
+        try:
+            rings = ord_mod.sample_rings(ord_grid, location["lat"], location["lon"], radii_km)
+        except Exception as e:
+            rings = []
+            print(f"  [{source_id}] ORD ring sampling failed: {e}")
+        frame_ts = ord_grid["frame_timestamp_local"]
+        frame_key = f"ord:{frame_ts}"
+    else:
+        data_source = "png"
+        current_cells = tracking.extract_cells(latest_rgb, source_id, location["lat"], location["lon"])
+        # Concentric-ring sampling for the transparent per-source detail table.
+        # (The cell/nowcast path above is the brain; these rings are the raw view
+        # the UI table shows.)
+        try:
+            rings = sampling.sample_concentric(latest_rgb, source_id, location["lat"], location["lon"], radii_km)
+        except Exception as e:
+            rings = []
+            print(f"  [{source_id}] ring sampling failed: {e}")
+        frame_ts = motion._frame_timestamp(latest_path).isoformat() if "_" in latest_path.stem else None
+        frame_key = f"png:{latest_path.name}"
+    # Annotate the beam-overshoot range-confidence taper on either path.
+    for r in rings:
+        r["confidence"] = _range_confidence(r.get("radius_km"))
+
+    # Track continuity (disk-persisted): reuse summaries when the frame hasn't
+    # changed (re-tracking an identical frame would zero all velocities), else
+    # match against the previous frame with the TRUE time step between them.
+    prev_entry = _track_cache().get(source_id) or {}
+    if prev_entry.get("frame_key") == frame_key and prev_entry.get("summaries"):
+        cell_summaries = prev_entry["summaries"]
+    else:
+        dt_min = None
+        t_now, t_prev = _parse_iso(frame_ts), _parse_iso(prev_entry.get("frame_time"))
+        if t_now and t_prev:
+            dt_min = (t_now - t_prev).total_seconds() / 60.0
+            if not (0.5 <= dt_min <= 180):
+                dt_min = None  # gap too odd — use the nominal interval
+        cell_summaries = tracking.update_summaries(
+            current_cells, prev_entry.get("summaries") or [], motion_info, dt_min=dt_min)
+        _track_cache_put(source_id, frame_key, frame_ts, cell_summaries)
 
     # 3. STAGE 2: Probabilistic Nowcast & Storm Mode Morphology
     nowcast_results = nowcast.arrival_nowcast(cell_summaries, location["lat"], location["lon"])
@@ -164,7 +239,8 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         "source": source_id,
         "ok": True,
         "frame_path": frame_path_rel.replace("\\", "/"),
-        "frame_timestamp": motion._frame_timestamp(latest_path).isoformat() if "_" in latest_path.stem else None,
+        "frame_timestamp": frame_ts,
+        "data_source": data_source,
         "motion": motion_info,
         "approaching": approaching_legacy,
         "storm_mode": storm_mode,
@@ -294,4 +370,22 @@ def interpret_all() -> dict:
         "closest_eta_minutes": closest_eta,
         "lines": summary_lines,
     }
+
+    # THE canonical Budva verdict — computed ONCE here, rendered verbatim by
+    # every page (budva-radar index + radar-map, and the forecast page). Also
+    # a per-source verdict so the per-radar summary lines come from the same
+    # interpreter instead of being re-derived in browser JS.
+    try:
+        from radar import verdict as verdict_mod
+        loc_name = config.LOCATION.get("name") or "Budva"
+        for src_id, info in out["sources"].items():
+            if info.get("ok"):
+                f = verdict_mod.facts_from_source(info, loc_name)
+                r = verdict_mod.interpret(f)
+                info["verdict"] = {"state": r["state"], "headline": r["headline"],
+                                   "narrative": r["narrative"]}
+        out["summary"]["budva_verdict"] = verdict_mod.budva_verdict(out)
+    except Exception as e:
+        print(f"  [verdict] failed: {e}")
+        out["summary"]["budva_verdict"] = None
     return out
