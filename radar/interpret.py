@@ -160,6 +160,38 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
     nowcast_results = nowcast.arrival_nowcast(cell_summaries, location["lat"], location["lon"])
     storm_mode = nowcast.classify_storm_mode(current_cells, cell_summaries, motion_info)
 
+    # STAGE 4: the "needs Doppler velocity to confirm" flags can now actually
+    # be checked — the ORD volume carries VRADH. Run the gate-to-gate azimuthal
+    # shear (mesocyclone proxy) at the strongest cell and report the measurement
+    # alongside the suspicion. Confirmation aid only; the verdict is untouched.
+    if (ord_grid is not None and current_cells
+            and any("Doppler" in fl for fl in storm_mode.get("flags", []))):
+        try:
+            strong = max(current_cells, key=lambda c: c["max_dbz"])
+            rc = ord_mod.rotation_check(vol_path, strong["lat"], strong["lon"])
+            if rc is not None:
+                storm_mode["doppler"] = rc
+                ni_txt = (f"{rc['elangle']:.1f}°, Nyquist ±{rc['nyquist_ms']:.0f} m/s"
+                          if rc.get("nyquist_ms") is not None else f"{rc.get('elangle', 0):.1f}°")
+                if rc.get("max_shear_ms") is None:
+                    msg = f"VRADH (Doppler, {ni_txt}) at the strongest cell: no valid velocity gates"
+                elif rc["couplet"]:
+                    msg = (f"VRADH (Doppler, {ni_txt}) at the strongest cell: velocity couplet, "
+                           f"gate-to-gate shear {rc['couplet_shear_ms']:.0f} m/s — rotation SUPPORTED"
+                           + (" (aliasing possible)" if rc.get("aliasing_possible") else ""))
+                elif rc.get("limited_nyquist"):
+                    # a >=20 m/s couplet physically FOLDS at this Nyquist — saying
+                    # "not confirmed" would be false certainty
+                    msg = (f"VRADH (Doppler, {ni_txt}) at the strongest cell: max gate-to-gate "
+                           f"shear {rc['max_shear_ms']:.0f} m/s, but mesocyclone-scale rotation "
+                           f"folds at this Nyquist — INCONCLUSIVE without dealiasing")
+                else:
+                    msg = (f"VRADH (Doppler, {ni_txt}) at the strongest cell: max gate-to-gate "
+                           f"shear {rc['max_shear_ms']:.0f} m/s, no couplet — rotation NOT confirmed")
+                storm_mode["flags"].append(msg)
+        except Exception as e:
+            print(f"  [{source_id}] VRADH rotation check failed: {e}")
+
     # Convert probabilistic nowcast into Legacy states to satisfy the UI/Verification.
     # IMPORTANT: the cell detector finds cells across the WHOLE image — for the
     # OPERA composite that is all of Europe — so a storm 3000 km away must NOT

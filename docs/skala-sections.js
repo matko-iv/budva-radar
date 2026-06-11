@@ -144,13 +144,17 @@
       svgInner += `<circle cx="${bx}" cy="${by}" r="${Math.max(2.5, imgW / 250)}" fill="#d32f2f" stroke="#ffffff" stroke-width="1"/>`;
       // Tracked-cell layer (circles/arrows/cones) from the shared viz module —
       // the SAME drawing radar-map.html shows. Dominant cell highlighted only
-      // while the nowcast actually calls it approaching.
-      if (global.SKALA_CELLS && Array.isArray(info.cells) && info.cells.length) {
+      // while the nowcast actually calls it approaching. Components are user-
+      // selectable via checkboxes under the image (persisted in localStorage).
+      const hasCells = !!(global.SKALA_CELLS && Array.isArray(info.cells) && info.cells.length);
+      let domId = null;
+      if (hasCells) {
         const app = info.approaching || {};
         const dom = app.nowcast_details && app.nowcast_details.dominant;
-        const domId = (app.is_approaching && dom) ? dom.track_id : null;
-        svgInner += global.SKALA_CELLS.buildCellsLayer(data, info, domId);
+        domId = (app.is_approaching && dom) ? dom.track_id : null;
       }
+      const ringsInner = svgInner;
+      if (hasCells) svgInner += global.SKALA_CELLS.buildCellsLayer(data, info, domId);
       const wrap = document.createElement('div');
       wrap.className = 'image-wrap';
       wrap.innerHTML = `
@@ -159,6 +163,28 @@
           <img src="${fileName}?t=${Date.now()}" alt="${src} radar">
           <svg class="overlay" viewBox="0 0 ${imgW} ${imgH}" preserveAspectRatio="none">${svgInner}</svg>
         </div>`;
+      if (hasCells) {
+        const opts = global.SKALA_CELLS.getOpts();
+        const controls = document.createElement('div');
+        controls.style.cssText = 'font-size:12px; color:#555; margin:4px 0 0; display:flex; gap:12px; flex-wrap:wrap;';
+        const parts = [['circles', 'krugovi (ćelije)'], ['arrows', 'strelice (30 min)'], ['cones', 'konusi (60 min)']];
+        for (const [key, label] of parts) {
+          const lab = document.createElement('label');
+          lab.style.cssText = 'cursor:pointer; user-select:none;';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = !!opts[key];
+          cb.addEventListener('change', () => {
+            global.SKALA_CELLS.setOpt(key, cb.checked);
+            const svg = wrap.querySelector('svg.overlay');
+            if (svg) svg.innerHTML = ringsInner + global.SKALA_CELLS.buildCellsLayer(data, info, domId);
+          });
+          lab.appendChild(cb);
+          lab.appendChild(document.createTextNode(' ' + label));
+          controls.appendChild(lab);
+        }
+        wrap.appendChild(controls);
+      }
       gridEl.appendChild(wrap);
     }
   }

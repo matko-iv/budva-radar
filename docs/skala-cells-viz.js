@@ -75,8 +75,29 @@
     });
   }
 
-  // SVG inner string for the cell layer. domId highlights the dominant cell.
-  function buildCellsLayer(data, info, domId) {
+  // User-selectable layer components (circles / arrows / cones), persisted in
+  // localStorage so the choice survives the pages' 60-s auto-reload. Shared by
+  // index.html's checkboxes and radar-map.html's canvas layer.
+  var OPTS_KEY = 'skala_cells_opts';
+  function getOpts() {
+    var o = { circles: true, arrows: true, cones: true };
+    try {
+      var saved = JSON.parse(localStorage.getItem(OPTS_KEY) || '{}');
+      for (var k in o) if (typeof saved[k] === 'boolean') o[k] = saved[k];
+    } catch (e) { /* no storage (file:// private mode) — defaults */ }
+    return o;
+  }
+  function setOpt(name, value) {
+    var o = getOpts();
+    o[name] = !!value;
+    try { localStorage.setItem(OPTS_KEY, JSON.stringify(o)); } catch (e) {}
+    return o;
+  }
+
+  // SVG inner string for the cell layer. domId highlights the dominant cell;
+  // opts ({circles, arrows, cones}) picks the components (default: saved opts).
+  function buildCellsLayer(data, info, domId, opts) {
+    opts = opts || getOpts();
     var cells = catalogCells(data, info);
     if (!cells.length) return '';
     var map = makeMapping(data, info);
@@ -96,7 +117,7 @@
       var isDom = domId != null && c.id === domId;
       var hasVel = c.speed_kmh != null && c.direction_deg != null && c.speed_kmh >= 1;
 
-      if (hasVel) {
+      if (hasVel && opts.cones) {
         var dir = c.direction_deg;
         // ±2σ cone edge at t=60 min (mirrors nowcast: base + 0.1 deg/min growth)
         var half = 2 * ((c.cell_type === 'convective' ? 15 : 5) + 0.1 * 60);
@@ -107,23 +128,28 @@
           pts.push((p.x + reach * Math.sin(t)).toFixed(1) + ',' + (p.y - reach * Math.cos(t)).toFixed(1));
         }
         s += '<polygon points="' + pts.join(' ') + '" fill="' + col + '" fill-opacity="0.08" stroke="' + col + '" stroke-opacity="0.35" stroke-width="0.8"/>';
+      }
+      if (hasVel && opts.arrows) {
         // 30-min displacement arrow
+        var dirA = c.direction_deg;
         var aLen = Math.min(c.speed_kmh, 120) * 0.5 * ppk;
-        var tD = dir * Math.PI / 180;
+        var tD = dirA * Math.PI / 180;
         var ex = p.x + aLen * Math.sin(tD), ey = p.y - aLen * Math.cos(tD);
         s += '<line x1="' + p.x.toFixed(1) + '" y1="' + p.y.toFixed(1) + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) + '" stroke="' + col + '" stroke-width="2"/>';
         var offs = [150, -150];
         for (var o = 0; o < 2; o++) {
-          var tH = (dir + offs[o]) * Math.PI / 180;
+          var tH = (dirA + offs[o]) * Math.PI / 180;
           s += '<line x1="' + ex.toFixed(1) + '" y1="' + ey.toFixed(1) + '" x2="' + (ex + 6 * Math.sin(tH)).toFixed(1) + '" y2="' + (ey - 6 * Math.cos(tH)).toFixed(1) + '" stroke="' + col + '" stroke-width="2"/>';
         }
       }
 
-      s += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + rPx.toFixed(1) + '" fill="' + col + '" fill-opacity="0.15" stroke="' + col + '" stroke-width="' + (isDom ? 2.5 : 1.5) + '"/>';
+      if (opts.circles) {
+        s += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + rPx.toFixed(1) + '" fill="' + col + '" fill-opacity="0.15" stroke="' + col + '" stroke-width="' + (isDom ? 2.5 : 1.5) + '"/>';
+      }
       if (isDom) {
         s += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + (rPx + 5).toFixed(1) + '" fill="none" stroke="' + col + '" stroke-width="1.5" stroke-dasharray="5 3"/>';
       }
-      if (isDom || labelIds[c.id]) {
+      if (opts.circles && (isDom || labelIds[c.id])) {
         s += '<text x="' + p.x.toFixed(1) + '" y="' + (p.y - rPx - 4).toFixed(1) + '" fill="' + col + '" stroke="#fff" stroke-width="2.5" paint-order="stroke" font-size="11" font-weight="600" text-anchor="middle">'
           + Math.round(c.max_dbz) + ' dBZ' + (hasVel ? ' · ' + Math.round(c.speed_kmh) + ' km/h' : '') + '</text>';
       }
@@ -138,5 +164,7 @@
     catalogCells: catalogCells,
     buildCellsLayer: buildCellsLayer,
     dbzColor: dbzColor,
+    getOpts: getOpts,
+    setOpt: setOpt,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

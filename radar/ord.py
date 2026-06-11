@@ -44,6 +44,10 @@ RHOHV_MIN = 0.80
 
 GRID_KM = 1.0  # cartesian grid resolution (km/pixel)
 
+# Gate-to-gate azimuthal shear at/above this is the operational mesocyclone
+# couplet signature (NSSL/SCIT practice, ~20-25 m/s).
+MESO_COUPLET_MS = 20.0
+
 _TS_RE = re.compile(r"@(\d{8}T\d{4})@")
 
 
@@ -204,6 +208,113 @@ def load_grid(path):
         "elangle": best_el,
         "range_km": range_km,
         "n_gates_wet": int(np.nansum(dbz >= config.RAIN_DBZ_THRESHOLD)),
+    }
+
+
+def rotation_check(path, lat, lon, ray_halfwin=12, bin_halfwin=10):
+    """Mesocyclone proxy from VRADH (Doppler radial velocity): max gate-to-gate
+    AZIMUTHAL shear in a window around (lat, lon) on the lowest sweep. A
+    velocity couplet (adjacent rays with opposite-sign radial velocity, each
+    >= 5 m/s) at gate-to-gate shear >= ~20-25 m/s is the operational
+    mesocyclone signature (NSSL/SCIT practice). This single-elevation check is
+    a CONFIRMATION AID, not a warning criterion — aliasing near the Nyquist
+    velocity can fake couplets, which we flag.
+
+    Sweep choice: among sweeps whose range covers the cell and whose elevation
+    is low enough to look at storm-relevant levels (<= ~5 deg), pick the one
+    with the HIGHEST Nyquist velocity (hrulj: 0.5deg has NI +-6.1 m/s but
+    1.3-4.8deg have +-8.3). Even so, a >=20 m/s couplet FOLDS at these NIs, so
+    when 2*NI is below the couplet threshold the result is honestly marked
+    `limited_nyquist` (inconclusive) instead of a false "not confirmed".
+
+    Returns {max_shear_ms, couplet, couplet_shear_ms, nyquist_ms, elangle,
+             limited_nyquist, aliasing_possible, n_valid_gates} or None when
+    VRADH is missing.
+    """
+    import h5py
+
+    def _ni_of(f, ds, dk):
+        for grp in (ds[dk], ds, f):
+            if "how" in grp and "NI" in grp["how"].attrs:
+                return float(grp["how"].attrs["NI"])
+        return None
+
+    with h5py.File(path, "r") as f:
+        where = f["where"].attrs
+        site_lat, site_lon = float(where["lat"]), float(where["lon"])
+
+        # target gate geometry first (needed to test range coverage per sweep)
+        kx = 111.32 * math.cos(math.radians(site_lat))
+        dx = (lon - site_lon) * kx
+        dy = (lat - site_lat) * 110.57
+        rng_km = math.hypot(dx, dy)
+
+        # candidate sweeps with VRADH that cover the range, elevation <= 5 deg;
+        # prefer highest NI, tie-break lowest elevation
+        cands = []
+        for k in f.keys():
+            if not k.startswith("dataset"):
+                continue
+            ds = f[k]
+            dw = ds["where"].attrs
+            el = float(dw["elangle"])
+            cover_km = float(dw.get("rstart", 0.0)) + int(dw["nbins"]) * float(dw["rscale"]) / 1000.0
+            if el > 5.0 or cover_km < rng_km:
+                continue
+            for dk in ds.keys():
+                if dk.startswith("data"):
+                    q = ds[dk]["what"].attrs["quantity"]
+                    q = q.decode() if isinstance(q, bytes) else str(q)
+                    if q == "VRADH":
+                        cands.append((_ni_of(f, ds, dk) or 0.0, -el, k, dk))
+        if not cands:
+            return None
+        cands.sort(reverse=True)
+        ni_val, neg_el, best, best_dk = cands[0]
+        ds = f[best]
+        dw = ds["where"].attrs
+        nbins, nrays = int(dw["nbins"]), int(dw["nrays"])
+        rscale_km = float(dw["rscale"]) / 1000.0
+        rstart_km = float(dw.get("rstart", 0.0))
+        vr = _unpack(ds[best_dk])
+        ni = ni_val or None
+        elangle = -neg_el
+
+    az = (math.degrees(math.atan2(dx, dy)) + 360.0) % 360.0
+    ray0 = int(round(az / (360.0 / nrays))) % nrays
+    bin0 = int((rng_km - rstart_km) / rscale_km)
+    if not (0 <= bin0 < nbins):
+        return None
+
+    rays = [(ray0 + r) % nrays for r in range(-ray_halfwin, ray_halfwin + 1)]
+    b0, b1 = max(0, bin0 - bin_halfwin), min(nbins, bin0 + bin_halfwin + 1)
+    win = vr[np.array(rays)][:, b0:b1]          # (rays, bins) window
+    v1, v2 = win[:-1, :], win[1:, :]            # adjacent-azimuth gate pairs
+    both = ~(np.isnan(v1) | np.isnan(v2))
+    n_valid = int(both.sum())
+    limited = bool(ni is not None and 2.0 * ni < MESO_COUPLET_MS)
+    if n_valid == 0:
+        return {"max_shear_ms": None, "couplet": False, "couplet_shear_ms": None,
+                "nyquist_ms": ni, "elangle": elangle, "limited_nyquist": limited,
+                "aliasing_possible": False, "n_valid_gates": 0}
+    dv = np.abs(v2 - v1)
+    dv[~both] = np.nan
+    max_shear = float(np.nanmax(dv))
+    # couplet = opposite signs, both meaningful (>= 5 m/s)
+    coup = both & (np.sign(v1) * np.sign(v2) < 0) & (np.abs(v1) >= 5.0) & (np.abs(v2) >= 5.0)
+    couplet_shear = float(np.nanmax(np.where(coup, dv, np.nan))) if coup.any() else None
+    couplet = bool(couplet_shear is not None and couplet_shear >= MESO_COUPLET_MS)
+    aliasing = bool(ni is not None and couplet_shear is not None
+                    and float(np.max(np.abs(win[~np.isnan(win)]))) > 0.8 * ni)
+    return {
+        "max_shear_ms": round(max_shear, 1),
+        "couplet": couplet,
+        "couplet_shear_ms": round(couplet_shear, 1) if couplet_shear is not None else None,
+        "nyquist_ms": ni,
+        "elangle": elangle,
+        "limited_nyquist": limited,
+        "aliasing_possible": aliasing,
+        "n_valid_gates": n_valid,
     }
 
 
