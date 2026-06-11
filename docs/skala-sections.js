@@ -86,6 +86,15 @@
     data = data || {};
     var sources = data.sources || {};
     var sum = data.summary || {};
+    // PREFERRED: the canonical verdict precomputed ONCE by the pipeline
+    // (radar/verdict.py) — the same object the forecast page renders, so every
+    // surface shows literally the same conclusion. The JS computation below
+    // remains only as a fallback for data.js produced by older pipelines.
+    var v = sum.budva_verdict;
+    if (v && v.state && v.headline) {
+      return { state: v.state, headline: v.headline, narrative: v.narrative,
+               meta: v.style || (global.SKALA && global.SKALA.STATE_META[v.state]) || {} };
+    }
     var loc = (data.location && data.location.name) || 'this location';
     var srcId = (sources.dhmz && sources.dhmz.ok)
       ? 'dhmz' : (sum.scenario_source || Object.keys(sources)[0]);
@@ -102,9 +111,12 @@
       if (!info || !info.ok) {
         li.textContent = sid.toUpperCase() + ': unavailable';
       } else {
-        const r = (global.SKALA && global.SKALA.interpret)
-          ? global.SKALA.interpret(factsFromSource(info, locName))
-          : { state: '?', narrative: '' };
+        // PREFERRED: pipeline-precomputed per-source verdict (radar/verdict.py)
+        // so the wording is decided in exactly one place; JS fallback for old data.
+        const r = (info.verdict && info.verdict.state) ? info.verdict
+          : ((global.SKALA && global.SKALA.interpret)
+            ? global.SKALA.interpret(factsFromSource(info, locName))
+            : { state: '?', narrative: '' });
         li.textContent = sid.toUpperCase() + ': [' + r.state + '] ' + r.narrative;
       }
       listEl.appendChild(li);
