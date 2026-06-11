@@ -142,6 +142,15 @@
         svgInner += `<text x="${bx}" y="${labelY}" fill="#ffffff" stroke="#000000" stroke-width="0.4" font-size="${Math.max(9, imgW / 65)}" text-anchor="middle" font-family="sans-serif">${km}km</text>`;
       });
       svgInner += `<circle cx="${bx}" cy="${by}" r="${Math.max(2.5, imgW / 250)}" fill="#d32f2f" stroke="#ffffff" stroke-width="1"/>`;
+      // Tracked-cell layer (circles/arrows/cones) from the shared viz module —
+      // the SAME drawing radar-map.html shows. Dominant cell highlighted only
+      // while the nowcast actually calls it approaching.
+      if (global.SKALA_CELLS && Array.isArray(info.cells) && info.cells.length) {
+        const app = info.approaching || {};
+        const dom = app.nowcast_details && app.nowcast_details.dominant;
+        const domId = (app.is_approaching && dom) ? dom.track_id : null;
+        svgInner += global.SKALA_CELLS.buildCellsLayer(data, info, domId);
+      }
       const wrap = document.createElement('div');
       wrap.className = 'image-wrap';
       wrap.innerHTML = `

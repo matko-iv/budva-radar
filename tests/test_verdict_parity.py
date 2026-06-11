@@ -31,7 +31,7 @@ def run_js(status):
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(status, f, default=str)
         out = subprocess.run(["node", str(RUNNER), name],
-                             capture_output=True, text=True)
+                             capture_output=True, text=True, encoding="utf-8")
         if out.returncode != 0:
             raise RuntimeError("node runner failed:\n" + out.stderr)
         return json.loads(out.stdout)

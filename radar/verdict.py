@@ -29,6 +29,12 @@ STATE_META = {
 }
 
 
+def _round(x):
+    """Half-up rounding — mirrors JS Math.round (Python's round() is banker's:
+    round(32.5)=32 but Math.round(32.5)=33, which broke wording parity)."""
+    return int(math.floor(x + 0.5))
+
+
 def _intensity(dbz):
     if dbz is None or (isinstance(dbz, float) and math.isnan(dbz)):
         return "rain"
@@ -68,7 +74,7 @@ def _fmt_km(km):
         return f"{km:.2f}"
     if km < 10:
         return f"{km:.1f}"
-    return str(round(km))
+    return str(_round(km))
 
 
 def _closest_wet(src):
@@ -131,7 +137,7 @@ def interpret(facts):
     dbz = facts.get("dbz")
     km = facts.get("km")
     intensity = _intensity(dbz)
-    dbz_txt = f" ({round(dbz)} dBZ)" if dbz is not None else ""
+    dbz_txt = f" ({_round(dbz)} dBZ)" if dbz is not None else ""
     where = f"~{_fmt_km(km)} km" + (f" {facts['cardinal']}" if facts.get("cardinal") else "")
 
     threat = facts.get("threat")
@@ -147,15 +153,15 @@ def interpret(facts):
         narrative = f"Raining now — {intensity}{dbz_txt}."
     elif severe_approaching:
         state = "SEVERE"
-        t_eta = f", ETA ~{round(threat['eta'])} min" if threat.get("eta") is not None else ""
+        t_eta = f", ETA ~{_round(threat['eta'])} min" if threat.get("eta") is not None else ""
         t_where = f"~{_fmt_km(threat.get('km'))} km" + (
             f" {threat['cardinal']}" if threat.get("cardinal") else "")
-        t_dbz = f" ({round(threat['dbz'])} dBZ)" if threat.get("dbz") is not None else ""
+        t_dbz = f" ({_round(threat['dbz'])} dBZ)" if threat.get("dbz") is not None else ""
         t_label = threat.get("label") or _intensity(threat.get("dbz"))
         narrative = f"Severe storm approaching — {t_label}{t_dbz}, {t_where}{t_eta}."
     elif facts.get("approaching"):
         state = "APPROACHING"
-        eta = f", ETA ~{round(facts['eta'])} min" if facts.get("eta") is not None else ""
+        eta = f", ETA ~{_round(facts['eta'])} min" if facts.get("eta") is not None else ""
         narrative = f"Rain approaching — {intensity}, {where}{eta}."
     elif facts.get("anyRain") and km is not None and km <= SKALA_VICINITY_KM:
         state = "BYPASSING"
@@ -193,21 +199,21 @@ def serbian_line(facts, res):
 
     if severe_here:
         text = (f"jako nevrijeme nad Budvom — {_intenzitet_sr(dbz)}"
-                + (f" ({round(dbz)} dBZ)" if dbz is not None else ""))
+                + (f" ({_round(dbz)} dBZ)" if dbz is not None else ""))
         return {"text": text, "bold": "jako nevrijeme nad Budvom",
                 "color": "#6a1b9a", "weight": 700}
     if state == "RAINING":
         return {"text": f"pada kiša u Budvi — {_intenzitet_sr(dbz)}",
                 "bold": "pada kiša u Budvi", "color": "#bf360c", "weight": 700}
     if severe_approaching and threat:
-        t_eta = f", ETA ~{round(threat['eta'])} min" if threat.get("eta") is not None else ""
-        t_dbz = f" ({round(threat['dbz'])} dBZ)" if threat.get("dbz") is not None else ""
+        t_eta = f", ETA ~{_round(threat['eta'])} min" if threat.get("eta") is not None else ""
+        t_dbz = f" ({_round(threat['dbz'])} dBZ)" if threat.get("dbz") is not None else ""
         text = (f"jako nevrijeme se približava — {_intenzitet_sr(threat.get('dbz'))}{t_dbz}, "
                 f"~{_fmt_km(threat.get('km'))} km {_smjer_sr(threat.get('cardinal'))}{t_eta}")
         return {"text": text, "bold": "jako nevrijeme se približava",
                 "color": "#6a1b9a", "weight": 700}
     if state == "APPROACHING":
-        eta = f", ETA ~{round(facts['eta'])} min" if facts.get("eta") is not None else ""
+        eta = f", ETA ~{_round(facts['eta'])} min" if facts.get("eta") is not None else ""
         text = (f"kiša se približava — {_intenzitet_sr(dbz)}, "
                 f"~{_fmt_km(km)} km {_smjer_sr(facts.get('cardinal'))}{eta}")
         return {"text": text, "bold": "kiša se približava",

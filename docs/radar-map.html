@@ -474,59 +474,56 @@ function getMotion() {
           && window.RADAR_DATA.sources.dhmz.motion) || null;
 }
 
-// Pixel <-> lat/lon mapping via the DHMZ Budva anchor + the isotropic
-// PX_PER_KM the rings already use (image y grows down -> north up).
+// Geometry + cell filtering now live in the SHARED viz module
+// (skala-cells-viz.js) so index.html draws the identical layer. These are
+// thin wrappers binding it to this page's data + dhmz source.
+function dhmzInfo() {
+  const d = window.RADAR_DATA || {};
+  return (d.sources && d.sources.dhmz) || null;
+}
+
+let _vizMap;
+function vizMapping() {
+  if (_vizMap === undefined) {
+    _vizMap = (window.SKALA_CELLS && window.RADAR_DATA)
+      ? SKALA_CELLS.makeMapping(window.RADAR_DATA, dhmzInfo()) : null;
+  }
+  return _vizMap;
+}
+
 function pxToLatLon(cx, cy) {
-  const d = window.RADAR_DATA || {};
-  const loc = d.location;
-  const anchor = d.sources && d.sources.dhmz && d.sources.dhmz.budva_pixel;
-  if (!loc || !anchor) return null;
-  const eKm = (cx - anchor.x) / PX_PER_KM;
-  const nKm = (anchor.y - cy) / PX_PER_KM;
-  return { lat: loc.lat + nKm / 110.57,
-           lon: loc.lon + eKm / (111.32 * Math.cos(loc.lat * Math.PI / 180)) };
+  const m = vizMapping();
+  return m ? m.pxToLatLon(cx, cy) : null;
 }
-
-function latLonToPx(lat, lon) {
-  const d = window.RADAR_DATA || {};
-  const loc = d.location;
-  const anchor = d.sources && d.sources.dhmz && d.sources.dhmz.budva_pixel;
-  if (!loc || !anchor) return null;
-  const eKm = (lon - loc.lon) * 111.32 * Math.cos(loc.lat * Math.PI / 180);
-  const nKm = (lat - loc.lat) * 110.57;
-  return { x: anchor.x + eKm * PX_PER_KM, y: anchor.y - nKm * PX_PER_KM };
-}
-
-// The Uljenje radar's own coverage disc (site coords + range from the
-// station's ODIM metadata via MeteoGate ORD). Everything on the image OUTSIDE
-// this disc is basemap/frame/legend — never echo (mirrors config.radar_site).
-const RADAR_SITE = { lat: 42.8944, lon: 17.4783, rangeKm: 248 };
 
 function inValid(x, y) {
-  return x >= VALID.x0 && x < VALID.x1 && y >= VALID.y0 && y < VALID.y1;
+  return window.SKALA_CELLS ? SKALA_CELLS.inValid(dhmzInfo(), x, y)
+    : (x >= VALID.x0 && x < VALID.x1 && y >= VALID.y0 && y < VALID.y1);
 }
 
-let _sitePx;
+// Coverage-disc test, memoized for the per-pixel ring scan.
+let _covTest;
 function inCoverage(x, y) {
-  if (_sitePx === undefined) _sitePx = latLonToPx(RADAR_SITE.lat, RADAR_SITE.lon);
-  const s = _sitePx;
-  if (!s) return true; // no anchor yet — can't test, accept
-  const r = RADAR_SITE.rangeKm * PX_PER_KM;
-  const dx = x - s.x, dy = y - s.y;
-  return dx * dx + dy * dy <= r * r;
+  if (_covTest === undefined) {
+    const m = vizMapping(), info = dhmzInfo();
+    if (!m || !info || !window.SKALA_CELLS) {
+      _covTest = null;
+    } else {
+      const rs = info.radar_site || { lat: 42.8944, lon: 17.4783, range_km: 248 };
+      const s = m.latLonToPx(rs.lat, rs.lon);
+      const r2 = Math.pow(rs.range_km * m.pxPerKm, 2);
+      _covTest = (px, py) => {
+        const dx = px - s.x, dy = py - s.y;
+        return dx * dx + dy * dy <= r2;
+      };
+    }
+  }
+  return _covTest ? _covTest(x, y) : true;
 }
 
-// The shipped catalog, filtered to plausible cells (inside valid_area AND the
-// coverage disc). Guards against stale data.js produced before the pipeline
-// itself learned to mask — and is the single source for nowcast + drawing.
 function catalogCells() {
-  const d = window.RADAR_DATA || {};
-  const dhmz = d.sources && d.sources.dhmz;
-  if (!dhmz || !Array.isArray(dhmz.cells)) return [];
-  return dhmz.cells.filter(c => {
-    const p = latLonToPx(c.lat, c.lon);
-    return p && inValid(p.x, p.y) && inCoverage(p.x, p.y);
-  });
+  return window.SKALA_CELLS
+    ? SKALA_CELLS.catalogCells(window.RADAR_DATA || {}, dhmzInfo()) : [];
 }
 
 // Replay the probabilistic cell-tracking nowcast (nowcast-browser.js) for a
