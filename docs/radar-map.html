@@ -103,6 +103,7 @@
 
 <script src="data.js"></script>
 <script src="skala-text.js"></script>
+<script src="skala-cells-viz.js"></script>
 <script src="skala-sections.js"></script>
 <script src="nowcast-browser.js"></script>
 <script>
@@ -550,64 +551,13 @@ function cellNowcastAt(cx, cy) {
 let ringsHTML = '';
 let lastDomId = null;
 
-function dbzColor(dbz) {
-  if (dbz == null || isNaN(dbz)) return '#9e9e9e';
-  if (dbz < MODERATE_DBZ) return '#2e7d32';   // light rain — green
-  if (dbz < HEAVY_DBZ)    return '#f9a825';   // moderate — yellow
-  if (dbz < SEVERE_DBZ)   return '#ef6c00';   // heavy — orange
-  return '#c62828';                            // severe — red
-}
-
 function buildCellsLayer(domId) {
   const tgl = document.getElementById('cells-toggle');
   if (tgl && !tgl.checked) return '';
-  const cells = catalogCells();
-  if (!cells.length) return '';
-  // On widespread-rain days the catalog can hold 100+ cells — label only the
-  // strongest dozen (plus the dominant one) so the text doesn't smother the map.
-  const labelIds = new Set(cells.slice()
-    .sort((a, b) => (b.max_dbz || 0) - (a.max_dbz || 0))
-    .slice(0, 12).map(c => c.id));
-  let s = '';
-  for (const c of cells) {
-    const p = latLonToPx(c.lat, c.lon);
-    if (!p) continue;
-    const rPx = Math.max(3, (c.equiv_diam_km / 2) * PX_PER_KM);
-    const col = dbzColor(c.max_dbz);
-    const isDom = domId != null && c.id === domId;
-    const hasVel = c.speed_kmh != null && c.direction_deg != null && c.speed_kmh >= 1;
-
-    if (hasVel) {
-      const dir = c.direction_deg;
-      // +-2-sigma cone edge at t=60 min (mirrors nowcast: base + 0.1 deg/min).
-      const half = 2 * ((c.cell_type === 'convective' ? 15 : 5) + 0.1 * 60);
-      const reach = rPx + Math.min(c.speed_kmh, 120) * 1.0 * PX_PER_KM; // body + 60-min travel
-      const pts = [`${p.x.toFixed(1)},${p.y.toFixed(1)}`];
-      for (let a = dir - half; a <= dir + half + 0.01; a += 6) {
-        const t = a * Math.PI / 180;
-        pts.push(`${(p.x + reach * Math.sin(t)).toFixed(1)},${(p.y - reach * Math.cos(t)).toFixed(1)}`);
-      }
-      s += `<polygon points="${pts.join(' ')}" fill="${col}" fill-opacity="0.08" stroke="${col}" stroke-opacity="0.35" stroke-width="0.8"/>`;
-      // 30-min displacement arrow
-      const aLen = Math.min(c.speed_kmh, 120) * 0.5 * PX_PER_KM;
-      const tD = dir * Math.PI / 180;
-      const ex = p.x + aLen * Math.sin(tD), ey = p.y - aLen * Math.cos(tD);
-      s += `<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="${col}" stroke-width="2"/>`;
-      for (const off of [150, -150]) {
-        const tH = (dir + off) * Math.PI / 180;
-        s += `<line x1="${ex.toFixed(1)}" y1="${ey.toFixed(1)}" x2="${(ex + 6 * Math.sin(tH)).toFixed(1)}" y2="${(ey - 6 * Math.cos(tH)).toFixed(1)}" stroke="${col}" stroke-width="2"/>`;
-      }
-    }
-
-    s += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${rPx.toFixed(1)}" fill="${col}" fill-opacity="0.15" stroke="${col}" stroke-width="${isDom ? 2.5 : 1.5}"/>`;
-    if (isDom) {
-      s += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(rPx + 5).toFixed(1)}" fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="5 3"/>`;
-    }
-    if (isDom || labelIds.has(c.id)) {
-      s += `<text x="${p.x.toFixed(1)}" y="${(p.y - rPx - 4).toFixed(1)}" fill="${col}" stroke="#fff" stroke-width="2.5" paint-order="stroke" font-size="11" font-weight="600" text-anchor="middle">${Math.round(c.max_dbz)} dBZ${hasVel ? ' · ' + Math.round(c.speed_kmh) + ' km/h' : ''}</text>`;
-    }
-  }
-  return s ? `<g id="cells-layer">${s}</g>` : '';
+  if (!window.SKALA_CELLS) return '';
+  // The actual drawing lives in the shared module so index.html shows the
+  // IDENTICAL layer on its dhmz preview.
+  return SKALA_CELLS.buildCellsLayer(window.RADAR_DATA || {}, dhmzInfo(), domId);
 }
 
 function renderOverlay(domId) {
