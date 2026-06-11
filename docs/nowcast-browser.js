@@ -106,10 +106,30 @@
         tau_min: null, stationary: !!extra.stationary, on_location: !!extra.on_location }, geo);
     };
 
-    // already raining at the point (inside the cell body / within the buffer)
-    if (edgeKm <= 0 || edgeKm <= C.NOWCAST_REACH_BUFFER_KM) {
+    // Cell body covers the point -> raining there NOW.
+    if (edgeKm <= 0) {
       return zero({ p: 1.0, eta: 0.0, pbl: 1.0, on_location: true });
     }
+
+    // Receding test (mirrors nowcast.py): positive range rate = centre moving
+    // AWAY. A departing cell whose trailing edge still sits within the buffer
+    // has already PASSED — it must not read "approaching, ETA 0".
+    var receding = false;
+    if (cell.speed_kmh != null && cell.direction_deg != null) {
+      var spd0 = Math.min(parseFloat(cell.speed_kmh) || 0.0, C.NOWCAST_MAX_SPEED_KMH);
+      if (spd0 >= 1.0) {
+        var ang0 = rad(cell.direction_deg);
+        receding = (px * Math.sin(ang0) + py * Math.cos(ang0)) > 0;
+      }
+    }
+
+    // Nearest edge essentially on top of us: imminent if inbound/stationary/
+    // unknown motion; already-passed if receding.
+    if (edgeKm <= C.NOWCAST_REACH_BUFFER_KM) {
+      if (receding) return zero({ p: 0.0, eta: null, pbl: 0.0 });
+      return zero({ p: 1.0, eta: 0.0, pbl: 1.0, on_location: true });
+    }
+
     if (cell.speed_kmh === null || cell.speed_kmh === undefined || cell.direction_deg === null || cell.direction_deg === undefined) {
       return null;
     }
