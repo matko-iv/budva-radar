@@ -192,6 +192,11 @@ def main():
         ("onloc001", LAT + 0.01, LON, 10.0, 38.0, "convective", 30.0, 180.0, 0.0, "steady"),
         # far beyond physical reach -> p 0
         ("far00001", LAT + 3.0, LON, 15.0, 52.0, "convective", 50.0, 180.0, 0.0, "steady"),
+        # just PASSED: trailing edge ~3 km E of the point, moving E (receding)
+        # -> p 0 (the "approaching, ETA 0 after the rain has gone by" bug)
+        ("passed01", LAT, LON + 0.0971, 10.0, 36.0, "convective", 40.0, 90.0, -0.5, "decaying"),
+        # mirror-image control: edge ~3 km W, moving E TOWARD the point -> p 1
+        ("immin001", LAT, LON - 0.0971, 10.0, 36.0, "convective", 40.0, 90.0, 0.0, "steady"),
     ]
     for (cid, clat, clon, eq, dbz, ct, sp, di, tr, trend) in specs:
         s, c = synth(cid, clat, clon, eq, dbz, ct, sp, di, tr, trend, LAT, LON)

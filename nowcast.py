@@ -61,12 +61,42 @@ def _cell_arrival(summary, lat_c, lon_c):
     None if the cell has no usable velocity."""
     latest = summary["latest"]
 
-    # Already raining at the point: the location is inside the cell, or the
-    # nearest rain pixel is essentially on top of us (within the buffer). NOTE
-    # this is a tighter test than the advection reach below (which is
-    # radius+buffer, i.e. the cell BODY covering the point) — a cell whose
-    # nearest edge is still tens of km away is approaching, not overhead.
-    if latest.get("contains_location") or latest["edge_km"] <= config.NOWCAST_REACH_BUFFER_KM:
+    # Geometry relative to the ASSESSED point, up front — the on-location and
+    # receding tests need it, not just the advection loop. (Per-point math,
+    # like the JS port: latest["edge_km"] is extraction-relative.)
+    kx = 111.32 * math.cos(math.radians(lat_c))
+    ky = 110.57
+    px = (latest["lon"] - lon_c) * kx
+    py = (latest["lat"] - lat_c) * ky
+    dist_c = math.hypot(px, py)
+    edge_pt = max(0.0, dist_c - latest["equiv_diam_km"] / 2.0)
+
+    # Cell body covers the point -> it is raining there NOW.
+    if edge_pt <= 0.0:
+        return {"p": 1.0, "eta_min": 0.0,
+                "p_by_lead": {b: 1.0 for b in LEAD_BUCKETS},
+                "tau_min": None, "stationary": False, "on_location": True}
+
+    # Receding test: positive range rate = the centre is moving AWAY from the
+    # point. A cell whose trailing edge is still within the buffer but which is
+    # departing has already PASSED — it must NOT read as "approaching, ETA 0"
+    # (the bug: rain crosses Budva west->east, and for the next ~20 min the
+    # trailing edge sits 0-5 km E while the page still screams APPROACHING).
+    receding = False
+    if "speed_kmh" in summary and summary.get("direction_deg") is not None:
+        spd0 = min(float(summary["speed_kmh"] or 0.0), config.NOWCAST_MAX_SPEED_KMH)
+        if spd0 >= 1.0:
+            ang0 = math.radians(summary["direction_deg"])
+            receding = (px * math.sin(ang0) + py * math.cos(ang0)) > 0.0
+
+    # Nearest edge essentially on top of us (within the buffer): imminent if
+    # inbound/stationary/unknown motion; already-passed if receding.
+    if edge_pt <= config.NOWCAST_REACH_BUFFER_KM:
+        if receding:
+            return {"p": 0.0, "eta_min": None,
+                    "p_by_lead": {b: 0.0 for b in LEAD_BUCKETS},
+                    "tau_min": None, "stationary": False, "on_location": False,
+                    "receding": True}
         return {"p": 1.0, "eta_min": 0.0,
                 "p_by_lead": {b: 1.0 for b in LEAD_BUCKETS},
                 "tau_min": None, "stationary": False, "on_location": True}
@@ -87,16 +117,10 @@ def _cell_arrival(summary, lat_c, lon_c):
     # than that it CANNOT arrive in time, so it is not "approaching" — this
     # kills absurd "hail 983 km away, ETA 103 min" cases.
     max_reach_km = config.NOWCAST_MAX_SPEED_KMH * (config.NOWCAST_LEAD_MAX_MIN / 60.0)
-    if latest["edge_km"] > max_reach_km:
+    if edge_pt > max_reach_km:
         return {"p": 0.0, "eta_min": None,
                 "p_by_lead": {b: 0.0 for b in LEAD_BUCKETS},
                 "tau_min": None, "stationary": False, "on_location": False}
-
-    # local km plane centred on the location (east +, north +)
-    kx = 111.32 * math.cos(math.radians(lat_c))
-    ky = 110.57
-    px = (latest["lon"] - lon_c) * kx
-    py = (latest["lat"] - lat_c) * ky
     # A member "hits" when the advected CENTRE passes within the cell's
     # equivalent radius + buffer of the point (i.e. the cell body covers it).
     reach = latest["equiv_diam_km"] / 2.0 + config.NOWCAST_REACH_BUFFER_KM
