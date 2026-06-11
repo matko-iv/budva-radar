@@ -53,12 +53,17 @@
     <div id="controls">
       <input id="city-input" placeholder="ime grada (Budva, Petrovac) ili klikni mapu" autocomplete="off">
       <button id="city-btn">setuj</button>
+      <label style="user-select:none; cursor:pointer;"><input type="checkbox" id="cells-toggle" checked> ćelije + nowcast</label>
       <span class="dim" id="status">mapa se ucitava ...</span>
     </div>
     <div id="map-wrap">
       <canvas id="canvas" width="720" height="751"></canvas>
       <svg id="overlay" viewBox="0 0 720 751" preserveAspectRatio="none"></svg>
     </div>
+    <p class="dim" style="font-size: 12px; margin: 4px 0 0; color: #888;">
+      krug = praćena ćelija (boja po max dBZ) · strelica = pomak u narednih 30 min ·
+      konus = moguć položaj ivice za 60 min · isprekidano = dominantna ćelija za izabranu tačku
+    </p>
 
     <section id="alert" class="alert ok" style="margin-top: 18px;">
       <p id="alert-text">Klikni mapu ili ukucaj grad da pokrenes interpretaciju.</p>
@@ -231,7 +236,7 @@ function interpretAt(cx, cy, pixels) {
   // Center-pixel dBZ: strictest "rain at location" signal — only true if
   // the literal pixel under the marker is a rain colour on the radar.
   let centerDbz = null;
-  if (cx >= 0 && cx < IMG_W && cy >= 0 && cy < IMG_H) {
+  if (cx >= 0 && cx < IMG_W && cy >= 0 && cy < IMG_H && inValid(cx, cy) && inCoverage(cx, cy)) {
     const cIdx = (cy * IMG_W + cx) * 4;
     const d = classifyDbz(pixels[cIdx], pixels[cIdx+1], pixels[cIdx+2]);
     if (!isNaN(d)) centerDbz = d;
@@ -256,6 +261,7 @@ function interpretAt(cx, cy, pixels) {
         const dx = x - cx, dy = y - cy;
         const distPx2 = dx*dx + dy*dy;
         if (distPx2 > rMaxPx2 || distPx2 <= rMinPx2) continue;
+        if (!inCoverage(x, y)) continue; // basemap beyond the radar disc — never echo
         nPix++;
         const idx = (y * IMG_W + x) * 4;
         const dbz = classifyDbz(pixels[idx], pixels[idx+1], pixels[idx+2]);
@@ -306,7 +312,12 @@ function initApp() {
       pixelCache = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       setStatus('', 'ok');
     } catch (e) {
-      setStatus('greska pri citanju pixela (CORS / file://): ' + e.message, 'err');
+      // file:// taints the canvas, so the per-pixel dBZ scan is unavailable.
+      // The cell catalog (data.js) is unaffected — clicks keep working in a
+      // nowcast-only degraded mode (see setLocation).
+      setStatus('pixel-scan nedostupan (canvas blokiran — file://). Pokreni lokalni server ' +
+                '(<code>python -m http.server</code> u docs/) ili koristi objavljeni sajt. ' +
+                'Klikovi rade u degradiranom rezimu: samo nowcast iz kataloga celija.', 'warn');
     }
   };
   img.onerror = () => setStatus('greska: latest_dhmz.png nije nadjen', 'err');
@@ -325,6 +336,10 @@ function initApp() {
   document.getElementById('city-input').addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter') handleCityInput();
   });
+  const tgl = document.getElementById('cells-toggle');
+  if (tgl) tgl.addEventListener('change', () => renderOverlay(lastDomId));
+  // Cell layer is data-driven (data.js), not pixel-driven — draw immediately.
+  renderOverlay(null);
 }
 
 function handleCityInput() {
@@ -341,9 +356,22 @@ function setStatus(html, cls) {
   el.className = cls || 'dim';
 }
 
+function emptyScanResult() {
+  return {
+    rings: RADII_KM.map(r => ({ r_km: r, n_pix: 0, n_wet: 0, n_echo: 0, max_dbz: null, bearing: null })),
+    closest: null, severeClosest: null, max_dbz: null, center_dbz: null,
+  };
+}
+
 function setLocation(cx, cy, label) {
-  if (!pixelCache) { setStatus('mapa jos nije ucitana', 'warn'); return; }
   drawOverlay(cx, cy);
+  if (!pixelCache) {
+    // Degraded mode (canvas tainted or image still loading): no local pixel
+    // scan, but the catalog nowcast still gives approaching/ETA for the point.
+    renderOutput(label, cx, cy, emptyScanResult(), 0);
+    setStatus('degradirani rezim: verdikt samo iz nowcasta (pixel-scan nedostupan)', 'warn');
+    return;
+  }
   setStatus(`scanning ${label} ...`);
   setTimeout(() => {
     const t0 = performance.now();
@@ -355,7 +383,6 @@ function setLocation(cx, cy, label) {
 }
 
 function drawOverlay(cx, cy) {
-  const svg = document.getElementById('overlay');
   let s = '';
   for (const r of RADII_KM) {
     const rPx = r * PX_PER_KM;
@@ -363,7 +390,8 @@ function drawOverlay(cx, cy) {
     s += `<text x="${cx}" y="${cy - rPx - 2}" fill="#fff" stroke="#000" stroke-width="0.4" font-size="11" text-anchor="middle">${r}km</text>`;
   }
   s += `<circle cx="${cx}" cy="${cy}" r="4" fill="#d32f2f" stroke="#fff" stroke-width="1"/>`;
-  svg.innerHTML = s;
+  ringsHTML = s;
+  renderOverlay(lastDomId);
 }
 
 function classifyIntensity(dbz) {
@@ -446,23 +474,147 @@ function getMotion() {
           && window.RADAR_DATA.sources.dhmz.motion) || null;
 }
 
-// Replay the probabilistic cell-tracking nowcast (nowcast-browser.js) for a
-// clicked pixel — the SAME model Budva uses, fed by the shipped DHMZ cell
-// catalog. Reconstruct the point's lat/lon from its pixel via the DHMZ Budva
-// anchor + the isotropic PX_PER_KM the rings already use. Returns null if the
-// catalog/anchor isn't available (facts then fall back to no-approach).
-function cellNowcastAt(cx, cy) {
+// Pixel <-> lat/lon mapping via the DHMZ Budva anchor + the isotropic
+// PX_PER_KM the rings already use (image y grows down -> north up).
+function pxToLatLon(cx, cy) {
   const d = window.RADAR_DATA || {};
   const loc = d.location;
+  const anchor = d.sources && d.sources.dhmz && d.sources.dhmz.budva_pixel;
+  if (!loc || !anchor) return null;
+  const eKm = (cx - anchor.x) / PX_PER_KM;
+  const nKm = (anchor.y - cy) / PX_PER_KM;
+  return { lat: loc.lat + nKm / 110.57,
+           lon: loc.lon + eKm / (111.32 * Math.cos(loc.lat * Math.PI / 180)) };
+}
+
+function latLonToPx(lat, lon) {
+  const d = window.RADAR_DATA || {};
+  const loc = d.location;
+  const anchor = d.sources && d.sources.dhmz && d.sources.dhmz.budva_pixel;
+  if (!loc || !anchor) return null;
+  const eKm = (lon - loc.lon) * 111.32 * Math.cos(loc.lat * Math.PI / 180);
+  const nKm = (lat - loc.lat) * 110.57;
+  return { x: anchor.x + eKm * PX_PER_KM, y: anchor.y - nKm * PX_PER_KM };
+}
+
+// The Uljenje radar's own coverage disc (site coords + range from the
+// station's ODIM metadata via MeteoGate ORD). Everything on the image OUTSIDE
+// this disc is basemap/frame/legend — never echo (mirrors config.radar_site).
+const RADAR_SITE = { lat: 42.8944, lon: 17.4783, rangeKm: 248 };
+
+function inValid(x, y) {
+  return x >= VALID.x0 && x < VALID.x1 && y >= VALID.y0 && y < VALID.y1;
+}
+
+let _sitePx;
+function inCoverage(x, y) {
+  if (_sitePx === undefined) _sitePx = latLonToPx(RADAR_SITE.lat, RADAR_SITE.lon);
+  const s = _sitePx;
+  if (!s) return true; // no anchor yet — can't test, accept
+  const r = RADAR_SITE.rangeKm * PX_PER_KM;
+  const dx = x - s.x, dy = y - s.y;
+  return dx * dx + dy * dy <= r * r;
+}
+
+// The shipped catalog, filtered to plausible cells (inside valid_area AND the
+// coverage disc). Guards against stale data.js produced before the pipeline
+// itself learned to mask — and is the single source for nowcast + drawing.
+function catalogCells() {
+  const d = window.RADAR_DATA || {};
   const dhmz = d.sources && d.sources.dhmz;
-  const anchor = dhmz && dhmz.budva_pixel;
-  if (!window.NOWCAST || !loc || !dhmz || !Array.isArray(dhmz.cells) || !anchor) return null;
+  if (!dhmz || !Array.isArray(dhmz.cells)) return [];
+  return dhmz.cells.filter(c => {
+    const p = latLonToPx(c.lat, c.lon);
+    return p && inValid(p.x, p.y) && inCoverage(p.x, p.y);
+  });
+}
+
+// Replay the probabilistic cell-tracking nowcast (nowcast-browser.js) for a
+// clicked pixel — the SAME model Budva uses, fed by the shipped DHMZ cell
+// catalog. Returns null if the catalog/anchor isn't available (facts then
+// fall back to no-approach).
+function cellNowcastAt(cx, cy) {
+  if (!window.NOWCAST) return null;
   if (cx == null || cy == null) return null;
-  const eKm = (cx - anchor.x) / PX_PER_KM;     // east of Budva
-  const nKm = (anchor.y - cy) / PX_PER_KM;     // image y grows down -> north up
-  const latP = loc.lat + nKm / 110.57;
-  const lonP = loc.lon + eKm / (111.32 * Math.cos(loc.lat * Math.PI / 180));
-  return NOWCAST.arrivalNowcast(dhmz.cells, latP, lonP);
+  const ll = pxToLatLon(cx, cy);
+  if (!ll) return null;
+  const cells = catalogCells();
+  if (!cells.length) return null;
+  return NOWCAST.arrivalNowcast(cells, ll.lat, ll.lon);
+}
+
+// ---------------------------------------------------------------------------
+// Cell-catalog visualization layer: draws each tracked DHMZ cell (circle sized
+// by equivalent diameter, coloured by max dBZ), its 30-min velocity arrow and
+// the 60-min advection cone (the same +-2-sigma directional spread the nowcast
+// integrates over: base spread + growth*t). Makes the verdict inspectable —
+// you SEE which cell drives "approaching" and where the model lets it go.
+// ---------------------------------------------------------------------------
+let ringsHTML = '';
+let lastDomId = null;
+
+function dbzColor(dbz) {
+  if (dbz == null || isNaN(dbz)) return '#9e9e9e';
+  if (dbz < MODERATE_DBZ) return '#2e7d32';   // light rain — green
+  if (dbz < HEAVY_DBZ)    return '#f9a825';   // moderate — yellow
+  if (dbz < SEVERE_DBZ)   return '#ef6c00';   // heavy — orange
+  return '#c62828';                            // severe — red
+}
+
+function buildCellsLayer(domId) {
+  const tgl = document.getElementById('cells-toggle');
+  if (tgl && !tgl.checked) return '';
+  const cells = catalogCells();
+  if (!cells.length) return '';
+  // On widespread-rain days the catalog can hold 100+ cells — label only the
+  // strongest dozen (plus the dominant one) so the text doesn't smother the map.
+  const labelIds = new Set(cells.slice()
+    .sort((a, b) => (b.max_dbz || 0) - (a.max_dbz || 0))
+    .slice(0, 12).map(c => c.id));
+  let s = '';
+  for (const c of cells) {
+    const p = latLonToPx(c.lat, c.lon);
+    if (!p) continue;
+    const rPx = Math.max(3, (c.equiv_diam_km / 2) * PX_PER_KM);
+    const col = dbzColor(c.max_dbz);
+    const isDom = domId != null && c.id === domId;
+    const hasVel = c.speed_kmh != null && c.direction_deg != null && c.speed_kmh >= 1;
+
+    if (hasVel) {
+      const dir = c.direction_deg;
+      // +-2-sigma cone edge at t=60 min (mirrors nowcast: base + 0.1 deg/min).
+      const half = 2 * ((c.cell_type === 'convective' ? 15 : 5) + 0.1 * 60);
+      const reach = rPx + Math.min(c.speed_kmh, 120) * 1.0 * PX_PER_KM; // body + 60-min travel
+      const pts = [`${p.x.toFixed(1)},${p.y.toFixed(1)}`];
+      for (let a = dir - half; a <= dir + half + 0.01; a += 6) {
+        const t = a * Math.PI / 180;
+        pts.push(`${(p.x + reach * Math.sin(t)).toFixed(1)},${(p.y - reach * Math.cos(t)).toFixed(1)}`);
+      }
+      s += `<polygon points="${pts.join(' ')}" fill="${col}" fill-opacity="0.08" stroke="${col}" stroke-opacity="0.35" stroke-width="0.8"/>`;
+      // 30-min displacement arrow
+      const aLen = Math.min(c.speed_kmh, 120) * 0.5 * PX_PER_KM;
+      const tD = dir * Math.PI / 180;
+      const ex = p.x + aLen * Math.sin(tD), ey = p.y - aLen * Math.cos(tD);
+      s += `<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="${col}" stroke-width="2"/>`;
+      for (const off of [150, -150]) {
+        const tH = (dir + off) * Math.PI / 180;
+        s += `<line x1="${ex.toFixed(1)}" y1="${ey.toFixed(1)}" x2="${(ex + 6 * Math.sin(tH)).toFixed(1)}" y2="${(ey - 6 * Math.cos(tH)).toFixed(1)}" stroke="${col}" stroke-width="2"/>`;
+      }
+    }
+
+    s += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${rPx.toFixed(1)}" fill="${col}" fill-opacity="0.15" stroke="${col}" stroke-width="${isDom ? 2.5 : 1.5}"/>`;
+    if (isDom) {
+      s += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(rPx + 5).toFixed(1)}" fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+    }
+    if (isDom || labelIds.has(c.id)) {
+      s += `<text x="${p.x.toFixed(1)}" y="${(p.y - rPx - 4).toFixed(1)}" fill="${col}" stroke="#fff" stroke-width="2.5" paint-order="stroke" font-size="11" font-weight="600" text-anchor="middle">${Math.round(c.max_dbz)} dBZ${hasVel ? ' · ' + Math.round(c.speed_kmh) + ' km/h' : ''}</text>`;
+    }
+  }
+  return s ? `<g id="cells-layer">${s}</g>` : '';
+}
+
+function renderOverlay(domId) {
+  document.getElementById('overlay').innerHTML = buildCellsLayer(domId) + ringsHTML;
 }
 
 // Per-location interpretation. Builds normalized facts, then defers ALL wording
@@ -511,6 +663,10 @@ function classifyScenario(result, label, cx, cy) {
   };
   const res = SKALA.interpret(facts);
   res.eta_min = (nc && nc.approaching) ? nc.eta_minutes : (rainAtLoc ? 0 : null);
+  // Expose the nowcast curve + dominant cell for the Details line and the
+  // map highlight (not part of the shared SKALA wording).
+  res.p_by_lead = nc ? nc.p_by_lead : null;
+  res.nowcast_dom_id = (nc && nc.dominant) ? nc.dominant.track_id : null;
   return res;
 }
 
@@ -557,10 +713,24 @@ function renderOutput(label, cx, cy, result, ms) {
     : classifyScenario(result, label, cx, cy);
   setBanner(sc);
 
+  // Nowcast curve + dominant-cell highlight. For Budva the precomputed pipeline
+  // nowcast is the source (same one the headline uses); for clicked points the
+  // browser replay attached them to `sc` in classifyScenario.
+  const dhmzApp = ((((window.RADAR_DATA || {}).sources || {}).dhmz || {}).approaching || {});
+  const nd = dhmzApp.nowcast_details || null;
+  const pbl = isBudva ? (nd && nd.p_by_lead) : sc.p_by_lead;
+  lastDomId = isBudva ? (nd && nd.dominant ? nd.dominant.track_id : null)
+                      : (sc.nowcast_dom_id || null);
+  renderOverlay(lastDomId);
+
   // Details (NOT a competing interpretation — just the raw per-ring data).
   const list = document.getElementById('summary-list');
   list.innerHTML = '';
   addLine(list, `${label}: [${sc.state}] ${sc.narrative}`);
+  if (pbl) {
+    const pct = v => (v == null ? '–' : Math.round(v * 100) + '%');
+    addLine(list, `P(kiša na tački, nowcast): 15 min ${pct(pbl['15'])} · 30 min ${pct(pbl['30'])} · 60 min ${pct(pbl['60'])} · 120 min ${pct(pbl['120'])}`);
+  }
   const ringSummary = result.rings.map(r => {
     const dbz = r.max_dbz == null ? '–' : r.max_dbz.toFixed(1);
     const brg = r.bearing == null ? '–' : bearingCardinal(r.bearing);
