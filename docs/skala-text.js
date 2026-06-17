@@ -58,31 +58,10 @@
     var where = '~' + fmtKm(facts.km) + ' km' + (facts.cardinal ? ' ' + facts.cardinal : '');
     var state, narrative;
 
-    // The dominant APPROACHING storm cell — may be a big cell BEHIND a lighter
-    // closest one. A severe such cell (or severe rain overhead) outranks every
-    // other state, so an inbound hail core is never hidden by light rain in front.
-    var threat = facts.threat || null;
-    var severeApproaching = !!facts.approaching && threat
-      && threat.dbz != null && threat.dbz >= SEVERE_DBZ;
-    var severeHere = !!facts.rainAtLocation && facts.dbz != null && facts.dbz >= SEVERE_DBZ;
-
-    if (severeHere) {
-      state = 'SEVERE';
-      narrative = 'Severe storm overhead — ' + intensity + dbzTxt + '.';
-    } else if (facts.rainAtLocation) {
-      // Rain is already falling here → report the present (RAINING). We do NOT
-      // jump to an approaching severe cell that has not arrived: severe rain
-      // OVERHEAD already won above, and severe-approaching is reported below only
-      // while it is still dry at the location.
+    // SEVERE-storm verdict removed — it false-triggered on distant cells.
+    if (facts.rainAtLocation) {
       state = 'RAINING';
       narrative = 'Raining now — ' + intensity + dbzTxt + '.';
-    } else if (severeApproaching) {
-      state = 'SEVERE';
-      var tEta = (threat.eta != null && !isNaN(threat.eta)) ? ', ETA ~' + Math.round(threat.eta) + ' min' : '';
-      var tWhere = '~' + fmtKm(threat.km) + ' km' + (threat.cardinal ? ' ' + threat.cardinal : '');
-      var tDbz = (threat.dbz != null && !isNaN(threat.dbz)) ? ' (' + Math.round(threat.dbz) + ' dBZ)' : '';
-      var tLabel = threat.label || skalaIntensity(threat.dbz);
-      narrative = 'Severe storm approaching — ' + tLabel + tDbz + ', ' + tWhere + tEta + '.';
     } else if (facts.approaching) {
       state = 'APPROACHING';
       var eta = (facts.eta != null && !isNaN(facts.eta)) ? ', ETA ~' + Math.round(facts.eta) + ' min' : '';
