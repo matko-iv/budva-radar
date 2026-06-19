@@ -1,118 +1,115 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sr">
 <head>
 <meta charset="UTF-8">
-<title>skala-sistem</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matkov-SKALA-sistem</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  body { max-width: 980px; }
+  .menu-hero {
+    background: radial-gradient(circle at 50% -10%, #14361f 0%, #0a140d 72%);
+    border: 1px solid #1d3d29; border-radius: 14px;
+    padding: 40px 24px 34px; text-align: center; position: relative; overflow: hidden;
+    color: #cfe9d8; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  .menu-hero::after {              /* subtle CRT scanlines */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,.18) 2px 3px);
+    opacity: .35;
+  }
+  .brand { font-size: 12px; letter-spacing: 5px; color: #5fae7e; margin: 0 0 8px; }
+  .skala-word {
+    font-size: clamp(48px, 13vw, 110px); font-weight: 800; letter-spacing: 10px;
+    line-height: .92; margin: 0; color: #7CFFB0;
+    text-shadow: 0 0 22px rgba(80,255,150,.45), 0 0 3px rgba(80,255,150,.85);
+  }
+  .tagline { font-size: 13px; color: #8bbfa1; margin: 12px 0 28px; }
+  .menu-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    max-width: 640px; margin: 0 auto; position: relative; z-index: 1;
+  }
+  @media (max-width: 560px) { .menu-grid { grid-template-columns: 1fr; } }
+  .menu-item {
+    display: block; text-decoration: none; border: 1px solid #2a5a3c; border-radius: 12px;
+    padding: 24px 18px; background: rgba(20,46,30,.55); color: #dff5e8; transition: .15s;
+  }
+  .menu-item .ic { font-size: 40px; display: block; margin-bottom: 10px; }
+  .menu-item .t { font-size: 21px; font-weight: 700; letter-spacing: 2px; }
+  .menu-item .d { font-size: 12px; color: #9fd3b5; margin-top: 8px; line-height: 1.45; }
+  .menu-item.cloud:hover {
+    border-color: #7CFFB0; background: rgba(34,74,49,.85);
+    transform: translateY(-3px); box-shadow: 0 0 26px rgba(80,255,150,.28);
+  }
+  .menu-item.rain { border-color: #2d4a66; background: rgba(20,38,56,.55); }
+  .menu-item.rain .t { color: #bfe0ff; }
+  .menu-item.rain:hover {
+    border-color: #7cc0ff; background: rgba(28,58,86,.85);
+    transform: translateY(-3px); box-shadow: 0 0 26px rgba(80,160,255,.28);
+  }
+  .menu-item .go { font-size: 11px; letter-spacing: 2px; color: #6f9a82; margin-top: 10px; }
+
+  .how { margin-top: 32px; }
+  .how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 680px) { .how-grid { grid-template-columns: 1fr; } }
+  .how-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px 16px; }
+  .how-card h3 { margin: 0 0 8px; font-size: 14px; }
+  .how-card ol { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: #333; }
+  .how-card ol b { color: #111; }
+</style>
 </head>
 <body>
-<header>
-  <h1>matkov-SKALA-sistem</h1>
-    <p style="font-size: 12px; color: #666; margin: 0 0 8px;">Modul za interpretaciju radarskih mjerenja.</p>
-    <p style="font-size: 10px; color: #666; margin: 0 0 8px;">Kliknite <a href="https://github.com/matko-iv/budva-radar">ovđe</a> za dokumentaciju.</p>
-  <p style="font-size: 13px; margin: 0 0 6px;"><a href="radar-map.html">Režim podesive lokacije</a> · <a href="cloud-map.html">Oblaci (satelit)</a></p>
-  <p id="generated">loading...</p>
-</header>
 
-<main>
-  <section id="alert" class="alert ok">
-    <p id="alert-text">loading...</p>
-  </section>
+<div class="menu-hero">
+  <p class="brand">MATKO INTERACTIVE SOFTWARE · 2026</p>
+  <h1 class="skala-word">SKALA</h1>
+  <p class="tagline">sistem za interpretaciju vremena nad Budvom &nbsp;—&nbsp; izaberi modul</p>
+  <div class="menu-grid">
+    <a class="menu-item rain" href="radar-map.html">
+      <span class="ic">🌧️</span>
+      <span class="t">SKALA RAIN</span>
+      <span class="d">Radarski nowcast — da li kiša pada ili dolazi nad Budvu, sa procjenom (ETA)</span>
+      <div class="go">[ ENTER ▸ ]</div>
+    </a>
+    <a class="menu-item cloud" href="cloud-map.html">
+      <span class="ic">🛰️</span>
+      <span class="t">SKALA CLOUD</span>
+      <span class="d">Satelitska interpretacija oblačnosti — vedro / oblaci nad nama / dolaze</span>
+      <div class="go">[ ENTER ▸ ]</div>
+    </a>
+  </div>
+</div>
 
-  <!-- <section id="scenario" style="margin: 6px 0 10px; font-size: 13px;">
-    <span id="scenario-badge" style="display:inline-block; padding:3px 8px; border-radius:3px; font-weight:bold; background:#eee; color:#333;">–</span>
-    <span id="scenario-reason" style="margin-left: 8px; color: #555;"></span>
-  </section> -->
-
-  <section id="summary">
-    <h2>Summary</h2>
-    <ul id="summary-list"></ul>
-  </section>
-
-  <section id="radar-images">
-    <h2>Latest radar images</h2>
-    <div id="images-grid"></div>
-  </section>
-
-  <section id="sources">
-    <h2>Per-source detail</h2>
-    <div id="sources-grid"></div>
-  </section>
-</main>
-
-<footer>
-  <p>Page auto-refreshes every 60 s. Source images update ~5 min (OPERA), ~10 min (DHMZ).</p>
-  <p>Sources:
-    <a href="https://vrijeme.hr/uljenje-stat.png" target="_blank">DHMZ MRC Uljenje</a> ·
-    <a href="https://www.eumetnet.eu/observations/opera-radar-animation/" target="_blank">OPERA Odyssey (FMI)</a>
+<section class="how">
+  <h2>Kako sistem radi</h2>
+  <div class="how-grid">
+    <div class="how-card">
+      <h3>🌧️ SKALA RAIN — radar</h3>
+      <ol>
+        <li>Povlači radarske slike: <b>DHMZ Uljenje</b> (lokalni) + <b>OPERA</b> (Evropa), te sirovi ODIM volumen (MeteoGate ORD, mjereni dBZ).</li>
+        <li>Detektuje i prati kišne ćelije (objektno praćenje), procjenjuje im brzinu i smjer.</li>
+        <li>Probabilistička advekcija (mini-ansambl + konus nesigurnosti) → P(kiša) i ETA.</li>
+        <li>Jedinstveni verdikt za Budvu: <b>pada · približava se · zaobilazi · nema kiše</b>.</li>
+      </ol>
+    </div>
+    <div class="how-card">
+      <h3>🛰️ SKALA CLOUD — satelit</h3>
+      <ol>
+        <li>Povlači EUMETSAT <b>MTG</b> produkte: maska oblaka (CLM), vrh oblaka (CTTH), optička analiza (OCA).</li>
+        <li>Razdvaja <b>neproziran</b> oblak (blokira sunce) od <b>poluprozirnog</b> cirusa (sunce probija).</li>
+        <li>Advekcija polja oblaka → da li oblaci dolaze ili se razilazi, sa ETA.</li>
+        <li>Verdikt: <b>vedro · djelimično · oblačno</b> + tip i visina; produženi NWP izgledi 2–48 h.</li>
+      </ol>
+    </div>
+  </div>
+  <p style="font-size:12px;color:#888;margin-top:14px;">
+    Isti zaključak se računa jednom (Python) i samo se prikazuje na stranicama — bez razilaženja između modula.
+    Dokumentacija: <a href="https://github.com/matko-iv/budva-radar">github.com/matko-iv/budva-radar</a>.
   </p>
+</section>
+
+<footer style="margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:12px;color:#888;">
+  <p>Izvori: DHMZ MRC Uljenje · OPERA Odyssey (FMI) · EUMETSAT MTG-FCI (Data Store).</p>
 </footer>
-
-<script src="data.js"></script>
-<script src="skala-text.js"></script>
-<script src="skala-cells-viz.js"></script>
-<script src="skala-sections.js"></script>
-<script>
-function load() {
-  if (window.RADAR_DATA) {
-    render(window.RADAR_DATA);
-  } else {
-    document.getElementById('alert-text').textContent =
-      'data.js not found — run run.py first';
-  }
-}
-
-function render(d) {
-  const gen = new Date(d.generated);
-  document.getElementById('generated').textContent =
-    'Generated: ' + gen.toLocaleString();
-
-  // ONE report per location — identical to radar-map.html. The shared
-  // budvaHeadline() reads the DHMZ probabilistic nowcast (the high-res local
-  // radar's cell-tracking forecast), the SAME data the per-source DHMZ line
-  // uses, so headline and detail agree. Deliberately NOT the OPERA-blended
-  // composite summary (whose coarse nowcast was over-triggering "approaching"
-  // here), and NOT single-frame motion geometry (whose 15 km gate dismissed a
-  // severe cell farther out but heading straight in). radar-map.html renders
-  // the same headline for Budva via the same function, so the pages can't differ.
-  const res = SKALA_SECTIONS.budvaHeadline(d);
-  const meta = res.meta;
-
-  const alert = document.getElementById('alert');
-  const alertText = document.getElementById('alert-text');
-  alert.className = 'alert ' + meta.cls;
-  alertText.textContent = res.headline;
-
-  // Stale-image guard: if any radar source stopped publishing new frames, the
-  // verdict above is built on stale data — replace it with a plain technical-
-  // error notice (no emoji/decoration). Shared check keeps both pages identical.
-  const stale = SKALA_SECTIONS.stalenessNotice(d);
-  if (stale) {
-    alert.className = 'alert warn';
-    alertText.textContent = stale.message;
-  }
-
-  // Scenario badge + narrative — optional (the section may be commented out).
-  const badge = document.getElementById('scenario-badge');
-  if (badge) {
-    badge.textContent = stale ? '' : res.state;
-    badge.style.background = stale ? '' : meta.bg;
-    badge.style.color = stale ? '' : meta.fg;
-  }
-  const reasonEl = document.getElementById('scenario-reason');
-  if (reasonEl) reasonEl.textContent = stale ? '' : res.narrative;
-
-  // Per-radar summary lines, image previews, and per-source tables — all
-  // rendered by the SHARED module so radar-map.html shows identical sections.
-  SKALA_SECTIONS.renderSummaryLines(d, document.getElementById('summary-list'));
-  SKALA_SECTIONS.renderImages(d, document.getElementById('images-grid'));
-  SKALA_SECTIONS.renderSources(d, document.getElementById('sources-grid'));
-}
-
-load();
-// Reload the whole page periodically so we pick up new data.js (file:// fetch
-// won't refresh cleanly across separate <script src> loads).
-setTimeout(() => location.reload(), 60000);
-</script>
 </body>
 </html>
