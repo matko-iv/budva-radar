@@ -6,42 +6,36 @@
 <title>matkov-SKALA-sistem</title>
 <link rel="stylesheet" href="style.css">
 <style>
-  pre.term { background:#0d130f;border:1px solid #1d3d29;border-radius:10px;padding:14px 16px;
-    font-family:ui-monospace,"Cascadia Mono","Consolas",monospace;font-size:14px;
-    line-height:1.45;white-space:pre;color:#bfe9cf;overflow-x:auto;margin:0;
-    box-shadow:0 4px 18px rgba(0,0,0,.18); }
-  pre.term .hint { color:#5fae7e;font-size:11px; }
-  pre.term .ok { color:#7CFFB0;font-weight:700; }
-  #controls { display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 12px;font-size:13px; }
-  #controls input,#controls button { font-family:inherit;font-size:13px;padding:5px 9px;
-    border:1px solid #ccc;border-radius:5px;background:#fff; }
-  #controls button { cursor:pointer; }
-  #controls button:hover { background:#eef3ef; border-color:#9ab; }
-  #controls .dim { color:#888; }
-  #map-wrap { position:relative;display:inline-block;max-width:100%;
-    border-radius:12px;overflow:hidden;box-shadow:0 6px 22px rgba(20,40,30,.22);
-    border:1px solid #cdd8d0; }
-  #canvas { display:block;max-width:100%;height:auto;cursor:crosshair;background:#cfd8dc; }
-  #overlay { position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none; }
-  #banner { border-radius:12px;padding:14px 16px;margin:14px 0;
-    box-shadow:0 3px 12px rgba(0,0,0,.14); }
-  .card { border:1px solid #e3e6e3;border-radius:10px;padding:12px 14px;margin:12px 0;
-    background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.05); }
-  .card h2 { font-size:14px;margin:0 0 8px; }
-  ul.rings { list-style:none;padding:0;margin:0;font-size:13px;display:flex;flex-wrap:wrap;gap:4px 16px; }
-  header .mod { display:inline-block;font-size:11px;letter-spacing:2px;font-weight:700;
-    color:#fff;background:#1565c0;border-radius:4px;padding:2px 8px;vertical-align:middle; }
+  pre.term {
+    background: #fff; border: 1px solid #ddd; border-radius: 6px;
+    padding: 12px; font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+    font-size: 16px; line-height: 1.4; white-space: pre; color: #222;
+    overflow-x: auto; margin: 0;
+  }
+  pre.term .hint { color: #888; font-size: 11px; }
+  pre.term .ok   { color: #1b5e20; font-weight: 600; }
+  #controls { display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+              margin: 0 0 10px; font-size: 13px; }
+  #controls input, #controls button {
+    font-family: inherit; font-size: 13px; padding: 4px 8px;
+    border: 1px solid #ccc; border-radius: 4px; background: #fff;
+  }
+  #controls button { cursor: pointer; }
+  #controls button:hover { background: #f0f0f0; }
+  #controls .dim  { color: #888; }
+  #map-wrap { position: relative; display: inline-block; max-width: 100%; }
+  #canvas { display: block; max-width: 100%; height: auto;
+            border: 1px solid #ddd; border-radius: 4px; cursor: crosshair;
+            background: #fff; }
+  #overlay { position: absolute; top: 0; left: 0;
+             width: 100%; height: 100%; pointer-events: none; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>matkov-SKALA-sistem <span class="mod">SKALA CLOUD</span></h1>
-  <p style="font-size:13px;margin:0 0 6px;">
-    <a href="index.html">← meni</a> ·
-    <a href="radar-map.html">SKALA RAIN</a> ·
-    <span style="color:#888;">satelitska interpretacija oblačnosti za Budvu</span>
-  </p>
+  <h1>matkov-SKALA-sistem — SKALA CLOUD</h1>
+  <p><a href="index.html">← meni</a> · <a href="radar-map.html">SKALA RAIN</a> · satelitska interpretacija oblačnosti za Budvu</p>
 </header>
 
 <main>
@@ -66,24 +60,22 @@
 
     <div id="banner">—</div>
 
-    <div class="card">
-      <h2>Detalji (osmatranje, satelit)</h2>
+    <div class="source-card">
+      <h3>Detalji (osmatranje, satelit)</h3>
       <div id="facts">—</div>
     </div>
 
-    <div class="card">
-      <h2>Oblačnost po prstenovima</h2>
-      <ul id="rings" class="rings"></ul>
+    <div class="source-card">
+      <h3>Oblačnost po prstenovima</h3>
+      <ul id="rings"></ul>
     </div>
 
-    <div class="card">
-      <h2>NWP izgledi (modelirano, 2–48 h)</h2>
+    <div class="source-card">
+      <h3>NWP izgledi (modelirano, 2–48 h)</h3>
       <div id="nwp">učitavanje…</div>
     </div>
 
-    <p class="dim" style="font-size:11px;">
-      Izvor: <span id="src">—</span> · sken: <span id="stime">—</span>
-    </p>
+    <p>Izvor: <span id="src">—</span> · sken: <span id="stime">—</span></p>
   </section>
 </main>
 
@@ -133,7 +125,7 @@
     clearSvg();
     var x = lonToX(lon), y = latToY(lat);
 
-    // --- sampling rings: white halo under a bold dashed blue ring (visible on any background) ---
+    // --- sampling rings: white halo under a dashed blue ring (visible on any background) ---
     var radii = params.sample_radii_km || [10, 25, 50];
     radii.forEach(function (r) {
       var rx = (r / (111.32 * Math.cos(lat * Math.PI / 180))) / (bbox.lon_max - bbox.lon_min) * W;
@@ -145,7 +137,7 @@
         "stroke-dasharray": (U * 2.4) + " " + (U * 1.8) }));
     });
 
-    // --- motion arrow: big, with white outline + filled arrowhead ---
+    // --- motion arrow: white outline + filled arrowhead ---
     var m = field.motion;
     if (m && m.direction_deg != null && m.speed_kmh > 0) {
       var br = m.direction_deg * Math.PI / 180;
@@ -158,11 +150,9 @@
       var head = (x2) + "," + (y2) + " " +
         (bxp + px * hw) + "," + (byp + py * hw) + " " +
         (bxp - px * hw) + "," + (byp - py * hw);
-      // white outline pass
       svg.appendChild(mk("line", { x1: x, y1: y, x2: bxp, y2: byp, stroke: "#fff",
         "stroke-width": U * 1.8, "stroke-linecap": "round", "stroke-opacity": 0.8 }));
       svg.appendChild(mk("polygon", { points: head, fill: "#fff", "fill-opacity": 0.85 }));
-      // blue arrow on top
       svg.appendChild(mk("line", { x1: x, y1: y, x2: bxp, y2: byp, stroke: "#0d47a1",
         "stroke-width": U * 0.9, "stroke-linecap": "round" }));
       svg.appendChild(mk("polygon", { points: head, fill: "#0d47a1" }));
@@ -192,7 +182,7 @@
     CLOUD_SECTIONS.renderFacts(document.getElementById("facts"), facts);
     CLOUD_SECTIONS.renderRings(document.getElementById("rings"), facts.rings);
     drawOverlay(lat, lon);
-    document.getElementById("status").textContent = name + " (" + lat.toFixed(3) + ", " + lon.toFixed(3) + ")";
+    document.getElementById("status").textContent = " " + name + " (" + lat.toFixed(3) + ", " + lon.toFixed(3) + ")";
   }
 
   function wireApp() {
@@ -211,7 +201,7 @@
     function setCity() {
       var q = (document.getElementById("city-input").value || "").trim().toLowerCase();
       if (CITIES[q]) assess(CITIES[q][0], CITIES[q][1], q.replace(/\b\w/g, function (c) { return c.toUpperCase(); }), q === "budva");
-      else document.getElementById("status").textContent = "nepoznat grad — klikni mapu";
+      else document.getElementById("status").textContent = " nepoznat grad — klikni mapu";
     }
     document.getElementById("city-btn").onclick = setCity;
     document.getElementById("city-input").addEventListener("keydown", function (e) { if (e.key === "Enter") setCity(); });
@@ -222,7 +212,7 @@
       fetch(D.nwp_forecast_url, { cache: "no-store" })
         .then(function (r) { return r.json(); })
         .then(function (j) { CLOUD_SECTIONS.renderNwp(document.getElementById("nwp"), j); })
-        .catch(function () { document.getElementById("nwp").innerHTML = "<span style='color:#999;'>NWP izgledi trenutno nedostupni.</span>"; });
+        .catch(function () { document.getElementById("nwp").textContent = "NWP izgledi trenutno nedostupni."; });
     }
   }
 
@@ -235,16 +225,16 @@
       ["SKALA(C) 2026 Matko Interactive Software", 40],
       ["SKALA Cloud Interpreter v1.0 — EUMETSAT MTG edition", 150],
       ["", 30],
-      ["Memory test : 65536K \x1bOK\x1b", 130],
+      ["Memory test : 65536K  OK", 130],
       ["", 30],
       ["Detecting satellite ........ MTG-I1 FCI / 0° disk", 150],
       ["Cloud products ............. CLM + CTTH + OCA (Data Store)", 150],
       ["Sensing time ............... " + hhmm + " UTC", 160],
       ["", 30],
-      ["Loading basemap.topo           [ \x1bOK\x1b ]", 90],
-      ["Loading cloud_field.npz        [ \x1bOK\x1b ]", 110],
-      ["Geo-navigation ............. geos → lat/lon (parallax-aware)", 150],
-      ["Cloud grid ................. " + ncols + "×" + nrows + " · src " + (s.data_source || "?"), 160],
+      ["Loading basemap.topo           [ OK ]", 90],
+      ["Loading cloud_field.npz        [ OK ]", 110],
+      ["Geo-navigation ............. geos -> lat/lon (parallax-aware)", 150],
+      ["Cloud grid ................. " + ncols + "x" + nrows + " · src " + (s.data_source || "?"), 160],
       ["Verdict .................... " + (v.state || "?"), 190],
       ["", 40],
       ["Booting from SKALA-CLOUD ...", 320],
@@ -252,15 +242,11 @@
     ];
   }
   function runBoot(done) {
-    boot.innerHTML = '<span class="hint">[ boot u toku — ne može se preskočiti ]</span>\n\n';
+    boot.textContent = "[ boot u toku — ne može se preskočiti ]\n\n";
     var lines = bootLines(), t = 0;
     lines.forEach(function (pair) {
       t += pair[1];
-      setTimeout(function () {
-        var safe = pair[0].replace(/&/g, "&amp;").replace(/</g, "&lt;")
-          .replace(/\x1bOK\x1b/g, '<span class="ok">  OK  </span>');
-        boot.insertAdjacentHTML("beforeend", safe + "\n");
-      }, t);
+      setTimeout(function () { boot.textContent += pair[0] + "\n"; }, t);
     });
     setTimeout(done, t + 280);
   }
