@@ -2,8 +2,16 @@
 <html lang="sr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>matkov-SKALA-sistem</title>
 <link rel="stylesheet" href="style.css">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+    options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
 <header>
@@ -12,6 +20,48 @@
 </header>
 
 <main>
+  <section id="svrha">
+    <h2>Svrha</h2>
+
+    <p>Ja sam Matija, osnivač SKALA sistema. Ovo nije komercijalni proizvod nego
+    lični istraživački projekat koji rješava konkretan problem: htio sam
+    <b>tačnu, lokalnu i interpretabilnu</b> sliku vremena nad Budvom — ne
+    generički simbol koji jednom ikonicom „pokrije" pola Jadrana, nego odgovor na
+    pitanje koje stvarno postavljam kad pogledam kroz prozor: <i>pada li, dolazi
+    li, odakle, za koliko, i da li sunce probija.</i></p>
+
+    <p>Sistem je svjesno podijeljen na dva osmatračka modula —
+    <a href="radar-map.html">SKALA RAIN</a> (radar) i
+    <a href="cloud-map.html">SKALA CLOUD</a> (satelit) — jer radar i satelit mjere
+    različite veličine (padavine naspram vrhova oblaka) i imaju različite jačine i
+    slabosti. Oba daju verdikt koji se računa <b>jednom, u Pythonu</b>, i samo se
+    prikazuje; logika nije skrivena u frontendu nego je determinisana i
+    provjerljiva, pa naslov i detalji ne mogu da protivrječe jedno drugom.</p>
+
+    <p><b>Kod je u potpunosti javno dostupan</b> i tehnički primjenjiv na bilo
+    koju lokaciju: lokacija je samo par $(\varphi, \lambda)$ plus kalibracija
+    izvora — sve ostalo (detekcija, praćenje, advekcija, verdikt) je nezavisno od
+    mjesta. Budva je referentna tačka jer tu živim i tu validiram protiv onoga što
+    stvarno vidim sa zemlje, što je najpošteniji test koji postoji.</p>
+
+    <p>SKALA se razvija <b>konstantno</b>. Trenutna revizija nije završnica nego
+    presjek stanja; redovno mijenjam pragove, dodajem izvore i ispravljam ono što
+    ne valja (npr. nedavno otkrivenu inverziju redova sjever–jug u satelitskoj
+    geolokaciji, koja je oblake stavljala na pogrešnu širinu). Trudim se da svaku
+    odluku — zašto baš taj prag, zašto baš taj izvor — <b>fino dokumentujem</b>,
+    da bi rezultat bio ponovljiv i da bih i sam mogao da mu se vratim. U planu su
+    nove funkcionalnosti (vidi <a href="#roadmap">pravac razvoja</a>).</p>
+
+    <p>Krajnji cilj je veći od osmatranja. Zajedno sa projektom
+    <b>weather-forecast</b> — <i>Matkov vremenski model</i>, NWP korekcija
+    pristrasnosti (bias-correction) nad ansamblom globalnih i mezoskalnih modela —
+    namjera je da se <b>osmatranje</b> (radar + satelit; „sad i naredna ~2 h") i
+    <b>modelirana prognoza</b> (NWP; „naredna 2–48 h i dalje") spoje u
+    <b>jednu tačnu i preciznu prognozu — ne samo za Budvu nego i šire.</b> Ovaj
+    sistem je osmatračka i interpretaciona polovina te slike; sve je pod stalnim
+    revizijama i poboljšanjima.</p>
+  </section>
+
   <section id="moduli">
     <h2>Moduli</h2>
     <ul>
@@ -25,113 +75,136 @@
 
     <p>SKALA RAIN spaja tri nezavisna izvora radarskih podataka i iz njih gradi
     jedinstvenu, probabilističku procjenu kiše za Budvu. Cilj nije „piksel iznad
-    grada" nego pravo pitanje koje korisnika zanima: da li kiša pada, da li
-    dolazi, odakle i za koliko.</p>
+    grada" nego pravo pitanje: da li kiša pada, da li dolazi, odakle i za koliko.</p>
 
     <h3>Izvori</h3>
     <p>Primarni lokalni izvor je radar <b>DHMZ Uljenje</b> (slika 720×751 px,
     osvježavanje ~10 min). Širi kontekst daje evropski kompozit <b>OPERA
     Odyssey</b> (FMI, ~5 min). Kad je dostupan, sirovi polarni volumen sa
-    <b>MeteoGate ORD</b> (ODIM PVOL) zamjenjuje klasifikaciju boja sa PNG-a —
-    tada se radi sa stvarno izmjerenim dBZ vrijednostima i sa RHOHV filtrom koji
-    izbacuje nemeteorološke odjeke (clutter, ptice, more). PNG ostaje sloj za
-    prikaz i automatski rezervni izvor ako ORD zakaže.</p>
+    <b>MeteoGate ORD</b> (ODIM PVOL) zamjenjuje klasifikaciju boja sa PNG-a — tada
+    se radi sa izmjerenim dBZ i RHOHV filtrom koji izbacuje nemeteorološke odjeke
+    (clutter, ptice, more). PNG ostaje sloj za prikaz i rezervni izvor.</p>
 
     <h3>Od piksela do intenziteta</h3>
-    <p>Boje radarske slike se prevode u reflektivnost (dBZ), pa u intenzitet kiše
-    (mm/h) preko Marshall-Palmer Z-R relacije. Pragovi su kalibrisani prema NOAA
-    JetStream i DHMZ skali: ispod ~5 dBZ je šum, 20 dBZ je početak slabe kiše, 30
-    umjerena, 40 jaka, a 50+ ulazi u zonu grada / nevremena (gdje Z-R prestaje da
-    važi pa se intenzitet ograničava da ne bi prijavio „300 mm/h" za jezgro
-    grada).</p>
+    <p>Reflektivnost se prevodi u intenzitet kiše preko Marshall-Palmer Z–R
+    relacije, a u logaritamsku skalu (dBZ) standardno:</p>
+    $$ Z = a\,R^{\,b}, \qquad R = \left(\frac{Z}{a}\right)^{1/b}, \qquad
+       \mathrm{dBZ} = 10\,\log_{10} Z $$
+    <p>sa $a \approx 200$, $b \approx 1.6$. Pragovi su kalibrisani prema NOAA
+    JetStream i DHMZ skali: $<5$ dBZ je šum, $20$ dBZ početak slabe kiše, $30$
+    umjerena, $40$ jaka, $\ge 50$ grad/nevrijeme (gdje Z–R prestaje da važi, pa se
+    intenzitet ograničava da ne prijavi „300 mm/h" za jezgro grada).</p>
 
     <h3>Ćelije, praćenje i kretanje</h3>
     <p>Umjesto jednog piksela, sistem <b>objektno izdvaja kišne ćelije</b>
     (povezane oblasti reflektivnosti) i prati ih kroz uzastopne snimke. Za svaku
-    ćeliju procjenjuje položaj, ekvivalentni prečnik, vršni dBZ, te brzinu i smjer
-    (track velocity); globalni vektor kretanja iz unakrsne korelacije služi kao
-    rezerva za nove ćelije bez istorije. Track-istorija se čuva na disku, pa
-    procjena brzine radi i u jednokratnim (cron / GitHub Actions) pokretanjima.</p>
+    ćeliju procjenjuje položaj, ekvivalentni prečnik, vršni dBZ i vektor brzine
+    $\mathbf{v}$; globalni vektor iz unakrsne korelacije služi kao rezerva za nove
+    ćelije bez istorije. Track-istorija se čuva na disku, pa procjena brzine radi i
+    u jednokratnim (cron / GitHub Actions) pokretanjima.</p>
 
     <h3>Probabilistički nowcast</h3>
-    <p>Svaka ćelija se advektuje <b>„unscented" mini-ansamblom</b>: mreža brzina
-    (oko ±20%) i raspon smjerova sa konusom nesigurnosti koji se širi s vremenom.
-    Za horizonte 15 / 30 / 60 / 120 min računa se kumulativna vjerovatnoća da
-    ćelija pređe preko lokacije, uz težinu opadanja (vijek τ) za ćelije koje
-    slabe. Fizički se odbacuju ćelije koje ni pri najvećoj brzini ne mogu stići u
-    datom prozoru. Verdikt „približava se" pali se tek ako je
-    <b>P(kiša | 60 min) ≥ 25%</b> <i>i</i> dominantna ćelija unutar <b>50 km</b> —
-    prag istreniran na verifikacionom logu (POD/FAR/CSI), da se izbjegnu lažne
-    uzbune sa grube OPERA mreže.</p>
+    <p>Svaka ćelija se advektuje „unscented" mini-ansamblom: položaj
+    $\mathbf{x}(t) = \mathbf{x}_0 + \mathbf{v}\,t$, sa mrežom brzina (oko $\pm 20\%$)
+    i konusom smjera čija poluširina raste s vremenom, $\sigma(t) = \sigma_0 +
+    \dot{\sigma}\,t$. Ćelije koje slabe dobijaju težinu preživljavanja
+    $w_i(t) = e^{-t/\tau_i}$. Po lead-bucketima (15/30/60/120 min) računa se
+    vjerovatnoća pogotka po ćeliji $p_i$, pa kombinovana vjerovatnoća kiše kao
+    komplement „nigdje ne pada":</p>
+    $$ P_{\text{kiša}} = 1 - \prod_{i}\bigl(1 - p_i\bigr) $$
+    <p>Verdikt „približava se" pali se tek kad oba uslova vrijede:</p>
+    $$ P\bigl(\text{kiša}\mid 60\,\text{min}\bigr) \ge 0.25
+       \quad \wedge \quad d_{\text{dom}} \le 50\ \text{km}, $$
+    <p>gdje je $d_{\text{dom}}$ rastojanje dominantne ćelije. Pragovi su
+    istrenirani na verifikacionom logu (vidi <a href="#verifikacija">metrike</a>)
+    da se izbjegnu lažne uzbune sa grube OPERA mreže.</p>
 
     <h3>Morfologija i severe</h3>
     <p>Zasebno se klasifikuje organizacija scene (slojevito, linija nevremena /
     QLCS, ugnježdena konvekcija, multicelijski klaster…) i podižu se zastave za
     olujne potpise. Kad postoji ORD volumen, radi se i provjera rotacije
-    (gate-to-gate azimutni shear iz VRADH / Doppler) na najjačoj ćeliji — kao
-    pomoć pri potvrdi mezociklona, ne kao samostalni kriterijum upozorenja.</p>
+    (gate-to-gate azimutni shear iz VRADH / Doppler) na najjačoj ćeliji — kao pomoć
+    pri potvrdi mezociklona, ne kao samostalni kriterijum upozorenja.</p>
 
     <h3>Jedinstveni verdikt</h3>
     <p>Sve se sliva u <b>jedan kanonski verdikt</b>, izračunat jednom u Pythonu i
-    prikazan identično na svim površinama (bez razilaženja između stranica):
-    <b>SEVERE · RAINING · APPROACHING · BYPASSING · NO_RAIN</b>, sa prikazanim
-    lokalnim dBZ, smjerom i procjenom vremena dolaska (ETA).</p>
+    prikazan identično svuda: <b>SEVERE · RAINING · APPROACHING · BYPASSING ·
+    NO_RAIN</b>, sa lokalnim dBZ, smjerom i procjenom vremena dolaska (ETA).</p>
   </section>
 
   <section id="cloud">
     <h2>SKALA CLOUD — satelitska interpretacija oblačnosti</h2>
 
     <p>SKALA CLOUD postavlja isto pitanje kao RAIN, ali za oblake i sa žive
-    satelitske slike: da li su oblaci sada iznad nas, da li dolaze ili se
-    razilazi, kakvi su (tip, visina, debljina) i hoće li biti sunca.</p>
+    satelitske slike: da li su oblaci sada iznad nas, da li dolaze ili se razilazi,
+    kakvi su (tip, visina, debljina) i hoće li biti sunca.</p>
 
-    <h3>Izvori</h3>
-    <p>EUMETSAT <b>MTG-I1</b> (Meteosat treće generacije, instrument FCI, disk
-    0°), L2 produkti sa Data Store-a (preko <code>eumdac</code>): maska oblaka
-    <b>CLM</b>, temperatura i visina vrha oblaka <b>CTTH</b>, te optička analiza
-    <b>OCA</b> (optička dubina, faza). Mreža je geostacionarna, rezolucije 2 km;
-    koordinate su uglovi skeniranja u radijanima.</p>
-
-    <h3>Geolokacija</h3>
-    <p>Produkti ne sadrže lat/lon nizove nego geostacionarnu projekciju, pa se
-    navigacija radi preko <code>pyproj</code> (CF „geostationary"), uz pretvaranje
-    radijani→metri i visinu satelita; region oko Budve se presampluje na pravilnu
-    lat/lon mrežu. (Bitan detalj otkriven verifikacijom: redovi u nizu podataka
-    idu sjever→jug, suprotno od rastuće y-koordinate — to je ispravljeno, jer je
-    inače oblake postavljalo na pogrešnu geografsku širinu.)</p>
+    <h3>Izvori i geolokacija</h3>
+    <p>EUMETSAT <b>MTG-I1</b> (FCI, disk 0°), L2 produkti sa Data Store-a (preko
+    <code>eumdac</code>): maska oblaka <b>CLM</b>, vrh oblaka <b>CTTH</b>, optička
+    analiza <b>OCA</b>. Mreža je geostacionarna (2 km); koordinate su uglovi
+    skeniranja u radijanima, $(x, y)$, koje u projekcione metre pretvaram preko
+    visine satelita $H$: $\;x_m = x\,H,\; y_m = y\,H$, pa navigaciju radim
+    <code>pyproj</code>-om (CF „geostationary") i presampliram region oko Budve na
+    pravilnu lat/lon mrežu. (Visine oblaka iz pritiska računam standardnom
+    atmosferom: $h = 44330\left[\,1 - (p/p_0)^{0.190284}\,\right]$.)</p>
 
     <h3>Šta se zaista računa kao oblak</h3>
-    <p>CLM polje <code>cloud_state</code> je kategorijsko: 0 nema podataka, 1
-    vedro, <b>2 kontaminiran</b> (djelimičan ili poluproziran oblak), <b>3 pun
-    neproziran oblak</b>, 4–7 prašina/pepeo, 8 snijeg. Ključno za doživljaj sa
-    zemlje: poluprozirni cirus (kod 2) propušta sunce — pa se <b>ne</b> računa kao
-    oblačnost; nivo verdikta vodi isključivo <b>neproziran</b> oblak (kod 3).
-    Optička dubina iz OCA (u log10) dodatno razdvaja tanko od debelog.</p>
+    <p>CLM polje <code>cloud_state</code> je kategorijsko: 0 nema podataka, 1 vedro,
+    <b>2 kontaminiran</b> (djelimičan/poluproziran), <b>3 pun neproziran oblak</b>,
+    4–7 prašina/pepeo, 8 snijeg. Ključno za doživljaj sa zemlje: oblak slabi
+    direktno sunce po Beer–Lambertu,</p>
+    $$ T = e^{-\tau/\mu}, \qquad \mu = \cos\theta_{\odot}, $$
+    <p>pa poluprozirni cirus (mali $\tau$) propušta sunce i <b>ne</b> računam ga kao
+    oblačnost. „Efektivnu pokrivenost neba" definišem preko neprozirnog dijela:</p>
+    $$ C_{\text{eff}} = C_{\text{opaque}} + w\,\bigl(C_{\text{total}} - C_{\text{opaque}}\bigr),
+       \qquad w \approx 0, $$
+    <p>tako da samo pravi neproziran oblak (kod 3) diže nivo na <i>djelimično</i> /
+    <i>oblačno</i>. Optička dubina iz OCA (u $\log_{10}$) razdvaja tanko od debelog.</p>
 
     <h3>Advekcija polja oblaka</h3>
-    <p>Oblaci su difuzno polje, a ne diskretne ćelije, pa se kretanje računa
-    <b>unakrsnom korelacijom cijelog polja</b>, a nowcast je <b>semi-Lagranžev</b>:
-    za izabranu tačku gleda se šta je „uzvodno" duž vektora kretanja na 0…120 min
-    → da li oblaci <i>dolaze</i> (vedro sad, oblak stiže) ili se <i>razilazi</i>
-    (oblačno sad, vedrina stiže), sa ETA i konusom nesigurnosti.</p>
+    <p>Oblaci su difuzno polje, ne diskretne ćelije, pa kretanje računam unakrsnom
+    korelacijom cijelog polja, a nowcast je <b>semi-Lagranžev</b>: stanje u tački
+    $\mathbf{p}$ za $t$ minuta je polje uzorkovano „uzvodno",</p>
+    $$ c(\mathbf{p}, t) = c_0\bigl(\mathbf{p} - \mathbf{v}\,t\bigr), $$
+    <p>iz čega slijedi da li oblaci <i>dolaze</i> (vedro sad, oblak uzvodno) ili se
+    <i>razilazi</i> (oblačno sad, vedrina uzvodno), sa ETA i konusom nesigurnosti.</p>
 
     <h3>Verdikt, izgledi i prikaz</h3>
-    <p>Stanja: <b>CLEAR · PARTLY · OVERCAST · CLOUDS_APPROACHING · CLEARING</b>,
-    uz opis tipa i visine (niski/srednji/visoki, tanko/debelo, vodena/ledena faza)
-    i kratkoročni izgled za sunce (0–2 h). Produženi izgledi 2–48 h dolaze iz NWP
-    oblačnosti (susjedni weather-forecast projekat) u zasebnoj traci — osmatrano i
-    modelirano se namjerno ne miješaju. Mapa je topografska podloga (relief +
-    obala + imena) preko koje se crtaju oblaci: neproziran oblak je bijelo/sivo, a
-    poluprozirni samo blijed veo — tako vedro more i kopno ostaju čisti kao na
-    pravoj satelitskoj slici.</p>
+    <p>Stanja: <b>CLEAR · PARTLY · OVERCAST · CLOUDS_APPROACHING · CLEARING</b>, uz
+    tip i visinu (niski/srednji/visoki, tanko/debelo, faza) i kratkoročni izgled za
+    sunce (0–2 h). Produženi izgledi 2–48 h dolaze iz NWP oblačnosti
+    (weather-forecast) u zasebnoj traci — osmatrano i modelirano se namjerno ne
+    miješaju. Mapa je topografska podloga preko koje se crtaju oblaci: neproziran
+    je bijelo/sivo, poluprozirni samo blijed veo, pa vedro more i kopno ostaju
+    čisti kao na pravoj satelitskoj slici.</p>
   </section>
 
-  <section id="napomena">
-    <h2>Napomena o doslednosti</h2>
-    <p>Oba modula računaju zaključak <b>jednom, u Pythonu</b>, i shipuju ga
-    stranicama koje ga samo prikazuju (JS je rezerva i put za proizvoljnu
-    kliknutu tačku). Time je nemoguće da naslov i detalji protivrječe jedno
-    drugom, ili da se dvije stranice razilaze.</p>
+  <section id="verifikacija">
+    <h2>Verifikacija</h2>
+    <p>Nowcast nije „lijepa slika" nego tvrdnja koja se može oboriti, pa se svaki
+    sken loguje i naknadno boduje protiv onoga što se zaista desilo. Za binarni
+    događaj (kiša/oblak da-ne) koriste se standardne mjere iz kontingencijske
+    tabele (TP pogodak, FP lažna uzbuna, FN promašaj):</p>
+    $$ \mathrm{POD} = \frac{TP}{TP + FN}, \qquad
+       \mathrm{FAR} = \frac{FP}{TP + FP}, \qquad
+       \mathrm{CSI} = \frac{TP}{TP + FP + FN} $$
+    <p>POD (vjerovatnoća detekcije) hoću visok, FAR (udio lažnih uzbuna) nizak, a
+    CSI (critical success index) je objedinjena mjera koja kažnjava i jedno i
+    drugo. Pragovi (npr. onaj $50$ km gore) biraju se da poprave CSI na realnom
+    logu, ne „na oko".</p>
+  </section>
+
+  <section id="roadmap">
+    <h2>Pravac razvoja</h2>
+    <p>Presjek stanja, ne završnica. U planu / u radu:</p>
+    <ul>
+      <li>Parallax-korekcija visokih oblaka (CTTH $\Delta\varphi, \Delta\lambda$) za precizniji položaj.</li>
+      <li>Spajanje osmatranja i NWP-a u jedinstvenu prognozu (blend radara/satelita sa Matkovim modelom).</li>
+      <li>Verifikacioni log i za satelitski modul (kao za radar), sa automatskim re-tuningom pragova.</li>
+      <li>Više lokacija (sistem je već lokaciono-nezavisan) i animirana petlja zadnjih frejmova.</li>
+      <li>Trajno fino dokumentovanje svake revizije.</li>
+    </ul>
   </section>
 </main>
 
