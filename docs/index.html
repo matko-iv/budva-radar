@@ -21,34 +21,30 @@
 
 <main>
   <section id="svrha">
-    <h2>Svrha</h2>
+    <h2>Poruka osnivača</h2>
 
-    <p>Ja sam Matija, osnivač SKALA sistema. Ovo nije komercijalni proizvod nego
-    lični istraživački projekat koji rješava konkretan problem: htio sam
-    <b>tačnu, lokalnu i interpretabilnu</b> sliku vremena nad Budvom — ne
-    generički simbol koji jednom ikonicom „pokrije" pola Jadrana, nego odgovor na
-    pitanje koje stvarno postavljam kad pogledam kroz prozor: <i>pada li, dolazi
-    li, odakle, za koliko, i da li sunce probija.</i></p>
+    <p>Prije svega, ovo nije komercijalni proizvod nego
+    lični istraživački projekat koji pokušava riješiti konkretan problem.</p>
 
     <p>Sistem je svjesno podijeljen na dva osmatračka modula —
     <a href="radar-map.html">SKALA RAIN</a> (radar) i
     <a href="cloud-map.html">SKALA CLOUD</a> (satelit) — jer radar i satelit mjere
     različite veličine (padavine naspram vrhova oblaka) i imaju različite jačine i
-    slabosti. Oba daju verdikt koji se računa <b>jednom, u Pythonu</b>, i samo se
+    slabosti. Oba daju verdikt koji se računa jednom, u Pythonu, i samo se
     prikazuje; logika nije skrivena u frontendu nego je determinisana i
     provjerljiva, pa naslov i detalji ne mogu da protivrječe jedno drugom.</p>
 
-    <p><b>Kod je u potpunosti javno dostupan</b> i tehnički primjenjiv na bilo
-    koju lokaciju: lokacija je samo par $(\varphi, \lambda)$ plus kalibracija
-    izvora — sve ostalo (detekcija, praćenje, advekcija, verdikt) je nezavisno od
+    <p>Kod je u potpunosti javno dostupan i tehnički primjenjiv na bilo
+    koju lokaciju lokacija je samo par $(\varphi, \lambda)$ plus kalibracija
+    izvora. Sve ostalo (detekcija, praćenje, advekcija, verdikt) je nezavisno od
     mjesta. Budva je referentna tačka jer tu živim i tu validiram protiv onoga što
     stvarno vidim sa zemlje, što je najpošteniji test koji postoji.</p>
 
-    <p>SKALA se razvija <b>konstantno</b>. Trenutna revizija nije završnica nego
+    <p>SKALA se razvija konstantno. Trenutna revizija nije završnica nego
     presjek stanja; redovno mijenjam pragove, dodajem izvore i ispravljam ono što
     ne valja (npr. nedavno otkrivenu inverziju redova sjever–jug u satelitskoj
     geolokaciji, koja je oblake stavljala na pogrešnu širinu). Trudim se da svaku
-    odluku — zašto baš taj prag, zašto baš taj izvor — <b>fino dokumentujem</b>,
+    odluku — zašto baš taj prag, zašto baš taj izvor — fino dokumentujem,
     da bi rezultat bio ponovljiv i da bih i sam mogao da mu se vratim. U planu su
     nove funkcionalnosti (vidi <a href="#roadmap">pravac razvoja</a>).</p>
 
