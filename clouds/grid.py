@@ -12,7 +12,7 @@ import numpy as np
 
 from radar import calibration
 
-LAYERS = ("mask", "frac", "ctt", "cth", "cot", "phase")
+LAYERS = ("mask", "frac", "opaque", "ctt", "cth", "cot", "phase")
 
 
 class CloudField:
@@ -59,20 +59,20 @@ class CloudField:
         d = calibration.haversine_km(lat, lon, self._lat2d, self._lon2d)
         return d <= radius_km
 
-    def cloud_fraction(self, lat, lon, radius_km):
-        """Fraction of valid mask cells within radius_km that are cloudy
-        (mask >= 0.5). Uses the sub-pixel 'frac' layer when present. Returns
-        None when no valid cells fall in the disc."""
+    def cloud_fraction(self, lat, lon, radius_km, layer="frac"):
+        """Disc-mean of `layer` (default 'frac' = total cloud amount; pass
+        'opaque' for opaque-only) within radius_km. Returns None when no valid
+        cells fall in the disc."""
         sel = self._disc_mask(lat, lon, radius_km)
         if not sel.any():
             return None
-        frac = self.layers.get("frac")
-        arr = frac if frac is not None else self.layers["mask"]
+        arr = self.layers.get(layer)
+        if arr is None:
+            arr = self.layers["mask"]
         vals = arr[sel]
         vals = vals[~np.isnan(vals)]
         if vals.size == 0:
             return None
-        # 'frac' is already 0..1; 'mask' is 0/1 -> mean gives the cloudy fraction
         return float(np.clip(vals.mean(), 0.0, 1.0))
 
     def sample_cloudy(self, layer, lat, lon, radius_km, reducer="mean"):
@@ -143,6 +143,7 @@ def downsample_for_browser(field, max_dim=80):
         "lats": [round(float(x), 4) for x in lats],
         "lons": [round(float(x), 4) for x in lons],
         "frac": _coarse("frac", 2, default="mask"),
+        "opaque": _coarse("opaque", 2),
         "cth": _coarse("cth", 0),
         "cot": _coarse("cot", 1),
     }

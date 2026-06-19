@@ -77,7 +77,7 @@ def build_status(field, prev_field, data_source):
             "height_low_max_m": cfg["height_low_max_m"],
             "height_mid_max_m": cfg["height_mid_max_m"],
             "cot_thin_max": cfg["cot_thin_max"],
-            "opacity_cot_scale": cfg["opacity_cot_scale"],
+            "semi_sky_weight": cfg["semi_sky_weight"],
             "nowcast_lead_step_min": cfg["nowcast_lead_step_min"],
             "nowcast_lead_max_min": cfg["nowcast_lead_max_min"],
             "nowcast_dir_spread_deg": cfg["nowcast_dir_spread_deg"],
@@ -101,7 +101,7 @@ def _demo_field(sensing_time, lon_edge):
     mask = cloudy.astype(float)
     nan = np.full(mask.shape, np.nan)
     return CloudField(lats, lons, {
-        "mask": mask, "frac": mask,
+        "mask": mask, "frac": mask, "opaque": mask,   # demo deck = opaque cloud
         "ctt": np.where(cloudy, 260.0, nan),    # ~ -13 C
         "cth": np.where(cloudy, 4200.0, nan),   # mid-level
         "cot": np.where(cloudy, 8.0, nan),      # thick

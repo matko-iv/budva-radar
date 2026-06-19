@@ -73,22 +73,15 @@ def to_png(field, path, scale=4):
         frac = field.layers["mask"]
     H, W = frac.shape
     f = np.clip(np.nan_to_num(frac, nan=0.0), 0.0, 1.0)
+    opq = np.clip(np.nan_to_num(field.layers.get("opaque"), nan=0.0), 0.0, 1.0) \
+        if field.layers.get("opaque") is not None else f
+    semi = np.clip(f - opq, 0.0, 1.0)
 
-    cot = field.layers.get("cot")
-    thickness = (np.clip(np.nan_to_num(cot, nan=0.0) / 20.0, 0.0, 1.0)
-                 if cot is not None else np.zeros_like(f))
-    cloud_col = _CLOUD * (1.0 - thickness[..., None]) + _THICK * thickness[..., None]
-
-    # Opacity reflects how much the cloud actually blocks light = OPTICAL DEPTH,
-    # not just coverage. Thin high cirrus (low COT) stays see-through (map shows),
-    # only optically thick cloud goes opaque white — matching the ground view.
-    if cot is not None:
-        c = np.asarray(cot, dtype="float64")
-        opacity = 1.0 - np.exp(-np.clip(c, 0.0, None) / 4.0)   # COT~1->0.22, 4->0.63, 12->0.95
-        opacity = np.where(np.isnan(c), 0.65, np.clip(opacity, 0.05, 1.0))
-    else:
-        opacity = np.ones_like(f)
-    alpha = np.clip(f * opacity, 0.0, 1.0)
+    # Opaque (CLM "cloud filled") -> grey/white solid; semitransparent ("cloud
+    # contaminated") -> very faint veil so clear sea/land reads clear like the
+    # GeoColour RGB (only real opaque cloud stands out).
+    cloud_col = _CLOUD * (1.0 - opq[..., None]) + _THICK * opq[..., None]
+    alpha = np.clip(opq + 0.12 * semi, 0.0, 1.0)
     alpha[np.isnan(frac)] = 0.0
 
     if field.lats[0] < field.lats[-1]:           # ensure north is on top

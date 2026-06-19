@@ -143,12 +143,17 @@ def _geos_indices(ds, lats, lons):
     X, Y = tf.transform(lon2d.ravel(), lat2d.ravel())
     X = np.asarray(X, dtype="float64").reshape(lat2d.shape)
     Y = np.asarray(Y, dtype="float64").reshape(lat2d.shape)
-    dx = (x[-1] - x[0]) / (len(x) - 1)
-    dy = (y[-1] - y[0]) / (len(y) - 1)
+    ny, nx = len(y), len(x)
+    dx = (x[-1] - x[0]) / (nx - 1)
+    dy = (y[-1] - y[0]) / (ny - 1)
     j = np.round((X - x[0]) / dx)
     i = np.round((Y - y[0]) / dy)
     valid = (np.isfinite(X) & np.isfinite(Y)
-             & (i >= 0) & (i < len(y)) & (j >= 0) & (j < len(x)))
+             & (i >= 0) & (i < ny) & (j >= 0) & (j < nx))
+    # *** Row order: the data array rows are stored N->S, OPPOSITE to the
+    # ascending y coordinate (verified 8/8 against EUMETView via debug_flip).
+    # So flip the row index into the data array. Columns (x) are already aligned. ***
+    i = (ny - 1) - i
     return np.where(valid, i, 0).astype(int), np.where(valid, j, 0).astype(int), valid
 
 
@@ -175,26 +180,6 @@ def _sample_cot(da, idx):
     return out
 
 
-def _clm_to_mask(da, grid_vals):
-    """Cloud mask 0/1 from the CLM cloud_state field, using flag_meanings when
-    present (any flag whose name says 'cloud' but not 'clear/free' = cloudy)."""
-    nanmask = np.isnan(grid_vals)
-    fv, fm = da.attrs.get("flag_values"), da.attrs.get("flag_meanings")
-    if fv is not None and fm:
-        codes = [int(c) for c in np.atleast_1d(fv)]
-        meanings = str(fm).split()
-        cloudy = [c for c, m in zip(codes, meanings)
-                  if "cloud" in m.lower() and not any(w in m.lower()
-                  for w in ("free", "clear", "no_cloud", "snow", "no_data"))]
-        if cloudy:
-            m = np.isin(np.round(grid_vals), cloudy).astype(float)
-            m[nanmask] = np.nan
-            return m
-    m = (grid_vals >= 1.5).astype(float)        # fallback if no flag metadata
-    m[nanmask] = np.nan
-    return m
-
-
 def _pressure_to_height_m(p_pa):
     """Crude standard-atmosphere pressure(Pa) -> geopotential height(m)."""
     p = np.asarray(p_pa, dtype="float64")
@@ -213,12 +198,20 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time):
     if clm is None:
         raise ValueError("no cloud-mask variable found in CLM product (check _VARMAP)")
     idx_clm = _geos_indices(ds_clm, lats, lons)
-    cs = _sample(clm, idx_clm)                  # raw cloud_state codes; NaN off-disk
-    on_disk = ~np.isnan(cs)
+    cs = np.round(_sample(clm, idx_clm))        # CLM cloud_state codes (see enum)
 
-    # Cloud fraction: prefer CTTH effective_cloudiness (a real 0..1 amount). Where
-    # it has no value but the pixel is on-disk -> clear (0). This avoids relying
-    # on the (un-documented here) cloud_state category codes for the amount.
+    # CLM cloud_state enum (MTG FCI L2 CLM):
+    #   0 no-data, 1 cloud-free, 2 cloud CONTAMINATED (partial/semitransparent),
+    #   3 cloud FILLED (opaque), 4-7 dust/ash, 8 snow/ice, 9 undefined.
+    # "Sunny from the ground" = no OPAQUE cloud overhead even if semitransparent
+    # cirrus is present, so we separate total cloud (2+3) from opaque (3).
+    nodata = np.isnan(cs) | (cs == 0) | (cs == 9)
+    clearish = (cs == 1) | ((cs >= 4) & (cs <= 8))     # clear / dust / ash / snow
+    semi = (cs == 2)
+    opaque_px = (cs == 3)
+    cloud_any = semi | opaque_px
+
+    # Cloud amount from CTTH effective_cloudiness (0..1); fall back per category.
     ctt = cth = cot = phase = nan
     idx_ctth = _geos_indices(ds_ctth, lats, lons) if ds_ctth is not None else None
     eff = None
@@ -227,14 +220,17 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time):
         if vfrac is not None:
             eff = _sample(vfrac, idx_ctth)
     if eff is not None:
-        finite = eff[~np.isnan(eff)]
-        if finite.size and np.nanmax(finite) > 1.5:   # percent -> fraction
+        fin = eff[~np.isnan(eff)]
+        if fin.size and np.nanmax(fin) > 1.5:   # percent -> fraction
             eff = eff / 100.0
-        frac = np.where(~np.isnan(eff), np.clip(eff, 0.0, 1.0),
-                        np.where(on_disk, 0.0, np.nan))
+        default_amt = np.where(opaque_px, 1.0, np.where(semi, 0.5, 0.0))
+        amt = np.where(np.isnan(eff), default_amt, np.clip(eff, 0.0, 1.0))
     else:
-        frac = _clm_to_mask(clm, cs)            # binary fallback (no CTTH)
-    mask = np.where(np.isnan(frac), np.nan, (frac >= 0.5).astype(float))
+        amt = np.where(opaque_px, 1.0, np.where(semi, 0.5, 0.0))
+
+    frac = np.where(nodata, np.nan, np.where(cloud_any, amt, 0.0))   # total cloud
+    opaque = np.where(nodata, np.nan, np.where(opaque_px, amt, 0.0))  # opaque only
+    mask = np.where(nodata, np.nan, cloud_any.astype(float))
 
     if ds_ctth is not None:
         v = _pick(ds_ctth, "ctt")
@@ -263,8 +259,8 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time):
             arr[~cloudy] = np.nan
 
     return CloudField(lats, lons,
-                      {"mask": mask, "frac": frac, "ctt": ctt, "cth": cth,
-                       "cot": cot, "phase": phase},
+                      {"mask": mask, "frac": frac, "opaque": opaque, "ctt": ctt,
+                       "cth": cth, "cot": cot, "phase": phase},
                       meta={"sensing_time": sensing_time, "source": "EUMETSAT"})
 
 

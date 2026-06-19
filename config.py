@@ -187,10 +187,13 @@ CLOUDS = {
     # Optical thickness: thin vs thick (COT ~3.6 is the cirrus/altostratus
     # boundary; round to 3.0 for "thin").
     "cot_thin_max": 3.0,
-    # Sky-blocking opacity from optical depth: opacity = 1 - exp(-COT/scale).
-    # Drives the verdict's "effective sky cover" so optically thin high cirrus
-    # (which the ground sees as sunny) is NOT classed as overcast.
-    "opacity_cot_scale": 4.0,
+    # Sky-blocking weight for CONTAMINATED (semitransparent, CLM code 2) cloud.
+    # Effective sky cover = opaque + semi_sky_weight*(total - opaque). Set to 0:
+    # ONLY genuinely OPAQUE cloud (CLM code 3) drives clear/partly/overcast;
+    # semitransparent cirrus is reported as a "thin veil, sun gets through" note
+    # but never counts as cloudiness (matches the from-the-ground experience).
+    "semi_sky_weight": 0.0,
+    "opacity_cot_scale": 4.0,    # (unused now; legacy)
 
     # Advection nowcast horizon + step (mirror the radar nowcast windows).
     "nowcast_lead_max_min": 120,
