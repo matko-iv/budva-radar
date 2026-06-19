@@ -5,6 +5,8 @@ thickness, phase) with clouds/nowcast.py (approaching / clearing / ETA) into one
 facts dict, plus a near-term sun outlook and per-ring fractions for the UI table.
 """
 
+import math
+
 import config
 from clouds import nowcast
 
@@ -69,8 +71,22 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
 
     band = _height_band(cth_m, cfg)
     thick = _thickness(cot, cfg)
-    now_clear = frac is not None and frac <= cfg["frac_clear_max"]
-    overcast = frac is not None and frac >= cfg["frac_overcast_min"]
+
+    # Effective sky cover = coverage weighted by how much the cloud blocks light
+    # (optical depth). Thin high cirrus (low COT) -> low blocking -> stays "clear"
+    # even at high coverage, matching the ground view (sun gets through).
+    opacity = None if cot is None else (1.0 - math.exp(-max(cot, 0.0) / cfg["opacity_cot_scale"]))
+    if frac is None:
+        sky_cover = None
+    elif opacity is None:
+        sky_cover = frac                      # unknown thickness -> assume it blocks
+    else:
+        sky_cover = frac * opacity
+    thin_veil = bool(frac is not None and frac > cfg["frac_clear_max"]
+                     and sky_cover is not None and sky_cover <= cfg["frac_clear_max"])
+
+    now_clear = sky_cover is not None and sky_cover <= cfg["frac_clear_max"]
+    overcast = sky_cover is not None and sky_cover >= cfg["frac_overcast_min"]
 
     rings = []
     for r in config.SAMPLE_RADII_KM:
@@ -81,6 +97,9 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
     return {
         "locationName": loc_name,
         "cloudFracNow": frac,
+        "skyCoverEff": None if sky_cover is None else round(sky_cover, 3),
+        "opacity": None if opacity is None else round(opacity, 2),
+        "thinVeil": thin_veil,
         "cloudAtLocation": nc["cloudAtLocation"],
         "approaching": nc["approaching"],
         "clearing": nc["clearing"],

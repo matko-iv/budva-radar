@@ -187,6 +187,10 @@ CLOUDS = {
     # Optical thickness: thin vs thick (COT ~3.6 is the cirrus/altostratus
     # boundary; round to 3.0 for "thin").
     "cot_thin_max": 3.0,
+    # Sky-blocking opacity from optical depth: opacity = 1 - exp(-COT/scale).
+    # Drives the verdict's "effective sky cover" so optically thin high cirrus
+    # (which the ground sees as sunny) is NOT classed as overcast.
+    "opacity_cot_scale": 4.0,
 
     # Advection nowcast horizon + step (mirror the radar nowcast windows).
     "nowcast_lead_max_min": 120,

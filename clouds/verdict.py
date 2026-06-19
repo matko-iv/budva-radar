@@ -87,9 +87,16 @@ def interpret(facts):
     facts = facts or {}
     loc = facts.get("locationName") or "this location"
     frac = facts.get("cloudFracNow")
+    # Level (clear/partly/overcast) is judged on the OPTICAL-DEPTH-weighted sky
+    # cover, so thin high cirrus does not read as overcast. Coverage % is still
+    # shown for context.
+    sky = facts.get("skyCoverEff")
+    if sky is None:
+        sky = frac
     pct = _pct(frac)
     pct_txt = f" ({pct}%)" if pct is not None else ""
-    level = _now_level(frac)
+    level = _now_level(sky)
+    thin = bool(facts.get("thinVeil"))
     typ = _type_phrase(facts)
     eta = facts.get("etaMin")
     eta_txt = f", ETA ~{_round(eta)} min" if eta is not None else ""
@@ -104,6 +111,9 @@ def interpret(facts):
             state = "CLOUDS_APPROACHING"
             typ_appr = typ if facts.get("heightBand") else "clouds"
             narrative = f"Clear now, but {typ_appr} approaching{frm}{eta_txt}."
+        elif thin:
+            state = "CLEAR"
+            narrative = f"Mostly clear over {loc} — {typ}{pct_txt}, sun gets through."
         else:
             state = "CLEAR"
             narrative = f"Clear sky over {loc} — no cloud incoming."
@@ -117,6 +127,9 @@ def interpret(facts):
         elif level == "overcast":
             state = "OVERCAST"
             narrative = f"Overcast over {loc}{pct_txt} — {typ}{tops}."
+        elif thin:
+            state = "PARTLY"
+            narrative = f"Hazy sun over {loc} — mostly {typ}{pct_txt}."
         else:
             state = "PARTLY"
             narrative = f"Partly cloudy over {loc}{pct_txt} — {typ}."
@@ -151,9 +164,15 @@ def serbian_line(facts, res):
         return {"text": f"oblačno nad Budvom{pct_txt} — {typ}",
                 "bold": "oblačno nad Budvom", "color": "#455a64", "weight": 700}
     if state == "PARTLY":
+        if facts.get("thinVeil"):
+            return {"text": f"sunce kroz tanak visoki oblak nad Budvom{pct_txt}",
+                    "bold": "sunce kroz tanak visoki oblak", "color": "#f9a825", "weight": 600}
         return {"text": f"djelimično oblačno nad Budvom{pct_txt}",
                 "bold": "djelimično oblačno nad Budvom", "color": "#607d8b", "weight": 600}
     # CLEAR
+    if facts.get("thinVeil"):
+        return {"text": f"pretežno vedro nad Budvom — tanak visoki oblak, sunce probija{pct_txt}",
+                "bold": "pretežno vedro nad Budvom", "color": "#f9a825", "weight": 600}
     return {"text": "vedro nad Budvom", "bold": "vedro nad Budvom",
             "color": "#f9a825", "weight": 600}
 

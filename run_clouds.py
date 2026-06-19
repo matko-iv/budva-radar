@@ -77,6 +77,7 @@ def build_status(field, prev_field, data_source):
             "height_low_max_m": cfg["height_low_max_m"],
             "height_mid_max_m": cfg["height_mid_max_m"],
             "cot_thin_max": cfg["cot_thin_max"],
+            "opacity_cot_scale": cfg["opacity_cot_scale"],
             "nowcast_lead_step_min": cfg["nowcast_lead_step_min"],
             "nowcast_lead_max_min": cfg["nowcast_lead_max_min"],
             "nowcast_dir_spread_deg": cfg["nowcast_dir_spread_deg"],

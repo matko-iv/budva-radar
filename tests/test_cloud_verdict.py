@@ -55,6 +55,12 @@ CASES = {
         facts(cloudFracNow=0.9, cloudAtLocation=True, clearing=True, etaMin=30,
               heightBand="low", thickness="thick"),
         "CLEARING"),
+    # high coverage but optically THIN cirrus -> stays CLEAR ("sun gets through")
+    "thin_veil": (
+        facts(cloudFracNow=0.7, skyCoverEff=0.12, thinVeil=True, cloudAtLocation=True,
+              heightBand="high", thickness="thin", phase="ice",
+              cloudTypeLabel="high thin cloud (cirrus)"),
+        "CLEAR"),
 }
 
 
@@ -82,6 +88,7 @@ def test_serbian_line():
         "partly": "djelimično",
         "overcast": "oblačno",
         "clearing": "razvedrava",
+        "thin_veil": "tanak",
     }
     for label, (f, _state) in CASES.items():
         res = verdict.interpret(f)

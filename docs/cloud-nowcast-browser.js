@@ -133,15 +133,27 @@
     var cth = cloudy ? discMean(field, "cth", lat, lon, descR, true) : null;
     var cot = cloudy ? discMean(field, "cot", lat, lon, descR, true) : null;
     var band = heightBand(cth, p), thick = thickness(cot, p);
-    var nowClear = frac != null && frac <= p.frac_clear_max;
-    var overcast = frac != null && frac >= p.frac_overcast_min;
+
+    // optical-depth-weighted sky cover (mirror clouds/interpret.py)
+    var scale = p.opacity_cot_scale || 4.0;
+    var opacity = cot == null ? null : (1 - Math.exp(-Math.max(cot, 0) / scale));
+    var sky = frac == null ? null : (opacity == null ? frac : frac * opacity);
+    var thinVeil = frac != null && frac > p.frac_clear_max
+      && sky != null && sky <= p.frac_clear_max;
+
+    var nowClear = sky != null && sky <= p.frac_clear_max;
+    var overcast = sky != null && sky >= p.frac_overcast_min;
     var rings = radii.map(function (r) {
       var rf = cloudFraction(field, lat, lon, r);
       return { radius_km: r, cloud_fraction: rf == null ? null : +rf.toFixed(3) };
     });
     return {
       locationName: locName || "this point",
-      cloudFracNow: frac, cloudAtLocation: nc.cloudAtLocation,
+      cloudFracNow: frac,
+      skyCoverEff: sky == null ? null : +sky.toFixed(3),
+      opacity: opacity == null ? null : +opacity.toFixed(2),
+      thinVeil: thinVeil,
+      cloudAtLocation: nc.cloudAtLocation,
       approaching: nc.approaching, clearing: nc.clearing, etaMin: nc.etaMin,
       motionCardinal: nc.motionCardinal, fromCardinal: OPP[nc.motionCardinal],
       cloudTopHeightM: cth == null ? null : Math.round(cth),

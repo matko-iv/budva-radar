@@ -37,7 +37,9 @@
     var loc = facts.locationName || "this location";
     var frac = facts.cloudFracNow, pc = pct(frac);
     var pctTxt = pc != null ? " (" + pc + "%)" : "";
-    var level = nowLevel(frac, p), typ = typePhrase(facts);
+    // Level judged on optical-depth-weighted sky cover (thin cirrus != overcast).
+    var sky = facts.skyCoverEff != null ? facts.skyCoverEff : frac;
+    var level = nowLevel(sky, p), thin = !!facts.thinVeil, typ = typePhrase(facts);
     var eta = facts.etaMin, etaTxt = eta != null ? ", ETA ~" + rnd(eta) + " min" : "";
     var fc = fromCard(facts), frm = fc ? " from " + fc : "";
     var tops = facts.cloudTopHeightM != null ? ", tops ~" + rnd(facts.cloudTopHeightM) + " m" : "";
@@ -49,6 +51,9 @@
         state = "CLOUDS_APPROACHING";
         var ta = facts.heightBand ? typ : "clouds";
         narrative = "Clear now, but " + ta + " approaching" + frm + etaTxt + ".";
+      } else if (thin) {
+        state = "CLEAR";
+        narrative = "Mostly clear over " + loc + " — " + typ + pctTxt + ", sun gets through.";
       } else {
         state = "CLEAR";
         narrative = "Clear sky over " + loc + " — no cloud incoming.";
@@ -63,6 +68,9 @@
       } else if (level === "overcast") {
         state = "OVERCAST";
         narrative = "Overcast over " + loc + pctTxt + " — " + typ + tops + ".";
+      } else if (thin) {
+        state = "PARTLY";
+        narrative = "Hazy sun over " + loc + " — mostly " + typ + pctTxt + ".";
       } else {
         state = "PARTLY";
         narrative = "Partly cloudy over " + loc + pctTxt + " — " + typ + ".";
@@ -86,7 +94,11 @@
       return { text: "razvedrava se nad Budvom — sunce" + e2, bold: "razvedrava se nad Budvom", color: "#1565c0", weight: 600 };
     }
     if (state === "OVERCAST") return { text: "oblačno nad Budvom" + pctTxt + " — " + typ, bold: "oblačno nad Budvom", color: "#455a64", weight: 700 };
-    if (state === "PARTLY") return { text: "djelimično oblačno nad Budvom" + pctTxt, bold: "djelimično oblačno nad Budvom", color: "#607d8b", weight: 600 };
+    if (state === "PARTLY") {
+      if (facts.thinVeil) return { text: "sunce kroz tanak visoki oblak nad Budvom" + pctTxt, bold: "sunce kroz tanak visoki oblak", color: "#f9a825", weight: 600 };
+      return { text: "djelimično oblačno nad Budvom" + pctTxt, bold: "djelimično oblačno nad Budvom", color: "#607d8b", weight: 600 };
+    }
+    if (facts.thinVeil) return { text: "pretežno vedro nad Budvom — tanak visoki oblak, sunce probija" + pctTxt, bold: "pretežno vedro nad Budvom", color: "#f9a825", weight: 600 };
     return { text: "vedro nad Budvom", bold: "vedro nad Budvom", color: "#f9a825", weight: 600 };
   }
 
