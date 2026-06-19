@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>skala — oblaci (satelit)</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  pre.term { background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px;
+    font-family:ui-monospace,"Cascadia Mono","Consolas",monospace;font-size:15px;
+    line-height:1.4;white-space:pre;color:#222;overflow-x:auto;margin:0; }
+  pre.term .hint { color:#888;font-size:11px; }
+  #controls { display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:13px; }
+  #controls input,#controls button { font-family:inherit;font-size:13px;padding:4px 8px;
+    border:1px solid #ccc;border-radius:4px;background:#fff; }
+  #controls button { cursor:pointer; }
+  #controls button:hover { background:#f0f0f0; }
+  #controls .dim { color:#888; }
+  #map-wrap { position:relative;display:inline-block;max-width:100%; }
+  #canvas { display:block;max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px;
+    cursor:crosshair;background:#cfd8dc; }
+  #overlay { position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none; }
+  #banner { border-radius:6px;padding:12px 14px;margin:12px 0; }
+  .card { border:1px solid #e0e0e0;border-radius:6px;padding:10px 12px;margin:10px 0;background:#fff; }
+  .card h2 { font-size:14px;margin:0 0 8px; }
+  ul.rings { list-style:none;padding:0;margin:0;font-size:13px;display:flex;flex-wrap:wrap;gap:4px 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>skala — oblaci (satelit)</h1>
+  <p style="font-size:13px;margin:0 0 6px;">
+    <a href="index.html">pregled</a> ·
+    <a href="radar-map.html">radar (kiša)</a> ·
+    <span class="dim">satelitska interpretacija oblačnosti za Budvu</span>
+  </p>
+</header>
+
+<main>
+  <section id="boot-section">
+    <h2>boot</h2>
+    <pre id="boot" class="term"><span class="hint">[ molim sačekajte... ]</span>
+</pre>
+  </section>
+
+  <section id="app" hidden>
+    <div id="controls">
+      <input id="city-input" placeholder="grad (Budva, Kotor, Bar…) ili klikni mapu" autocomplete="off">
+      <button id="city-btn">setuj</button>
+      <button id="budva-btn">↺ Budva</button>
+      <span class="dim" id="status"></span>
+    </div>
+
+    <div id="map-wrap">
+      <canvas id="canvas" width="100" height="100"></canvas>
+      <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+    </div>
+    <p class="dim" style="font-size:12px;margin:4px 0 0;">
+      plavo = vedro · bijelo/sivo = oblak (sivlje = deblji) · ● = procijenjena tačka ·
+      strelica = kretanje oblaka · elipse = prstenovi uzorkovanja
+    </p>
+
+    <div id="banner">—</div>
+
+    <div class="card">
+      <h2>Detalji (osmatranje, satelit)</h2>
+      <div id="facts">—</div>
+    </div>
+
+    <div class="card">
+      <h2>Oblačnost po prstenovima</h2>
+      <ul id="rings" class="rings"></ul>
+    </div>
+
+    <div class="card">
+      <h2>NWP izgledi (modelirano, 2–48 h)</h2>
+      <div id="nwp">učitavanje…</div>
+    </div>
+
+    <p class="dim" style="font-size:11px;">
+      Izvor: <span id="src">—</span> · sken: <span id="stime">—</span>
+    </p>
+  </section>
+</main>
+
+<footer><p>SKALA — satelitska analiza oblačnosti</p></footer>
+
+<script src="cloud_data.js"></script>
+<script src="cloud-text.js"></script>
+<script src="cloud-nowcast-browser.js"></script>
+<script src="cloud-sections.js"></script>
+<script>
+(function () {
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var CITIES = {
+    "budva": [42.2864, 18.84], "petrovac": [42.205, 18.943],
+    "sveti stefan": [42.255, 18.892], "kotor": [42.424, 18.771],
+    "tivat": [42.436, 18.696], "bar": [42.094, 19.100],
+    "podgorica": [42.4304, 19.2594], "cetinje": [42.39, 18.92], "ulcinj": [41.929, 19.224]
+  };
+  var boot = document.getElementById("boot");
+  function log(s) { boot.textContent += s + "\n"; }
+
+  var D = window.CLOUD_DATA;
+  if (!D || !D.field) {
+    log("[x] cloud_data.js nije učitan ili nema podataka.");
+    log("    Pokreni: python run_clouds.py --demo");
+    return;
+  }
+  var bbox = D.field.bbox, params = D.params || {}, field = D.field;
+  var canvas = document.getElementById("canvas"), ctx = canvas.getContext("2d");
+  var svg = document.getElementById("overlay");
+  var W = 100, H = 100; // canvas pixel size (set on image load)
+
+  function lonToX(lon) { return (lon - bbox.lon_min) / (bbox.lon_max - bbox.lon_min) * W; }
+  function latToY(lat) { return (bbox.lat_max - lat) / (bbox.lat_max - bbox.lat_min) * H; }
+  function xToLon(x) { return bbox.lon_min + (x / W) * (bbox.lon_max - bbox.lon_min); }
+  function yToLat(y) { return bbox.lat_max - (y / H) * (bbox.lat_max - bbox.lat_min); }
+
+  function mk(tag, attrs) {
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function clearSvg() { while (svg.firstChild) svg.removeChild(svg.firstChild); }
+
+  function drawOverlay(lat, lon, facts, isBudva) {
+    clearSvg();
+    var x = lonToX(lon), y = latToY(lat);
+    // sampling rings (ellipses, because lon/lat scales differ)
+    var radii = params.sample_radii_km || [10, 25, 50];
+    radii.forEach(function (r) {
+      var rx = (r / (111.32 * Math.cos(lat * Math.PI / 180))) / (bbox.lon_max - bbox.lon_min) * W;
+      var ry = (r / 111.32) / (bbox.lat_max - bbox.lat_min) * H;
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: rx, ry: ry,
+        fill: "none", stroke: "#37474f", "stroke-width": 0.25, "stroke-opacity": 0.5, "stroke-dasharray": "1 1" }));
+    });
+    // motion arrow
+    var m = field.motion;
+    if (m && m.direction_deg != null && m.speed_kmh > 0) {
+      var br = m.direction_deg * Math.PI / 180;
+      var L = Math.min(3 + m.speed_kmh * 0.06, 12);
+      var x2 = x + Math.sin(br) * L, y2 = y - Math.cos(br) * L;
+      svg.appendChild(mk("line", { x1: x, y1: y, x2: x2, y2: y2, stroke: "#0d47a1", "stroke-width": 0.5 }));
+      svg.appendChild(mk("circle", { cx: x2, cy: y2, r: 0.7, fill: "#0d47a1" }));
+    }
+    // Budva reference marker (always)
+    var bx = lonToX(CITIES.budva[1]), by = latToY(CITIES.budva[0]);
+    svg.appendChild(mk("circle", { cx: bx, cy: by, r: 0.8, fill: "none", stroke: "#000", "stroke-width": 0.3 }));
+    // assessed point
+    svg.appendChild(mk("circle", { cx: x, cy: y, r: 1.1, fill: "#c62828", stroke: "#fff", "stroke-width": 0.3 }));
+  }
+
+  function assess(lat, lon, name, isBudva) {
+    var facts, h;
+    if (isBudva && D.facts) {
+      facts = D.facts;
+      h = CLOUD_SECTIONS.cloudHeadline(D);
+    } else {
+      facts = CLOUD_NOWCAST.pointFacts(field, lat, lon, params, name);
+      h = CLOUD_SECTIONS.cloudHeadline({ facts: facts, params: params });
+    }
+    CLOUD_SECTIONS.renderBanner(document.getElementById("banner"), h);
+    CLOUD_SECTIONS.renderFacts(document.getElementById("facts"), facts);
+    CLOUD_SECTIONS.renderRings(document.getElementById("rings"), facts.rings);
+    drawOverlay(lat, lon, facts, isBudva);
+    document.getElementById("status").textContent = name + " (" + lat.toFixed(3) + ", " + lon.toFixed(3) + ")";
+  }
+
+  function start() {
+    document.getElementById("boot-section").hidden = true;
+    document.getElementById("app").hidden = false;
+    document.getElementById("src").textContent = (D.source && D.source.data_source) || "?";
+    document.getElementById("stime").textContent = (D.source && D.source.sensing_time) || "?";
+
+    // click to interpret any point
+    canvas.addEventListener("click", function (ev) {
+      var rect = canvas.getBoundingClientRect();
+      var px = (ev.clientX - rect.left) / rect.width * W;
+      var py = (ev.clientY - rect.top) / rect.height * H;
+      assess(yToLat(py), xToLon(px), "tačka", false);
+    });
+    document.getElementById("budva-btn").onclick = function () { assess(CITIES.budva[0], CITIES.budva[1], "Budva", true); };
+    function setCity() {
+      var q = (document.getElementById("city-input").value || "").trim().toLowerCase();
+      if (CITIES[q]) assess(CITIES[q][0], CITIES[q][1], q.replace(/\b\w/g, function (c) { return c.toUpperCase(); }), q === "budva");
+      else document.getElementById("status").textContent = "nepoznat grad — klikni mapu";
+    }
+    document.getElementById("city-btn").onclick = setCity;
+    document.getElementById("city-input").addEventListener("keydown", function (e) { if (e.key === "Enter") setCity(); });
+
+    // default: Budva
+    assess(CITIES.budva[0], CITIES.budva[1], "Budva", true);
+
+    // NWP band (modeled, separate) — cross-origin fetch from weather-forecast
+    if (D.nwp_forecast_url) {
+      fetch(D.nwp_forecast_url, { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { CLOUD_SECTIONS.renderNwp(document.getElementById("nwp"), j); })
+        .catch(function () { document.getElementById("nwp").innerHTML = "<span style='color:#999;'>NWP izgledi trenutno nedostupni.</span>"; });
+    }
+  }
+
+  log("[ok] cloud_data.js — " + ((D.source && D.source.data_source) || "?"));
+  var img = new Image();
+  img.onload = function () {
+    W = img.naturalWidth; H = img.naturalHeight;
+    canvas.width = W; canvas.height = H;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    ctx.drawImage(img, 0, 0, W, H);
+    start();
+  };
+  img.onerror = function () { log("[x] ne mogu učitati " + field.image); start(); };
+  img.src = field.image;
+})();
+</script>
+</body>
+</html>
