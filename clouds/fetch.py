@@ -203,16 +203,32 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time):
     # CLM cloud_state enum (MTG FCI L2 CLM):
     #   0 no-data, 1 cloud-free, 2 cloud CONTAMINATED (partial/semitransparent),
     #   3 cloud FILLED (opaque), 4-7 dust/ash, 8 snow/ice, 9 undefined.
-    # "Sunny from the ground" = no OPAQUE cloud overhead even if semitransparent
-    # cirrus is present, so we separate total cloud (2+3) from opaque (3).
+    # NOTE: code 3 ("opaque") is NOT trustworthy on its own — the FCI CLM marks
+    # optically thin cloud as code 3 too. We keep the codes here but let OCA
+    # optical thickness gate what really counts as cloud / sun-blocking (below).
     nodata = np.isnan(cs) | (cs == 0) | (cs == 9)
     clearish = (cs == 1) | ((cs >= 4) & (cs <= 8))     # clear / dust / ash / snow
     semi = (cs == 2)
     opaque_px = (cs == 3)
     cloud_any = semi | opaque_px
 
-    # Cloud amount from CTTH effective_cloudiness (0..1); fall back per category.
     ctt = cth = cot = phase = nan
+
+    # --- OCA optical thickness (COT) + phase, sampled FIRST ----------------
+    # The CLM mask over-detects (flags optically thin cloud as code-3 "opaque"),
+    # so COT — not the CLM flag — decides what actually blocks the sun. Sampled
+    # up front so the frac/opaque layers below can be gated on it.
+    if ds_oca is not None:
+        idx_oca = _geos_indices(ds_oca, lats, lons)
+        vcot = _pick(ds_oca, "cot")
+        if vcot is not None:
+            cot = _sample_cot(vcot, idx_oca)
+        vph = _pick(ds_oca, "phase")
+        if vph is not None:
+            phase = _sample(vph, idx_oca)
+    cot_ok = (cot is not nan) and bool(np.isfinite(cot).any())
+
+    # Cloud amount from CTTH effective_cloudiness (0..1); fall back per category.
     idx_ctth = _geos_indices(ds_ctth, lats, lons) if ds_ctth is not None else None
     eff = None
     if ds_ctth is not None:
@@ -228,9 +244,27 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time):
     else:
         amt = np.where(opaque_px, 1.0, np.where(semi, 0.5, 0.0))
 
-    frac = np.where(nodata, np.nan, np.where(cloud_any, amt, 0.0))   # total cloud
-    opaque = np.where(nodata, np.nan, np.where(opaque_px, amt, 0.0))  # opaque only
-    mask = np.where(nodata, np.nan, cloud_any.astype(float))
+    # Optical-thickness gating. When OCA COT is available, a pixel is
+    #   * SUN-BLOCKING (opaque layer) only if COT >= cot_block_min, and
+    #   * counted as cloud at all (frac) only if COT >= cot_cloud_min,
+    # so the CLM's optically thin false "opaque" detections drop out and the
+    # field matches the visible sky. With no OCA we keep the raw CLM flags.
+    cot_block = float(cfg.get("cot_block_min", 5.0))
+    cot_cloud = float(cfg.get("cot_cloud_min", 1.0))
+    if cot_ok:
+        cot_g = np.where(np.isnan(cot), 0.0, cot)   # no retrieval -> treat as thin
+        # COT is the arbiter, NOT the CLM 2/3 split: a pixel blocks the sun if any
+        # cloud is present AND it is optically thick (so thick cloud the CLM mis-
+        # labelled "contaminated" still counts, and thin "opaque" no longer does).
+        block_px = cloud_any & (cot_g >= cot_block)
+        cloud_keep = cloud_any & (cot_g >= cot_cloud)
+    else:
+        block_px = opaque_px           # no OCA -> fall back to the raw CLM flag
+        cloud_keep = cloud_any
+
+    frac = np.where(nodata, np.nan, np.where(cloud_keep, amt, 0.0))   # any (real) cloud
+    opaque = np.where(nodata, np.nan, np.where(block_px, amt, 0.0))   # sun-blocking only
+    mask = np.where(nodata, np.nan, cloud_keep.astype(float))
 
     if ds_ctth is not None:
         v = _pick(ds_ctth, "ctt")
@@ -243,14 +277,6 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time):
             vctp = _pick(ds_ctth, "ctp")
             if vctp is not None:
                 cth = _pressure_to_height_m(_sample(vctp, idx_ctth))
-    if ds_oca is not None:
-        idx_oca = _geos_indices(ds_oca, lats, lons)
-        vcot = _pick(ds_oca, "cot")
-        if vcot is not None:
-            cot = _sample_cot(vcot, idx_oca)
-        vph = _pick(ds_oca, "phase")
-        if vph is not None:
-            phase = _sample(vph, idx_oca)
 
     # Mask cloud-only layers to where there is cloud.
     cloudy = mask >= 0.5

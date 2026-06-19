@@ -187,6 +187,26 @@ CLOUDS = {
     # Optical thickness: thin vs thick (COT ~3.6 is the cirrus/altostratus
     # boundary; round to 3.0 for "thin").
     "cot_thin_max": 3.0,
+
+    # --- Optical-thickness gating (the FCI L2 CLM mask OVER-DETECTS cloud) ---
+    # The CLM flags optically thin cloud as "cloud filled (opaque)" (verified:
+    # ~88% of code-3 pixels have COT < 5, e.g. Budva read code 3 at COT 2.3 on a
+    # sunny day). So we don't trust the CLM opaque flag alone for "is the sun
+    # blocked"; OCA cloud optical thickness (COT) is the arbiter, which makes the
+    # verdict match the visible (GeoColour) sky:
+    #   * a pixel is SUN-BLOCKING (opaque layer) only if COT >= cot_block_min,
+    #   * a pixel counts as cloud at all (total/frac) only if COT >= cot_cloud_min.
+    # cot_block_min ~5 reproduces EUMETView's clear/cloudy split closely; tune if
+    # the field still reads too cloudy (raise) or drops real cloud (lower). When
+    # OCA is unavailable for a frame we fall back to the raw CLM flags.
+    # cot_cloud_min is set EQUAL to cot_block_min so "any cloud" and "sun-blocking"
+    # coincide — that matches what the visible (GeoColour) eye sees for this
+    # over-detecting product, and stops the preview PNG from washing clear areas
+    # with a faint veil. Lower it (e.g. 3.0) to reintroduce a thin-veil band for
+    # COT in [cot_cloud_min, cot_block_min) if you want "sun gets through" notes.
+    "cot_block_min": 5.0,
+    "cot_cloud_min": 5.0,
+
     # Sky-blocking weight for CONTAMINATED (semitransparent, CLM code 2) cloud.
     # Effective sky cover = opaque + semi_sky_weight*(total - opaque). Set to 0:
     # ONLY genuinely OPAQUE cloud (CLM code 3) drives clear/partly/overcast;

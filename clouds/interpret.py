@@ -62,25 +62,29 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
 
     now_radius = config.SAMPLE_RADII_KM[0]
     desc_radius = config.SAMPLE_RADII_KM[1] if len(config.SAMPLE_RADII_KM) > 1 else 25
-    cloudy = frac is not None and frac > cfg["frac_clear_max"]
-    ctt_k = field.sample_cloudy("ctt", lat, lon, desc_radius) if cloudy else None
-    cth_m = field.sample_cloudy("cth", lat, lon, desc_radius) if cloudy else None
-    cot = field.sample_cloudy("cot", lat, lon, desc_radius) if cloudy else None
-    phase = field.dominant_phase(lat, lon, desc_radius) if cloudy else None
 
-    band = _height_band(cth_m, cfg)
-    thick = _thickness(cot, cfg)
-
-    # Effective sky cover for the clear/partly/overcast decision: OPAQUE cloud
-    # blocks the sun fully; CONTAMINATED (semitransparent) cloud counts only a
-    # little (sun gets through). So sky_cover = opaque + semi_weight*(total-opaque).
-    # This uses the satellite's own CLM classification (frac=total, opaque=code 3).
+    # Effective sky cover for the clear/partly/overcast decision. The "opaque"
+    # layer is now OCA-optical-thickness-gated (only genuinely sun-blocking cloud;
+    # see clouds/fetch.py), so it — not the raw CLM total — drives the verdict.
+    # sky_cover = opaque + semi_weight*(total - opaque); semi_weight defaults to 0.
     opaque_cover = field.cloud_fraction(lat, lon, now_radius, layer="opaque")
     if frac is None:
         sky_cover = None
     else:
         opq = opaque_cover or 0.0
         sky_cover = opq + cfg["semi_sky_weight"] * max(frac - opq, 0.0)
+
+    # Describe cloud type only where there is real SUN-BLOCKING cloud, so a clear
+    # or thin-veil sky never gets a bogus "stratus" label.
+    blocking = (opaque_cover or 0.0) > cfg["frac_clear_max"]
+    ctt_k = field.sample_cloudy("ctt", lat, lon, desc_radius) if blocking else None
+    cth_m = field.sample_cloudy("cth", lat, lon, desc_radius) if blocking else None
+    cot = field.sample_cloudy("cot", lat, lon, desc_radius) if blocking else None
+    phase = field.dominant_phase(lat, lon, desc_radius) if blocking else None
+
+    band = _height_band(cth_m, cfg)
+    thick = _thickness(cot, cfg)
+
     thin_veil = bool(frac is not None and frac > cfg["frac_clear_max"]
                      and sky_cover is not None and sky_cover <= cfg["frac_clear_max"])
 

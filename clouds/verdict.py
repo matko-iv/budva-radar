@@ -93,7 +93,10 @@ def interpret(facts):
     sky = facts.get("skyCoverEff")
     if sky is None:
         sky = frac
-    pct = _pct(frac)
+    # Show the SUN-BLOCKING cover as the percentage, not the raw CLM total — that
+    # is what the state (clear/partly/overcast) is judged on, so the number and
+    # the verdict stay consistent (no "CLEAR — 78%").
+    pct = _pct(sky)
     pct_txt = f" ({pct}%)" if pct is not None else ""
     level = _now_level(sky)
     thin = bool(facts.get("thinVeil"))
