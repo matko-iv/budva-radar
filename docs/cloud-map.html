@@ -3,37 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>skala — oblaci (satelit)</title>
+<title>matkov-SKALA-sistem</title>
 <link rel="stylesheet" href="style.css">
 <style>
-  pre.term { background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px;
-    font-family:ui-monospace,"Cascadia Mono","Consolas",monospace;font-size:15px;
-    line-height:1.4;white-space:pre;color:#222;overflow-x:auto;margin:0; }
-  pre.term .hint { color:#888;font-size:11px; }
-  #controls { display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:13px; }
-  #controls input,#controls button { font-family:inherit;font-size:13px;padding:4px 8px;
-    border:1px solid #ccc;border-radius:4px;background:#fff; }
+  pre.term { background:#0d130f;border:1px solid #1d3d29;border-radius:10px;padding:14px 16px;
+    font-family:ui-monospace,"Cascadia Mono","Consolas",monospace;font-size:14px;
+    line-height:1.45;white-space:pre;color:#bfe9cf;overflow-x:auto;margin:0;
+    box-shadow:0 4px 18px rgba(0,0,0,.18); }
+  pre.term .hint { color:#5fae7e;font-size:11px; }
+  pre.term .ok { color:#7CFFB0;font-weight:700; }
+  #controls { display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 12px;font-size:13px; }
+  #controls input,#controls button { font-family:inherit;font-size:13px;padding:5px 9px;
+    border:1px solid #ccc;border-radius:5px;background:#fff; }
   #controls button { cursor:pointer; }
-  #controls button:hover { background:#f0f0f0; }
+  #controls button:hover { background:#eef3ef; border-color:#9ab; }
   #controls .dim { color:#888; }
-  #map-wrap { position:relative;display:inline-block;max-width:100%; }
-  #canvas { display:block;max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px;
-    cursor:crosshair;background:#cfd8dc; }
+  #map-wrap { position:relative;display:inline-block;max-width:100%;
+    border-radius:12px;overflow:hidden;box-shadow:0 6px 22px rgba(20,40,30,.22);
+    border:1px solid #cdd8d0; }
+  #canvas { display:block;max-width:100%;height:auto;cursor:crosshair;background:#cfd8dc; }
   #overlay { position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none; }
-  #banner { border-radius:6px;padding:12px 14px;margin:12px 0; }
-  .card { border:1px solid #e0e0e0;border-radius:6px;padding:10px 12px;margin:10px 0;background:#fff; }
+  #banner { border-radius:12px;padding:14px 16px;margin:14px 0;
+    box-shadow:0 3px 12px rgba(0,0,0,.14); }
+  .card { border:1px solid #e3e6e3;border-radius:10px;padding:12px 14px;margin:12px 0;
+    background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.05); }
   .card h2 { font-size:14px;margin:0 0 8px; }
   ul.rings { list-style:none;padding:0;margin:0;font-size:13px;display:flex;flex-wrap:wrap;gap:4px 16px; }
+  header .mod { display:inline-block;font-size:11px;letter-spacing:2px;font-weight:700;
+    color:#fff;background:#1565c0;border-radius:4px;padding:2px 8px;vertical-align:middle; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>skala — oblaci (satelit)</h1>
+  <h1>matkov-SKALA-sistem <span class="mod">SKALA CLOUD</span></h1>
   <p style="font-size:13px;margin:0 0 6px;">
-    <a href="index.html">pregled</a> ·
-    <a href="radar-map.html">radar (kiša)</a> ·
-    <span class="dim">satelitska interpretacija oblačnosti za Budvu</span>
+    <a href="index.html">← meni</a> ·
+    <a href="radar-map.html">SKALA RAIN</a> ·
+    <span style="color:#888;">satelitska interpretacija oblačnosti za Budvu</span>
   </p>
 </header>
 
@@ -56,10 +63,6 @@
       <canvas id="canvas" width="100" height="100"></canvas>
       <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
     </div>
-    <p class="dim" style="font-size:12px;margin:4px 0 0;">
-      vedro/tanko = vidi se topografska karta · bijelo/sivo = oblak (sivlje = gušći) ·
-      ● = procijenjena tačka · strelica = kretanje oblaka · elipse = prstenovi uzorkovanja
-    </p>
 
     <div id="banner">—</div>
 
@@ -84,7 +87,7 @@
   </section>
 </main>
 
-<footer><p>SKALA — satelitska analiza oblačnosti</p></footer>
+<footer><p>SKALA — satelitska analiza oblačnosti · EUMETSAT MTG-FCI</p></footer>
 
 <script src="cloud_data.js"></script>
 <script src="cloud-text.js"></script>
@@ -105,13 +108,14 @@
   var D = window.CLOUD_DATA;
   if (!D || !D.field) {
     log("[x] cloud_data.js nije učitan ili nema podataka.");
-    log("    Pokreni: python run_clouds.py --demo");
+    log("    Pokreni: python run_clouds.py");
     return;
   }
   var bbox = D.field.bbox, params = D.params || {}, field = D.field;
   var canvas = document.getElementById("canvas"), ctx = canvas.getContext("2d");
   var svg = document.getElementById("overlay");
-  var W = 100, H = 100; // canvas pixel size (set on image load)
+  var W = 100, H = 100;     // canvas pixel size (set on image load)
+  var U = 1;                // overlay base unit (set from W on image load)
 
   function lonToX(lon) { return (lon - bbox.lon_min) / (bbox.lon_max - bbox.lon_min) * W; }
   function latToY(lat) { return (bbox.lat_max - lat) / (bbox.lat_max - bbox.lat_min) * H; }
@@ -125,31 +129,54 @@
   }
   function clearSvg() { while (svg.firstChild) svg.removeChild(svg.firstChild); }
 
-  function drawOverlay(lat, lon, facts, isBudva) {
+  function drawOverlay(lat, lon) {
     clearSvg();
     var x = lonToX(lon), y = latToY(lat);
-    // sampling rings (ellipses, because lon/lat scales differ)
+
+    // --- sampling rings: white halo under a bold dashed blue ring (visible on any background) ---
     var radii = params.sample_radii_km || [10, 25, 50];
     radii.forEach(function (r) {
       var rx = (r / (111.32 * Math.cos(lat * Math.PI / 180))) / (bbox.lon_max - bbox.lon_min) * W;
       var ry = (r / 111.32) / (bbox.lat_max - bbox.lat_min) * H;
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: rx, ry: ry,
-        fill: "none", stroke: "#37474f", "stroke-width": 0.25, "stroke-opacity": 0.5, "stroke-dasharray": "1 1" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: rx, ry: ry, fill: "none",
+        stroke: "#ffffff", "stroke-width": U * 1.4, "stroke-opacity": 0.55 }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: rx, ry: ry, fill: "none",
+        stroke: "#0d47a1", "stroke-width": U * 0.6, "stroke-opacity": 0.9,
+        "stroke-dasharray": (U * 2.4) + " " + (U * 1.8) }));
     });
-    // motion arrow
+
+    // --- motion arrow: big, with white outline + filled arrowhead ---
     var m = field.motion;
     if (m && m.direction_deg != null && m.speed_kmh > 0) {
       var br = m.direction_deg * Math.PI / 180;
-      var L = Math.min(3 + m.speed_kmh * 0.06, 12);
-      var x2 = x + Math.sin(br) * L, y2 = y - Math.cos(br) * L;
-      svg.appendChild(mk("line", { x1: x, y1: y, x2: x2, y2: y2, stroke: "#0d47a1", "stroke-width": 0.5 }));
-      svg.appendChild(mk("circle", { cx: x2, cy: y2, r: 0.7, fill: "#0d47a1" }));
+      var dirx = Math.sin(br), diry = -Math.cos(br);
+      var L = Math.max(U * 6, Math.min(U * 5 + m.speed_kmh * U * 0.14, U * 18));
+      var x2 = x + dirx * L, y2 = y + diry * L;
+      var hl = U * 2.6, hw = U * 1.7;           // arrowhead length / half-width
+      var bxp = x2 - dirx * hl, byp = y2 - diry * hl;
+      var px = -diry, py = dirx;                 // perpendicular
+      var head = (x2) + "," + (y2) + " " +
+        (bxp + px * hw) + "," + (byp + py * hw) + " " +
+        (bxp - px * hw) + "," + (byp - py * hw);
+      // white outline pass
+      svg.appendChild(mk("line", { x1: x, y1: y, x2: bxp, y2: byp, stroke: "#fff",
+        "stroke-width": U * 1.8, "stroke-linecap": "round", "stroke-opacity": 0.8 }));
+      svg.appendChild(mk("polygon", { points: head, fill: "#fff", "fill-opacity": 0.85 }));
+      // blue arrow on top
+      svg.appendChild(mk("line", { x1: x, y1: y, x2: bxp, y2: byp, stroke: "#0d47a1",
+        "stroke-width": U * 0.9, "stroke-linecap": "round" }));
+      svg.appendChild(mk("polygon", { points: head, fill: "#0d47a1" }));
     }
-    // Budva reference marker (always)
+
+    // --- Budva reference marker (small ring, always) ---
     var bx = lonToX(CITIES.budva[1]), by = latToY(CITIES.budva[0]);
-    svg.appendChild(mk("circle", { cx: bx, cy: by, r: 0.8, fill: "none", stroke: "#000", "stroke-width": 0.3 }));
-    // assessed point
-    svg.appendChild(mk("circle", { cx: x, cy: y, r: 1.1, fill: "#c62828", stroke: "#fff", "stroke-width": 0.3 }));
+    svg.appendChild(mk("circle", { cx: bx, cy: by, r: U * 1.0, fill: "none",
+      stroke: "#000", "stroke-width": U * 0.4, "stroke-opacity": 0.7 }));
+
+    // --- assessed point: red dot with white halo ---
+    svg.appendChild(mk("circle", { cx: x, cy: y, r: U * 1.9, fill: "#fff", "fill-opacity": 0.85 }));
+    svg.appendChild(mk("circle", { cx: x, cy: y, r: U * 1.25, fill: "#c62828",
+      stroke: "#fff", "stroke-width": U * 0.4 }));
   }
 
   function assess(lat, lon, name, isBudva) {
@@ -164,17 +191,16 @@
     CLOUD_SECTIONS.renderBanner(document.getElementById("banner"), h);
     CLOUD_SECTIONS.renderFacts(document.getElementById("facts"), facts);
     CLOUD_SECTIONS.renderRings(document.getElementById("rings"), facts.rings);
-    drawOverlay(lat, lon, facts, isBudva);
+    drawOverlay(lat, lon);
     document.getElementById("status").textContent = name + " (" + lat.toFixed(3) + ", " + lon.toFixed(3) + ")";
   }
 
-  function start() {
+  function wireApp() {
     document.getElementById("boot-section").hidden = true;
     document.getElementById("app").hidden = false;
     document.getElementById("src").textContent = (D.source && D.source.data_source) || "?";
     document.getElementById("stime").textContent = (D.source && D.source.sensing_time) || "?";
 
-    // click to interpret any point
     canvas.addEventListener("click", function (ev) {
       var rect = canvas.getBoundingClientRect();
       var px = (ev.clientX - rect.left) / rect.width * W;
@@ -190,10 +216,8 @@
     document.getElementById("city-btn").onclick = setCity;
     document.getElementById("city-input").addEventListener("keydown", function (e) { if (e.key === "Enter") setCity(); });
 
-    // default: Budva
-    assess(CITIES.budva[0], CITIES.budva[1], "Budva", true);
+    assess(CITIES.budva[0], CITIES.budva[1], "Budva", true);   // default: Budva
 
-    // NWP band (modeled, separate) — cross-origin fetch from weather-forecast
     if (D.nwp_forecast_url) {
       fetch(D.nwp_forecast_url, { cache: "no-store" })
         .then(function (r) { return r.json(); })
@@ -202,16 +226,55 @@
     }
   }
 
-  log("[ok] cloud_data.js — " + ((D.source && D.source.data_source) || "?"));
+  // ---- non-skippable boot sequence (cloud-specific, data-aware) ----
+  function bootLines() {
+    var s = D.source || {}, v = (D.summary || {}).cloud_verdict || {};
+    var nrows = (field.lats || []).length, ncols = (field.lons || []).length;
+    var hhmm = (s.sensing_time || "").slice(11, 16) || "--:--";
+    return [
+      ["SKALA(C) 2026 Matko Interactive Software", 40],
+      ["SKALA Cloud Interpreter v1.0 — EUMETSAT MTG edition", 150],
+      ["", 30],
+      ["Memory test : 65536K \x1bOK\x1b", 130],
+      ["", 30],
+      ["Detecting satellite ........ MTG-I1 FCI / 0° disk", 150],
+      ["Cloud products ............. CLM + CTTH + OCA (Data Store)", 150],
+      ["Sensing time ............... " + hhmm + " UTC", 160],
+      ["", 30],
+      ["Loading basemap.topo           [ \x1bOK\x1b ]", 90],
+      ["Loading cloud_field.npz        [ \x1bOK\x1b ]", 110],
+      ["Geo-navigation ............. geos → lat/lon (parallax-aware)", 150],
+      ["Cloud grid ................. " + ncols + "×" + nrows + " · src " + (s.data_source || "?"), 160],
+      ["Verdict .................... " + (v.state || "?"), 190],
+      ["", 40],
+      ["Booting from SKALA-CLOUD ...", 320],
+      ["", 0]
+    ];
+  }
+  function runBoot(done) {
+    boot.innerHTML = '<span class="hint">[ boot u toku — ne može se preskočiti ]</span>\n\n';
+    var lines = bootLines(), t = 0;
+    lines.forEach(function (pair) {
+      t += pair[1];
+      setTimeout(function () {
+        var safe = pair[0].replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/\x1bOK\x1b/g, '<span class="ok">  OK  </span>');
+        boot.insertAdjacentHTML("beforeend", safe + "\n");
+      }, t);
+    });
+    setTimeout(done, t + 280);
+  }
+
   var img = new Image();
   img.onload = function () {
     W = img.naturalWidth; H = img.naturalHeight;
+    U = W / 130;                                 // overlay scale relative to image
     canvas.width = W; canvas.height = H;
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     ctx.drawImage(img, 0, 0, W, H);
-    start();
+    runBoot(wireApp);                            // boot first, THEN reveal app
   };
-  img.onerror = function () { log("[x] ne mogu učitati " + field.image); start(); };
+  img.onerror = function () { log("[x] ne mogu učitati " + field.image); runBoot(wireApp); };
   img.src = field.image;
 })();
 </script>

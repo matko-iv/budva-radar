@@ -37,7 +37,7 @@
 
 <header>
   <h1>matkov-SKALA-sistem</h1>
-  <p style="font-size: 13px; margin: 0 0 6px;"><a href="index.html">nazad na pregled</a> · <a href="cloud-map.html">Oblaci (satelit)</a></p>
+  <p style="font-size: 13px; margin: 0 0 6px;"><a href="index.html">← meni</a> · <a href="cloud-map.html">SKALA CLOUD</a> · <span style="color:#888;">SKALA RAIN — radar (kiša)</span></p>
 </header>
 
 <main>
@@ -120,7 +120,7 @@
 // ---------------------------------------------------------------------------
 // Data-aware POST: the lines report what THIS scan actually contains (data
 // source, frame ages, cell catalog, nowcast, verdict) — the boot screen is the
-// first diagnostic, not just decoration. Click or any key skips it.
+// first diagnostic, not just decoration. It is NOT skippable.
 function buildBootLines() {
   const d = window.RADAR_DATA || {};
   const dh = (d.sources && d.sources.dhmz) || {};
@@ -215,7 +215,7 @@ function renderStormMode() {
 }
 (function runBoot() {
   bootEl.insertAdjacentHTML('beforeend',
-    '<span class="hint">[ klik ili bilo koji taster preskace boot ]</span>\n\n');
+    '<span class="hint">[ boot u toku — ne može se preskočiti ]</span>\n\n');
   let t = 0;
   for (const [line, delay] of BOOT_LINES) {
     t += delay;
@@ -229,9 +229,7 @@ function renderStormMode() {
     }, t);
   }
   setTimeout(finishBoot, t + 200);
-  // Skip on click or any key (finishBoot is idempotent).
-  bootSection.addEventListener('click', finishBoot, { once: true });
-  document.addEventListener('keydown', finishBoot, { once: true });
+  // Boot is NOT skippable (no click/key shortcut) — runs to completion.
 })();
 
 

@@ -28,9 +28,8 @@
     node.style.background = m.bg || "#eee";
     node.style.color = m.fg || "#222";
     node.innerHTML =
-      '<div style="font-weight:700;font-size:15px;letter-spacing:.3px;">' + esc(h.headline) + "</div>" +
-      '<div style="margin-top:4px;font-size:14px;">' + esc(h.narrative) + "</div>" +
-      (h.line_sr ? '<div style="margin-top:6px;font-size:13px;opacity:.95;">' + esc(h.line_sr) + "</div>" : "");
+      '<div style="font-weight:700;font-size:16px;letter-spacing:.3px;">' + esc(h.headline) + "</div>" +
+      '<div style="margin-top:5px;font-size:14px;">' + esc(h.narrative) + "</div>";
   }
 
   function _row(k, v) { return v == null || v === "" ? "" : "<tr><td style='color:#666;padding:2px 10px 2px 0;'>" + esc(k) + "</td><td>" + esc(v) + "</td></tr>"; }
