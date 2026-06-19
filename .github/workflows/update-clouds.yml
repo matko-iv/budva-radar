@@ -45,6 +45,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/cloud_data.js docs/cloud_status.json docs/latest_cloud.png || true
+          git add docs/cloud_basemap_*.png || true
           git add output/cloud_status.json || true
           git add data/cloud_frames/*.npz data/cloud_frames/*.png || true
           git diff --staged --quiet || git commit -m "🛰️ Update clouds $(date +'%Y-%m-%d %H:%M %Z')"
