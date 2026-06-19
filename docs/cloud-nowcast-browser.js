@@ -51,6 +51,9 @@
   function cloudFraction(field, lat, lon, radiusKm) {
     return discMean(field, "frac", lat, lon, radiusKm, false);
   }
+  function opaqueFraction(field, lat, lon, radiusKm) {
+    return discMean(field, "opaque", lat, lon, radiusKm, false);
+  }
 
   function fanFraction(field, lat, lon, motion, t, p) {
     var distKm = motion.speed_kmh * (t / 60);
@@ -134,10 +137,11 @@
     var cot = cloudy ? discMean(field, "cot", lat, lon, descR, true) : null;
     var band = heightBand(cth, p), thick = thickness(cot, p);
 
-    // optical-depth-weighted sky cover (mirror clouds/interpret.py)
-    var scale = p.opacity_cot_scale || 4.0;
-    var opacity = cot == null ? null : (1 - Math.exp(-Math.max(cot, 0) / scale));
-    var sky = frac == null ? null : (opacity == null ? frac : frac * opacity);
+    // Effective sky cover: opaque cloud blocks fully, semitransparent counts
+    // little (mirror clouds/interpret.py — uses the CLM-derived opaque layer).
+    var opq = opaqueFraction(field, lat, lon, p.sample_radius_now_km || 10);
+    var w = p.semi_sky_weight != null ? p.semi_sky_weight : 0.25;
+    var sky = frac == null ? null : ((opq || 0) + w * Math.max(frac - (opq || 0), 0));
     var thinVeil = frac != null && frac > p.frac_clear_max
       && sky != null && sky <= p.frac_clear_max;
 
@@ -145,13 +149,15 @@
     var overcast = sky != null && sky >= p.frac_overcast_min;
     var rings = radii.map(function (r) {
       var rf = cloudFraction(field, lat, lon, r);
-      return { radius_km: r, cloud_fraction: rf == null ? null : +rf.toFixed(3) };
+      var ro = opaqueFraction(field, lat, lon, r);
+      return { radius_km: r, cloud_fraction: rf == null ? null : +rf.toFixed(3),
+               opaque_fraction: ro == null ? null : +ro.toFixed(3) };
     });
     return {
       locationName: locName || "this point",
       cloudFracNow: frac,
+      opaqueFracNow: opq == null ? null : +opq.toFixed(3),
       skyCoverEff: sky == null ? null : +sky.toFixed(3),
-      opacity: opacity == null ? null : +opacity.toFixed(2),
       thinVeil: thinVeil,
       cloudAtLocation: nc.cloudAtLocation,
       approaching: nc.approaching, clearing: nc.clearing, etaMin: nc.etaMin,
