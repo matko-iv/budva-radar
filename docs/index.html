@@ -2,113 +2,49 @@
 <html lang="sr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>matkov-SKALA-sistem</title>
 <link rel="stylesheet" href="style.css">
-<style>
-  body { max-width: 980px; }
-  .menu-hero {
-    background: radial-gradient(circle at 50% -10%, #14361f 0%, #0a140d 72%);
-    border: 1px solid #1d3d29; border-radius: 14px;
-    padding: 40px 24px 34px; text-align: center; position: relative; overflow: hidden;
-    color: #cfe9d8; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  }
-  .menu-hero::after {              /* subtle CRT scanlines */
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,.18) 2px 3px);
-    opacity: .35;
-  }
-  .brand { font-size: 12px; letter-spacing: 5px; color: #5fae7e; margin: 0 0 8px; }
-  .skala-word {
-    font-size: clamp(48px, 13vw, 110px); font-weight: 800; letter-spacing: 10px;
-    line-height: .92; margin: 0; color: #7CFFB0;
-    text-shadow: 0 0 22px rgba(80,255,150,.45), 0 0 3px rgba(80,255,150,.85);
-  }
-  .tagline { font-size: 13px; color: #8bbfa1; margin: 12px 0 28px; }
-  .menu-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-    max-width: 640px; margin: 0 auto; position: relative; z-index: 1;
-  }
-  @media (max-width: 560px) { .menu-grid { grid-template-columns: 1fr; } }
-  .menu-item {
-    display: block; text-decoration: none; border: 1px solid #2a5a3c; border-radius: 12px;
-    padding: 24px 18px; background: rgba(20,46,30,.55); color: #dff5e8; transition: .15s;
-  }
-  .menu-item .ic { font-size: 40px; display: block; margin-bottom: 10px; }
-  .menu-item .t { font-size: 21px; font-weight: 700; letter-spacing: 2px; }
-  .menu-item .d { font-size: 12px; color: #9fd3b5; margin-top: 8px; line-height: 1.45; }
-  .menu-item.cloud:hover {
-    border-color: #7CFFB0; background: rgba(34,74,49,.85);
-    transform: translateY(-3px); box-shadow: 0 0 26px rgba(80,255,150,.28);
-  }
-  .menu-item.rain { border-color: #2d4a66; background: rgba(20,38,56,.55); }
-  .menu-item.rain .t { color: #bfe0ff; }
-  .menu-item.rain:hover {
-    border-color: #7cc0ff; background: rgba(28,58,86,.85);
-    transform: translateY(-3px); box-shadow: 0 0 26px rgba(80,160,255,.28);
-  }
-  .menu-item .go { font-size: 11px; letter-spacing: 2px; color: #6f9a82; margin-top: 10px; }
-
-  .how { margin-top: 32px; }
-  .how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 680px) { .how-grid { grid-template-columns: 1fr; } }
-  .how-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px 16px; }
-  .how-card h3 { margin: 0 0 8px; font-size: 14px; }
-  .how-card ol { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: #333; }
-  .how-card ol b { color: #111; }
-</style>
 </head>
 <body>
+<header>
+  <h1>matkov-SKALA-sistem</h1>
+  <p style="font-size: 13px; color: #666; margin: 0 0 8px;">SKALA sistem — izaberi modul.</p>
+</header>
 
-<div class="menu-hero">
-  <p class="brand">MATKO INTERACTIVE SOFTWARE · 2026</p>
-  <h1 class="skala-word">SKALA</h1>
-  <p class="tagline">sistem za interpretaciju vremena nad Budvom &nbsp;—&nbsp; izaberi modul</p>
-  <div class="menu-grid">
-    <a class="menu-item rain" href="radar-map.html">
-      <span class="ic">🌧️</span>
-      <span class="t">SKALA RAIN</span>
-      <span class="d">Radarski nowcast — da li kiša pada ili dolazi nad Budvu, sa procjenom (ETA)</span>
-      <div class="go">[ ENTER ▸ ]</div>
-    </a>
-    <a class="menu-item cloud" href="cloud-map.html">
-      <span class="ic">🛰️</span>
-      <span class="t">SKALA CLOUD</span>
-      <span class="d">Satelitska interpretacija oblačnosti — vedro / oblaci nad nama / dolaze</span>
-      <div class="go">[ ENTER ▸ ]</div>
-    </a>
-  </div>
-</div>
+<main>
+  <section id="meni">
+    <h2>SKALA sistem</h2>
+    <ul>
+      <li><a href="radar-map.html">SKALA RAIN</a> — radarski nowcast: da li kiša pada ili dolazi nad Budvu (ETA).</li>
+      <li><a href="cloud-map.html">SKALA CLOUD</a> — satelitska interpretacija oblačnosti: vedro / oblaci nad nama / dolaze.</li>
+    </ul>
+  </section>
 
-<section class="how">
-  <h2>Kako sistem radi</h2>
-  <div class="how-grid">
-    <div class="how-card">
-      <h3>🌧️ SKALA RAIN — radar</h3>
-      <ol>
-        <li>Povlači radarske slike: <b>DHMZ Uljenje</b> (lokalni) + <b>OPERA</b> (Evropa), te sirovi ODIM volumen (MeteoGate ORD, mjereni dBZ).</li>
-        <li>Detektuje i prati kišne ćelije (objektno praćenje), procjenjuje im brzinu i smjer.</li>
-        <li>Probabilistička advekcija (mini-ansambl + konus nesigurnosti) → P(kiša) i ETA.</li>
-        <li>Jedinstveni verdikt za Budvu: <b>pada · približava se · zaobilazi · nema kiše</b>.</li>
-      </ol>
-    </div>
-    <div class="how-card">
-      <h3>🛰️ SKALA CLOUD — satelit</h3>
-      <ol>
-        <li>Povlači EUMETSAT <b>MTG</b> produkte: maska oblaka (CLM), vrh oblaka (CTTH), optička analiza (OCA).</li>
-        <li>Razdvaja <b>neproziran</b> oblak (blokira sunce) od <b>poluprozirnog</b> cirusa (sunce probija).</li>
-        <li>Advekcija polja oblaka → da li oblaci dolaze ili se razilazi, sa ETA.</li>
-        <li>Verdikt: <b>vedro · djelimično · oblačno</b> + tip i visina; produženi NWP izgledi 2–48 h.</li>
-      </ol>
-    </div>
-  </div>
-  <p style="font-size:12px;color:#888;margin-top:14px;">
-    Isti zaključak se računa jednom (Python) i samo se prikazuje na stranicama — bez razilaženja između modula.
-    Dokumentacija: <a href="https://github.com/matko-iv/budva-radar">github.com/matko-iv/budva-radar</a>.
-  </p>
-</section>
+  <section id="kako">
+    <h2>Kako sistem radi</h2>
 
-<footer style="margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:12px;color:#888;">
+    <h3>SKALA RAIN — radar</h3>
+    <ol>
+      <li>Povlači radarske slike: DHMZ Uljenje (lokalni) + OPERA (Evropa), te sirovi ODIM volumen (MeteoGate ORD, mjereni dBZ).</li>
+      <li>Detektuje i prati kišne ćelije (objektno praćenje), procjenjuje brzinu i smjer.</li>
+      <li>Probabilistička advekcija (mini-ansambl + konus nesigurnosti) → P(kiša) i ETA.</li>
+      <li>Jedinstveni verdikt za Budvu: pada · približava se · zaobilazi · nema kiše.</li>
+    </ol>
+
+    <h3>SKALA CLOUD — satelit</h3>
+    <ol>
+      <li>Povlači EUMETSAT MTG produkte: maska oblaka (CLM), vrh oblaka (CTTH), optička analiza (OCA).</li>
+      <li>Razdvaja neproziran oblak (blokira sunce) od poluprozirnog cirusa (sunce probija).</li>
+      <li>Advekcija polja oblaka → da li oblaci dolaze ili se razilazi, sa ETA.</li>
+      <li>Verdikt: vedro · djelimično · oblačno + tip i visina; produženi NWP izgledi 2–48 h.</li>
+    </ol>
+
+    <p>Isti zaključak se računa jednom (Python) i samo se prikazuje na stranicama — bez razilaženja.</p>
+  </section>
+</main>
+
+<footer>
+  <p>Dokumentacija: <a href="https://github.com/matko-iv/budva-radar">github.com/matko-iv/budva-radar</a></p>
   <p>Izvori: DHMZ MRC Uljenje · OPERA Odyssey (FMI) · EUMETSAT MTG-FCI (Data Store).</p>
 </footer>
 </body>
