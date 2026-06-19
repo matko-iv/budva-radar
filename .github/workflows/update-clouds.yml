@@ -1,0 +1,52 @@
+name: Update Budva Cloud Status
+
+# Separate from the radar loop (update.yml): the EUMETSAT download + product
+# processing is heavier and must not slow or couple to the fast radar job.
+on:
+  workflow_dispatch:
+  # schedule:                # enable once EUMETSAT creds + collection ids are set
+  #   - cron: "*/15 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cloud-update
+  cancel-in-progress: false
+
+jobs:
+  clouds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Europe/Podgorica
+      EUMETSAT_KEY: ${{ secrets.EUMETSAT_KEY }}
+      EUMETSAT_SECRET: ${{ secrets.EUMETSAT_SECRET }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run cloud fetch + interpret
+        run: python run_clouds.py
+
+      - name: Commit and push updated cloud status
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/cloud_data.js docs/cloud_status.json docs/latest_cloud.png || true
+          git add output/cloud_status.json || true
+          git add data/cloud_frames/*.npz data/cloud_frames/*.png || true
+          git diff --staged --quiet || git commit -m "🛰️ Update clouds $(date +'%Y-%m-%d %H:%M %Z')"
+          git pull --rebase || true
+          git push

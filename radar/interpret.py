@@ -322,8 +322,7 @@ def classify_scenario(approaching, storm_mode):
         return _result("RAINING", f"Rain at the location: {txt}.")
         
     if is_appr:
-        if (dbz or 0) >= config.SEVERE_DBZ:
-            return _result("SEVERE", f"Severe core approaching: {txt}, ETA ~{eta:.0f} min.")
+        # SEVERE removed — it false-triggered on distant high-dBZ cells.
         if (dbz or 0) >= config.HEAVY_DBZ_THRESHOLD and km <= 25:
             return _result("IMMINENT", f"Rain imminent: {txt}, ETA ~{eta:.0f} min.")
         if (dbz or 0) >= config.MODERATE_DBZ:

@@ -3,3 +3,11 @@ numpy>=1.24
 requests>=2.31
 scipy>=1.10
 h5py>=3.10
+
+# Cloud module (clouds/) — EUMETSAT Data Store access + product reading.
+# Only needed for the LIVE cloud fetch; `run_clouds.py --demo` and the tests
+# run without them.
+eumdac>=2.2
+xarray>=2024.1
+netCDF4>=1.6
+pyproj>=3.6

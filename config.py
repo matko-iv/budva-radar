@@ -131,3 +131,75 @@ NOWCAST_LEAD_MAX_MIN = 120       # Maximum lookahead window (2 hours)
 NOWCAST_DIR_SPREAD_CONVECTIVE_DEG = 15.0 # Erratic movement base spread
 NOWCAST_DIR_SPREAD_STRATIFORM_DEG = 5.0   # Steady movement base spread
 NOWCAST_DIR_GROWTH_DEG_PER_MIN = 0.1     # Cone widening factor over time
+
+# ============================================================================
+# Clouds (EUMETSAT satellite cloud-cover module) — parallel to the radar module
+# ============================================================================
+# The cloud module fetches EUMETSAT Data Store cloud products (via eumdac),
+# subsets them to a REGULAR lat/lon grid over the region below, and runs a
+# field-advection nowcast for the cloud verdict (see the clouds/ package). It is
+# fully independent of the radar pipeline above and writes its own outputs
+# (output/cloud_status.json, docs/cloud_data.js, docs/cloud_status.json).
+#
+# Everything downstream of clouds/fetch.py consumes a NORMALIZED cloud field
+# (a regular lat/lon grid with named layers: mask / fraction / cloud-top temp /
+# cloud-top height / optical thickness / phase). fetch.py is the only adapter
+# that touches EUMETSAT product specifics; discover.py pins the exact ids/vars.
+CLOUDS = {
+    # Region of interest (bounding box) for the satellite subset, around
+    # LOCATION. Big enough to see cloud fields advecting in from any side
+    # within the ~2 h nowcast horizon (a ~100 km/h jet covers ~200 km).
+    "bbox": {  # degrees
+        "lat_min": 40.3, "lat_max": 44.3,
+        "lon_min": 16.4, "lon_max": 21.4,
+    },
+    # Target subset grid resolution (degrees per cell on the regular lat/lon
+    # grid produced by Data Tailor). ~0.03 deg ~ 3 km, near MTG-FCI L2 native.
+    "grid_step_deg": 0.03,
+
+    # EUMETSAT Data Store collection IDs — pinned from the live catalogue
+    # (clouds/discover.py, 2026-06-19). MTG (Meteosat Third Generation, 0 deg
+    # disk) covers Budva; these are the dedicated netCDF L2 cloud products.
+    "collections": {
+        # Cloud Mask (netCDF) - MTG - 0 deg: clear/cloudy -> presence + advection
+        "clm": "EO:EUM:DAT:0678",
+        # Cloud Top Temperature and Height - MTG: cloud-top temp + height
+        "ctth": "EO:EUM:DAT:0681",
+        # Optimal Cloud Analysis - MTG: optical thickness + phase
+        "oca": "EO:EUM:DAT:0684",
+        # (Cloud Type - MTG = EO:EUM:DAT:0680 — could replace the derived
+        #  band/thickness label later; not used yet.)
+    },
+    # Prefer EUMETSAT Data Tailor to ROI-subset + reproject to a regular lat/lon
+    # grid (keeps files small, makes clouds/grid.py a trivial lat/lon index).
+    "use_data_tailor": True,
+
+    # Cloud fraction thresholds at the location (fraction of cloudy pixels in
+    # the innermost ring): <= clear_max -> clear, >= overcast_min -> overcast,
+    # otherwise partly.
+    "frac_clear_max": 0.20,
+    "frac_overcast_min": 0.80,
+
+    # Cloud-top height bands (m): low <2 km, mid 2-6 km, high >6 km (WMO-ish).
+    "height_low_max_m": 2000.0,
+    "height_mid_max_m": 6000.0,
+
+    # Optical thickness: thin vs thick (COT ~3.6 is the cirrus/altostratus
+    # boundary; round to 3.0 for "thin").
+    "cot_thin_max": 3.0,
+
+    # Advection nowcast horizon + step (mirror the radar nowcast windows).
+    "nowcast_lead_max_min": 120,
+    "nowcast_lead_step_min": 10,
+    # Directional cone spread for field motion (deg), grows with lead time.
+    "nowcast_dir_spread_deg": 12.0,
+    "nowcast_dir_growth_deg_per_min": 0.08,
+
+    # Frame cache retention (mirror KEEP_FRAMES). 12 frames @ ~10 min ~ 2 h.
+    "keep_frames": 12,
+}
+
+# Public NWP forecast JSON (weather-forecast / "vrijeme" project) used for the
+# 2-48 h cloud OUTLOOK band on cloud-map.html. Observed (satellite) vs modeled
+# (NWP) are rendered in separate bands — never conflated.
+NWP_FORECAST_URL = "https://matko-iv.github.io/vrijeme/forecast_data/forecast_48h.json"
