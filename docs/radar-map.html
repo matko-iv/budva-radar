@@ -38,14 +38,14 @@
 
 <header>
   <h1>matkov-SKALA-sistem</h1>
-  <p style="font-size: 13px; margin: 0 0 6px;"><a href="index.html">home</a> · <a href="cloud-map.html">SKALA CLOUD</a> · <span style="color:#888;">SKALA RAIN — radar (kiša)</span></p>
+  <p style="font-size: 13px; margin: 0 0 6px;"><a href="index.html">home</a> · <a href="cloud-map.html">SKALA CLOUD</a> · <span style="color:#888;">SKALA RAIN</span></p>
 </header>
 
 <main>
 
   <section id="boot-section">
     <h2>boot</h2>
-    <pre id="boot" class="term"><span class="hint">[ molim sačekajte... ]</span>
+    <pre id="boot" class="term">
 </pre>
   </section>
 
@@ -216,7 +216,7 @@ function renderStormMode() {
 }
 (function runBoot() {
   bootEl.insertAdjacentHTML('beforeend',
-    '<span class="hint">[ boot u toku — ne može se preskočiti ]</span>\n\n');
+    '<span class="hint"></span>');
   let t = 0;
   for (const [line, delay] of BOOT_LINES) {
     t += delay;

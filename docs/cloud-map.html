@@ -35,7 +35,7 @@
 
 <header>
   <h1>matkov-SKALA-sistem</h1>
-  <p><a href="index.html">home</a> · <a href="radar-map.html">SKALA RAIN</a> · satelitska interpretacija oblačnosti za Budvu</p>
+  <p><a href="index.html">home</a> · <a href="radar-map.html">SKALA RAIN</a> · SKALA CLOUD</p>
 </header>
 
 <main>
@@ -71,11 +71,11 @@
     </div>
 
     <div class="source-card">
-      <h3>NWP izgledi (modelirano, 2–48 h)</h3>
+      <h3>NWP izgledi za Budvu (modelirano, 2–48 h)</h3>
       <div id="nwp">učitavanje…</div>
     </div>
 
-    <p>Izvor: <span id="src">—</span> · sken: <span id="stime">—</span></p>
+    <p>NWP izgledi za bilo koju lokaciju osim Budve trenutno nisu dostupni. · Izvor: <span id="src">—</span> · sken: <span id="stime">—</span></p>
   </section>
 </main>
 
@@ -242,7 +242,7 @@
     ];
   }
   function runBoot(done) {
-    boot.textContent = "[ boot u toku — ne može se preskočiti ]\n\n";
+    boot.textContent = "";
     var lines = bootLines(), t = 0;
     lines.forEach(function (pair) {
       t += pair[1];
