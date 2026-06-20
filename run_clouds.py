@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 
 import config
-from clouds import fetch, interpret, motion as cmotion, render, verdict
+from clouds import fetch, interpret, motion as cmotion, render, verdict, visible
 from clouds.grid import CloudField, downsample_for_browser
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -38,6 +38,22 @@ def _dt_min(prev, curr):
         return 10.0
 
 
+def _render_map(field, cfg, loc, gc_rgb=None):
+    """Write the preview PNG and return its [W, H]. Prefer EUMETSAT GeoColour
+    (shows real cumulus, matches EUMETView); fall back to the L2-derived overlay
+    if GeoColour is disabled or unavailable. Reuses gc_rgb if already fetched."""
+    if cfg.get("use_geocolour_map", True) and gc_rgb is not None:
+        try:
+            W, H = visible.render_map_png(cfg, loc, LATEST_PNG, source_image=gc_rgb)
+            return [W, H]
+        except Exception as e:
+            print(f"  GeoColour map render failed ({e}); using L2 render",
+                  file=sys.stderr)
+    render.to_png(field, LATEST_PNG, scale=PREVIEW_SCALE)
+    H, W = field.shape
+    return [W * PREVIEW_SCALE, H * PREVIEW_SCALE]
+
+
 def build_status(field, prev_field, data_source):
     loc = config.LOCATION
     cfg = config.CLOUDS
@@ -47,18 +63,37 @@ def build_status(field, prev_field, data_source):
         mot = cmotion.compute_motion(prev_field, field, loc["lat"], loc["lon"],
                                      _dt_min(prev_field, field))
 
-    facts = interpret.cloud_facts(field, mot, loc["lat"], loc["lon"], loc["name"], cfg)
+    # GeoColour (what EUMETView shows) drives BOTH the Budva verdict and the map.
+    # Fetch the LATEST frame ONCE; the L2 field is the fallback when GeoColour
+    # can't be fetched.
+    gc_rgb = None
+    gc_time = None
+    if cfg.get("use_geocolour_map", True) or cfg.get("use_geocolour_verdict", True):
+        try:
+            gc_rgb, gc_time = visible.fetch_geocolour(cfg)
+        except Exception as e:
+            print(f"  GeoColour unavailable ({e}); using L2 field", file=sys.stderr)
+
+    if gc_rgb is not None and cfg.get("use_geocolour_verdict", True):
+        sky = visible.budva_sky_from_geocolour(gc_rgb, cfg, loc)
+        facts = visible.geocolour_facts(sky, loc, cfg, motion=mot)
+        verdict_source = "GeoColour"
+    else:
+        facts = interpret.cloud_facts(field, mot, loc["lat"], loc["lon"], loc["name"], cfg)
+        verdict_source = "L2-COT"
 
     # Preview PNG (north-up) + its pixel size, so the page can place the marker.
-    render.to_png(field, LATEST_PNG, scale=PREVIEW_SCALE)
-    H, W = field.shape
-    img_size = [W * PREVIEW_SCALE, H * PREVIEW_SCALE]
+    # Reuses the already-fetched GeoColour image so the marker sits exactly on
+    # the pixels the verdict measured.
+    img_size = _render_map(field, cfg, loc, gc_rgb=gc_rgb)
 
     status = {
         "generated": datetime.datetime.now().isoformat(timespec="seconds"),
         "location": loc,
         "source": {"name": "EUMETSAT cloud products", "ok": True,
-                   "sensing_time": field.sensing_time, "data_source": data_source},
+                   "sensing_time": gc_time or field.sensing_time,
+                   "data_source": data_source, "verdict_source": verdict_source,
+                   "geocolour_time": gc_time},
         "motion": None if mot is None else {
             "direction_deg": mot["direction_deg"],
             "direction_cardinal": mot["direction_cardinal"],

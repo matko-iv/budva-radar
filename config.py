@@ -157,6 +157,23 @@ CLOUDS = {
     # grid produced by Data Tailor). ~0.03 deg ~ 3 km, near MTG-FCI L2 native.
     "grid_step_deg": 0.03,
 
+    # --- Map rendering: use EUMETSAT GeoColour as the picture (clouds/visible.py).
+    # The L2 retrievals miss small sub-pixel cumulus and over-detect at night, so
+    # for the MAP we show GeoColour — exactly what EUMETView shows — while the
+    # Budva point verdict still uses the COT logic. Set False to draw the L2
+    # overlay instead. Fetch failures (offline) fall back to the L2 render.
+    "use_geocolour_map": True,
+    "geocolour_wms": "https://view.eumetsat.int/geoserver/wms",
+    "geocolour_layer": "mtg_fd:rgb_geocolour",
+    # GeoColour also drives the Budva verdict (state + %): read the sky straight
+    # off the same image. Cloud = bright + near-neutral; sun-blocking = very
+    # bright. No cloud-top height/type from RGB. Set False to use the L2 verdict.
+    "use_geocolour_verdict": True,
+    "geocolour_sample_km": 6.0,     # disc radius around Budva for the read
+    "geocolour_bright_min": 150,    # max(R,G,B) >= this & near-neutral = cloud
+    "geocolour_sat_max": 40,        # max(R,G,B)-min(R,G,B) <= this = near-neutral
+    "geocolour_thick_min": 205,     # very bright = optically thick / sun-blocking
+
     # EUMETSAT Data Store collection IDs — pinned from the live catalogue
     # (clouds/discover.py, 2026-06-19). MTG (Meteosat Third Generation, 0 deg
     # disk) covers Budva; these are the dedicated netCDF L2 cloud products.
