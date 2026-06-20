@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-20T14:42:35",
+  "generated": "2026-06-20T14:49:35",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -8,16 +8,16 @@
   "source": {
     "name": "EUMETSAT cloud products",
     "ok": true,
-    "sensing_time": "2026-06-20T12:10:00.000Z",
+    "sensing_time": "2026-06-20T12:20:00.000Z",
     "data_source": "EUMETSAT",
     "verdict_source": "GeoColour",
-    "geocolour_time": "2026-06-20T12:10:00.000Z"
+    "geocolour_time": "2026-06-20T12:20:00.000Z"
   },
   "motion": {
-    "direction_deg": 298.5,
-    "direction_cardinal": "NW",
-    "speed_kmh": 84.1,
-    "confidence": 0.81
+    "direction_deg": null,
+    "direction_cardinal": null,
+    "speed_kmh": 0.0,
+    "confidence": 1.0
   },
   "facts": {
     "locationName": "Budva",
@@ -34,8 +34,8 @@
     "approaching": false,
     "clearing": false,
     "etaMin": null,
-    "motionCardinal": "NW",
-    "motionSpeedKmh": 84.1,
+    "motionCardinal": null,
+    "motionSpeedKmh": 0.0,
     "sunOutlook": "",
     "source": "GeoColour",
     "sampleRadiusKm": 6.0,
@@ -10607,12 +10607,12 @@
       800
     ],
     "motion": {
-      "dlat_per_min": 0.005999755859375,
-      "dlon_per_min": -0.015000343322753906,
-      "speed_kmh": 84.1,
-      "direction_deg": 298.5,
-      "direction_cardinal": "NW",
-      "confidence": 0.81,
+      "dlat_per_min": -0.0,
+      "dlon_per_min": 0.0,
+      "speed_kmh": 0.0,
+      "direction_deg": null,
+      "direction_cardinal": null,
+      "confidence": 1.0,
       "dt_min": 10.0
     }
   },
