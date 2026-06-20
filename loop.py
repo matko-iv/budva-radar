@@ -1,8 +1,16 @@
-"""Run run.py every N minutes until killed with Ctrl+C.
+"""Run the SKALA pipelines every N minutes until killed with Ctrl+C.
 
-By default also commits + pushes docs/ to the git remote after each run,
-so GitHub Pages picks up the new radar_status.json. Pass --no-push to skip
-the git step (useful when serving docs/ directly over HTTP locally).
+Each cycle runs BOTH modules — run.py (SKALA RAIN, radar) and run_clouds.py
+(SKALA CLOUD, satellite) — then commits + pushes docs/ once so GitHub Pages
+picks up both radar_status.json and cloud_status.json.
+
+Flags:
+  --no-push    skip the git commit/push (serve docs/ locally instead)
+  --no-rain    skip the radar pipeline this run
+  --no-cloud   skip the satellite pipeline (e.g. no EUMETSAT credentials)
+
+The cloud pipeline needs EUMETSAT_KEY / EUMETSAT_SECRET in the environment; if
+they're missing it just logs and the loop carries on with radar only.
 """
 
 import time
@@ -16,6 +24,8 @@ import config
 INTERVAL_SEC = config.FETCH_INTERVAL_MIN * 60
 BASE_DIR = Path(__file__).resolve().parent
 PUSH_TO_GIT = "--no-push" not in sys.argv
+RUN_RAIN = "--no-rain" not in sys.argv
+RUN_CLOUD = "--no-cloud" not in sys.argv
 
 
 def push_docs():
@@ -30,12 +40,12 @@ def push_docs():
         # frames + status files don't pile up as untracked changes.
         subprocess.run(["git", "add", "docs/"], cwd=BASE_DIR,
                        check=False, capture_output=True, timeout=15)
-        subprocess.run(["git", "add", "output/status.json"], cwd=BASE_DIR,
-                       check=False, capture_output=True, timeout=15)
+        subprocess.run(["git", "add", "output/status.json", "output/cloud_status.json"],
+                       cwd=BASE_DIR, check=False, capture_output=True, timeout=15)
         # Use -A so frame rotations (additions AND deletions) are both tracked.
-        subprocess.run(["git", "add", "-A", "data/frames/"], cwd=BASE_DIR,
-                       check=False, capture_output=True, timeout=15)
-        msg = f"radar update {datetime.now():%Y-%m-%d %H:%M:%S}"
+        subprocess.run(["git", "add", "-A", "data/frames/", "data/cloud_frames/"],
+                       cwd=BASE_DIR, check=False, capture_output=True, timeout=15)
+        msg = f"skala update {datetime.now():%Y-%m-%d %H:%M:%S}"
         subprocess.run([
             "git",
             "-c", "user.name=github-actions[bot]",
@@ -71,17 +81,28 @@ def push_docs():
         print(f"  git: skip ({e})")
 
 
+def _run(script):
+    """Run a pipeline script; never let a crash kill the loop."""
+    try:
+        subprocess.run([sys.executable, script], check=False, cwd=BASE_DIR)
+    except Exception as e:
+        print(f"{script} crashed: {e}")
+
+
 def main():
     mode = "with git push" if PUSH_TO_GIT else "no push (--no-push)"
-    print(f"budva-radar loop - interval {config.FETCH_INTERVAL_MIN} min, {mode}. "
-          f"Ctrl+C to stop.")
+    modules = " + ".join(([("RAIN") ] if RUN_RAIN else []) + (["CLOUD"] if RUN_CLOUD else []))
+    print(f"SKALA loop [{modules or 'nothing'}] - interval "
+          f"{config.FETCH_INTERVAL_MIN} min, {mode}. Ctrl+C to stop.")
     while True:
         t0 = datetime.now()
         print(f"\n=== {t0.isoformat(timespec='seconds')} ===")
-        try:
-            subprocess.run([sys.executable, "run.py"], check=False, cwd=BASE_DIR)
-        except Exception as e:
-            print(f"run.py crashed: {e}")
+        if RUN_RAIN:
+            print("--- SKALA RAIN (run.py) ---")
+            _run("run.py")
+        if RUN_CLOUD:
+            print("--- SKALA CLOUD (run_clouds.py) ---")
+            _run("run_clouds.py")
         if PUSH_TO_GIT:
             push_docs()
         elapsed = (datetime.now() - t0).total_seconds()
