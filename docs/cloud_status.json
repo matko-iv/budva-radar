@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-21T18:29:08",
+  "generated": "2026-06-21T18:36:19",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -8,10 +8,10 @@
   "source": {
     "name": "EUMETSAT cloud products",
     "ok": true,
-    "sensing_time": "2026-06-21T16:00:00.000Z",
+    "sensing_time": "2026-06-21T16:10:00.000Z",
     "data_source": "EUMETSAT",
     "verdict_source": "GeoColour",
-    "geocolour_time": "2026-06-21T16:00:00.000Z"
+    "geocolour_time": "2026-06-21T16:10:00.000Z"
   },
   "motion": {
     "direction_deg": null,
@@ -21,11 +21,11 @@
   },
   "facts": {
     "locationName": "Budva",
-    "cloudFracNow": 0.109,
-    "cloudAtLocation": false,
+    "cloudFracNow": 0.454,
+    "cloudAtLocation": true,
     "skyCoverEff": 0.0,
     "opaqueFracNow": 0.0,
-    "thinVeil": false,
+    "thinVeil": true,
     "cloudTypeLabel": null,
     "heightBand": null,
     "thickness": null,
@@ -10641,21 +10641,21 @@
     "cloud_verdict": {
       "state": "CLEAR",
       "headline": "CLEAR SKY — Budva",
-      "narrative": "Clear sky over Budva — no cloud incoming.",
+      "narrative": "Mostly clear over Budva — cloud (0%), sun gets through.",
       "style": {
         "cls": "ok",
         "bg": "#ffd54f",
         "fg": "#3e2723",
         "head": "CLEAR SKY"
       },
-      "line_sr": "vedro nad Budvom",
-      "line_sr_bold": "vedro nad Budvom",
+      "line_sr": "pretežno vedro nad Budvom — tanak visoki oblak, sunce probija (45%)",
+      "line_sr_bold": "pretežno vedro nad Budvom",
       "color_sr": "#f9a825",
       "weight_sr": 600,
       "sun_outlook": "",
       "facts": {
-        "cloudFracNow": 0.109,
-        "cloudAtLocation": false,
+        "cloudFracNow": 0.454,
+        "cloudAtLocation": true,
         "approaching": false,
         "clearing": false,
         "etaMin": null,
