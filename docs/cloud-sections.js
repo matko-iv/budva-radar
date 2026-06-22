@@ -12,13 +12,14 @@
     if (v && v.state && v.headline) {
       return { state: v.state, headline: v.headline, narrative: v.narrative,
                meta: v.style || (global.CLOUD_TEXT && global.CLOUD_TEXT.STATE_META[v.state]) || {},
-               line_sr: v.line_sr, sun_outlook: v.sun_outlook };
+               line_sr: v.line_sr, sun_outlook: v.sun_outlook, sun: v.sun };
     }
     if (global.CLOUD_TEXT && data.facts) {
       var res = global.CLOUD_TEXT.interpret(data.facts, data.params);
       var sr = global.CLOUD_TEXT.serbianLine(data.facts, res);
       return { state: res.state, headline: res.headline, narrative: res.narrative,
-               meta: res.meta, line_sr: sr.text, sun_outlook: data.facts.sunOutlook || "" };
+               meta: res.meta, line_sr: sr.text, sun_outlook: data.facts.sunOutlook || "",
+               sun: global.CLOUD_TEXT.sunDescriptor(data.facts) };
     }
     return { state: "CLEAR", headline: "—", narrative: "nema podataka", meta: {} };
   }
@@ -34,17 +35,35 @@
 
   function _row(k, v) { return v == null || v === "" ? "" : "<tr><td style='color:#666;padding:2px 10px 2px 0;'>" + esc(k) + "</td><td>" + esc(v) + "</td></tr>"; }
 
+  // Sun/shade label (mirror clouds/verdict.py sun_descriptor wording, Serbian).
+  function _sunLabel(facts) {
+    if (facts.isNight) return "noć — IR detekcija (bez procjene sunca)";
+    var map = { sunny: "sunce probija", dimmed: "sunce prigušeno", blocked: "sunce zaklonjeno" };
+    var s = facts.sunState ? map[facts.sunState] : null;
+    if (!s) return null;
+    if (facts.sunTransmittance != null) s += " (T≈" + Math.round(facts.sunTransmittance * 100) + "%)";
+    return s;
+  }
+
   function renderFacts(node, facts) {
     facts = facts || {};
+    // PRESENCE (is there cloud — thin cirrus counts) vs SUN-BLOCKING are two
+    // separate numbers (the PDF's core point), shown on separate rows.
     var pct = facts.cloudFracNow == null ? null : Math.round(facts.cloudFracNow * 100) + "%";
+    var block = facts.skyCoverEff != null ? facts.skyCoverEff
+              : (facts.opaqueFracNow != null ? facts.opaqueFracNow : null);
+    var blockPct = block == null ? null : Math.round(block * 100) + "%";
     var rows = [
-      _row("Oblačnost (sad)", pct),
+      _row("Oblačnost (prisustvo)", pct),
+      _row("Sunce", _sunLabel(facts)),
+      _row("Zaklanja sunce", blockPct),
       _row("Tip", facts.cloudTypeLabel),
       _row("Visina vrha", facts.cloudTopHeightM != null ? Math.round(facts.cloudTopHeightM) + " m (" + (facts.heightBand || "?") + ")" : null),
       _row("Debljina", facts.thickness ? facts.thickness + (facts.opticalThickness != null ? " (COT " + facts.opticalThickness + ")" : "") : null),
       _row("Temp. vrha", facts.cloudTopTempC != null ? facts.cloudTopTempC + " °C" : null),
       _row("Faza", facts.phase),
       _row("Kretanje", facts.motionCardinal ? "ka " + facts.motionCardinal + (facts.motionSpeedKmh != null ? " @ " + facts.motionSpeedKmh + " km/h" : "") : null),
+      _row("Sunčev zenit", facts.szaDeg != null ? Math.round(facts.szaDeg) + "°" : null),
       _row("Izgledi (0–2 h)", facts.sunOutlook)
     ].join("");
     node.innerHTML = "<table style='font-size:13px;border-collapse:collapse;'>" + rows + "</table>";
