@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-22T13:32:45",
+  "generated": "2026-06-22T13:39:40",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -8,16 +8,16 @@
   "source": {
     "name": "EUMETSAT cloud products",
     "ok": true,
-    "sensing_time": "2026-06-22T11:00:00.000Z",
+    "sensing_time": "2026-06-22T11:10:00.000Z",
     "data_source": "EUMETSAT",
     "verdict_source": "L2-COT",
-    "geocolour_time": "2026-06-22T11:00:00.000Z"
+    "geocolour_time": "2026-06-22T11:10:00.000Z"
   },
   "motion": {
     "direction_deg": null,
     "direction_cardinal": null,
     "speed_kmh": 0.0,
-    "confidence": 0.674
+    "confidence": 0.999
   },
   "facts": {
     "locationName": "Budva",
@@ -39,7 +39,7 @@
     "thickness": "thick",
     "phase": "ice",
     "cloudTypeLabel": "mid thick cloud (altostratus)",
-    "szaDeg": 19.5,
+    "szaDeg": 20.1,
     "isNight": false,
     "sunState": "sunny",
     "sunTransmittance": 0.025,
@@ -70,8 +70,8 @@
       },
       {
         "radius_km": 150,
-        "cloud_fraction": 0.83,
-        "opaque_fraction": 0.435
+        "cloud_fraction": 0.831,
+        "opaque_fraction": 0.436
       }
     ],
     "series": [
@@ -2753,7 +2753,7 @@
         1.0,
         1.0,
         1.0,
-        0.5,
+        1.0,
         1.0,
         0.38,
         1.0,
@@ -2897,7 +2897,7 @@
         0.0,
         1.0,
         1.0,
-        0.0,
+        1.0,
         1.0,
         0.0,
         0.0,
@@ -4605,7 +4605,7 @@
         1.0,
         1.0,
         1.0,
-        0.0,
+        1.0,
         1.0,
         1.0,
         1.0,
@@ -5222,7 +5222,7 @@
         0.73,
         0.73,
         0.74,
-        0.0,
+        0.74,
         0.75,
         0.76,
         0.77,
@@ -10652,7 +10652,7 @@
       "speed_kmh": 0.0,
       "direction_deg": null,
       "direction_cardinal": null,
-      "confidence": 0.674,
+      "confidence": 0.999,
       "dt_min": 10.0
     }
   },
@@ -10713,7 +10713,7 @@
         "cloudTypeLabel": "mid thick cloud (altostratus)",
         "cloudTopHeightM": 5668.0,
         "cloudTopTempC": -25.7,
-        "szaDeg": 19.5,
+        "szaDeg": 20.1,
         "isNight": false,
         "sunState": "sunny",
         "sunTransmittance": 0.025,
