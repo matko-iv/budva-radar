@@ -13,13 +13,15 @@ Cache layout mirrors the radar one: data/cloud_frames/YYYYMMDD_HHMMSS_<hash>.npz
 
 import datetime
 import hashlib
+import math
 import tempfile
 from pathlib import Path
 
 import numpy as np
 
 import config
-from clouds import render
+from clouds import clm as clmcat
+from clouds import oca, render, solar
 from clouds.grid import CloudField
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,7 +35,12 @@ _VARMAP = {
     "ctt":   ["cloud_top_temperature", "retrieved_cloud_top_temperature", "ctt"],
     "cth":   ["cloud_top_height", "retrieved_cloud_top_height", "cth", "height"],
     "ctp":   ["cloud_top_pressure", "retrieved_cloud_top_pressure", "ctp"],
+    # OCA optical thickness: prefer satpy's linear total; else the two log10
+    # layers (cloud_optical_depth_log[_lower_layer]) summed in LINEAR space.
     "cot":   ["retrieved_cloud_optical_thickness", "cloud_optical_thickness", "cot"],
+    "cot_log":       ["cloud_optical_depth_log", "cloud_optical_thickness_log"],
+    "cot_log_lower": ["cloud_optical_depth_log_lower_layer"],
+    "scene":         ["scene_classification", "scene_class"],        # OCA quality
     "phase": ["retrieved_cloud_phase", "cloud_phase", "phase", "cph"],
 }
 
@@ -166,18 +173,50 @@ def _sample(da, idx):
     return out
 
 
-def _sample_cot(da, idx):
-    """OCA optical thickness: 3D (rows, cols, layers) and stored as log10(COT).
-    Take the upper layer (0) and de-log if the metadata says so."""
-    arr = np.asarray(da.values, dtype="float64")
-    if arr.ndim == 3:
-        arr = arr[..., 0]
-    i, j, valid = idx
-    out = np.full(i.shape, np.nan)
-    out[valid] = arr[i[valid], j[valid]]
-    if "log10" in str(da.attrs.get("long_name", "")).lower():
-        out = np.power(10.0, out)
-    return out
+def _varname(ds, key):
+    """First name from _VARMAP[key] present in the dataset, or None."""
+    return next((n for n in _VARMAP[key] if n in ds.variables), None)
+
+
+def _oca_total_cot(ds, idx):
+    """Total LINEAR OCA optical thickness on the target grid (see clouds/oca.py).
+
+    Prefers the two log10 layers (10^upper + 10^lower, summed in LINEAR space);
+    else a linear/total variable (de-logged only if it is itself log-scaled).
+    Drops failed retrievals (scene_classification == 10) and any unmasked fill
+    that leaks through as an absurd value. Returns None if no COT variable found.
+    """
+    up_name = _varname(ds, "cot_log")
+    if up_name is not None:
+        upper = _sample(ds[up_name], idx)                 # log10(COT), fill->NaN
+        lo_name = _varname(ds, "cot_log_lower")
+        lower = _sample(ds[lo_name], idx) if lo_name else None
+        cot = oca.total_cot(upper, lower)
+    else:
+        v = _pick(ds, "cot")
+        if v is None:
+            return None
+        islog = oca.is_log_variable(getattr(v, "name", ""), dict(v.attrs))
+        arr = np.asarray(v.values, dtype="float64")
+        i, j, valid = idx
+        if arr.ndim == 3:                  # (rows, cols, layers): sum in LINEAR space
+            cot = None
+            for k in range(arr.shape[-1]):
+                s = np.full(i.shape, np.nan)
+                s[valid] = arr[i[valid], j[valid], k]
+                s = oca.delog(s) if islog else s
+                cot = s if cot is None else np.where(
+                    np.isnan(s), cot, np.where(np.isnan(cot), s, cot + s))
+        else:
+            s = _sample(v, idx)
+            cot = oca.delog(s) if islog else s
+
+    sc_name = _varname(ds, "scene")
+    if sc_name is not None:
+        cot = oca.apply_scene_filter(cot, _sample(ds[sc_name], idx))
+    # Guard: real COT saturates near 257 (10^2.41); anything wildly bigger (or
+    # negative) is unmasked fill, not a thick cloud -> drop it.
+    return np.where(np.isfinite(cot) & (cot >= 0.0) & (cot < 1e4), cot, np.nan)
 
 
 def _pressure_to_height_m(p_pa):
@@ -186,43 +225,57 @@ def _pressure_to_height_m(p_pa):
     return 44330.0 * (1.0 - np.power(np.clip(p, 1.0, 1.1e5) / 101325.0, 0.190284))
 
 
-def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time):
+def _read_clm_enum(nc_path):
+    """Read the authoritative cloud_state {name: value} enum straight from the
+    netCDF file (the PDF says: never assume the integers). xarray does not always
+    surface the enum, so we read it via netCDF4. Returns {} on any problem."""
+    try:
+        import netCDF4
+        with netCDF4.Dataset(nc_path) as nc:
+            for vn in _VARMAP["mask"]:
+                if vn in nc.variables:
+                    ed = getattr(nc.variables[vn].datatype, "enum_dict", None)
+                    if ed:
+                        return {str(k): int(v) for k, v in dict(ed).items()}
+    except Exception:
+        pass
+    return {}
+
+
+def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time, clm_enum=None):
     """Build a CloudField on the target grid from the MTG cloud products:
     CLM (mask), CTTH (cloud-top temp + height), OCA (optical thickness + phase).
-    Variable mapping uses _VARMAP — confirm names via discover.py."""
+    Variable mapping uses _VARMAP — confirm names via discover.py. `clm_enum`
+    (name->value) is the cloud_state enum read from the file; when omitted we try
+    the variable's flag_values/flag_meanings, then the documented heritage map."""
     lats, lons = target_grid(cfg)
     H, W = len(lats), len(lons)
     nan = np.full((H, W), np.nan)
 
-    clm = _pick(ds_clm, "mask")
-    if clm is None:
+    clm_da = _pick(ds_clm, "mask")
+    if clm_da is None:
         raise ValueError("no cloud-mask variable found in CLM product (check _VARMAP)")
     idx_clm = _geos_indices(ds_clm, lats, lons)
-    cs = np.round(_sample(clm, idx_clm))        # CLM cloud_state codes (see enum)
+    cs = np.round(_sample(clm_da, idx_clm))     # CLM cloud_state codes
 
-    # CLM cloud_state enum (MTG FCI L2 CLM):
-    #   0 no-data, 1 cloud-free, 2 cloud CONTAMINATED (partial/semitransparent),
-    #   3 cloud FILLED (opaque), 4-7 dust/ash, 8 snow/ice, 9 undefined.
-    # NOTE: code 3 ("opaque") is NOT trustworthy on its own — the FCI CLM marks
-    # optically thin cloud as code 3 too. We keep the codes here but let OCA
-    # optical thickness gate what really counts as cloud / sun-blocking (below).
-    nodata = np.isnan(cs) | (cs == 0) | (cs == 9)
-    clearish = (cs == 1) | ((cs >= 4) & (cs <= 8))     # clear / dust / ash / snow
-    semi = (cs == 2)
-    opaque_px = (cs == 3)
-    cloud_any = semi | opaque_px
+    # Classify cloud_state by MEANING, reading the enum from the FILE (PDF 2.1):
+    # the integer<->category map is a netCDF enum, not a public constant; dust/ash
+    # are separate flags. contaminated (thin/partial) and filled (opaque) are BOTH
+    # cloud. Falls back to the documented heritage integers if no enum is present.
+    enum = clm_enum or clmcat.enum_from_attrs(dict(clm_da.attrs))
+    cats = clmcat.categorize(cs, enum or None)
+    nodata = cats["nodata"]
+    contaminated, filled = cats["contaminated"], cats["filled"]
+    cloud_any = cats["cloud_any"]               # contaminated OR filled = presence
 
     ctt = cth = cot = phase = nan
 
-    # --- OCA optical thickness (COT) + phase, sampled FIRST ----------------
-    # The CLM mask over-detects (flags optically thin cloud as code-3 "opaque"),
-    # so COT — not the CLM flag — decides what actually blocks the sun. Sampled
-    # up front so the frac/opaque layers below can be gated on it.
+    # --- OCA optical thickness (COT, total/linear) + phase -----------------
     if ds_oca is not None:
         idx_oca = _geos_indices(ds_oca, lats, lons)
-        vcot = _pick(ds_oca, "cot")
-        if vcot is not None:
-            cot = _sample_cot(vcot, idx_oca)
+        c = _oca_total_cot(ds_oca, idx_oca)
+        if c is not None:
+            cot = c
         vph = _pick(ds_oca, "phase")
         if vph is not None:
             phase = _sample(vph, idx_oca)
@@ -235,36 +288,37 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time):
         vfrac = _pick(ds_ctth, "frac")
         if vfrac is not None:
             eff = _sample(vfrac, idx_ctth)
+    default_amt = np.where(filled, 1.0, np.where(contaminated, 0.5, 0.0))
     if eff is not None:
         fin = eff[~np.isnan(eff)]
         if fin.size and np.nanmax(fin) > 1.5:   # percent -> fraction
             eff = eff / 100.0
-        default_amt = np.where(opaque_px, 1.0, np.where(semi, 0.5, 0.0))
         amt = np.where(np.isnan(eff), default_amt, np.clip(eff, 0.0, 1.0))
     else:
-        amt = np.where(opaque_px, 1.0, np.where(semi, 0.5, 0.0))
+        amt = default_amt
 
-    # Optical-thickness gating. When OCA COT is available, a pixel is
-    #   * SUN-BLOCKING (opaque layer) only if COT >= cot_block_min, and
-    #   * counted as cloud at all (frac) only if COT >= cot_cloud_min,
-    # so the CLM's optically thin false "opaque" detections drop out and the
-    # field matches the visible sky. With no OCA we keep the raw CLM flags.
+    # ---- TWO SEPARATE AXES (the PDF's core fix) ----------------------------
+    # PRESENCE (frac / mask): "is there cloud" — from the CLM ONLY, NEVER gated on
+    # COT, so optically thin cirrus (which IS cloud) is always kept.
+    frac = np.where(nodata, np.nan, np.where(cloud_any, amt, 0.0))
+    mask = np.where(nodata, np.nan, cloud_any.astype(float))
+
+    # SUN-BLOCKING (opaque): "is the sun blocked" — optical thickness AND sun
+    # geometry. A pixel blocks the sun when its SLANT optical depth (COT/cos SZA)
+    # crosses cot_block_min, so the same cloud blocks more when the sun is low
+    # (COT >= cot_block*cos SZA). At night, or with no OCA, COT is unreliable, so
+    # fall back to the CLM opaque ("filled") flag.
+    center_lat, center_lon = 0.5 * (lats[0] + lats[-1]), 0.5 * (lons[0] + lons[-1])
+    sza = solar.solar_zenith_deg(sensing_time, center_lat, center_lon)
+    night = solar.is_night(sza, float(cfg.get("sun_night_sza", solar.NIGHT_SZA_DEG)))
     cot_block = float(cfg.get("cot_block_min", 5.0))
-    cot_cloud = float(cfg.get("cot_cloud_min", 1.0))
-    if cot_ok:
-        cot_g = np.where(np.isnan(cot), 0.0, cot)   # no retrieval -> treat as thin
-        # COT is the arbiter, NOT the CLM 2/3 split: a pixel blocks the sun if any
-        # cloud is present AND it is optically thick (so thick cloud the CLM mis-
-        # labelled "contaminated" still counts, and thin "opaque" no longer does).
-        block_px = cloud_any & (cot_g >= cot_block)
-        cloud_keep = cloud_any & (cot_g >= cot_cloud)
+    if cot_ok and not night:
+        mu0 = max(math.cos(math.radians(sza)), 0.05)
+        cot_g = np.where(np.isnan(cot), 0.0, cot)
+        block_px = cloud_any & (cot_g >= cot_block * mu0)   # slant-corrected
     else:
-        block_px = opaque_px           # no OCA -> fall back to the raw CLM flag
-        cloud_keep = cloud_any
-
-    frac = np.where(nodata, np.nan, np.where(cloud_keep, amt, 0.0))   # any (real) cloud
-    opaque = np.where(nodata, np.nan, np.where(block_px, amt, 0.0))   # sun-blocking only
-    mask = np.where(nodata, np.nan, cloud_keep.astype(float))
+        block_px = filled
+    opaque = np.where(nodata, np.nan, np.where(block_px, amt, 0.0))
 
     if ds_ctth is not None:
         v = _pick(ds_ctth, "ctt")
@@ -287,7 +341,8 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time):
     return CloudField(lats, lons,
                       {"mask": mask, "frac": frac, "opaque": opaque, "ctt": ctt,
                        "cth": cth, "cot": cot, "phase": phase},
-                      meta={"sensing_time": sensing_time, "source": "EUMETSAT"})
+                      meta={"sensing_time": sensing_time, "source": "EUMETSAT",
+                            "sza_deg": round(float(sza), 2), "night": bool(night)})
 
 
 # --------------------------------------------------------------------------
@@ -367,10 +422,12 @@ def fetch_latest(cfg=None) -> dict:
     with tempfile.TemporaryDirectory() as d:
         clm_nc = _download_nc(clm_product, d)
         ds_clm = xr.open_dataset(clm_nc)
+        clm_enum = _read_clm_enum(clm_nc)       # authoritative cloud_state enum
         ds_ctth = _open(cols.get("ctth"), d)
         ds_oca = _open(cols.get("oca"), d)
         try:
-            field = normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing)
+            field = normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing,
+                              clm_enum=clm_enum)
         finally:
             for ds in (ds_clm, ds_ctth, ds_oca):  # release file handles before
                 if ds is not None:                # the temp dir is removed (Windows)

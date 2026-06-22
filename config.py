@@ -165,10 +165,17 @@ CLOUDS = {
     "use_geocolour_map": True,
     "geocolour_wms": "https://view.eumetsat.int/geoserver/wms",
     "geocolour_layer": "mtg_fd:rgb_geocolour",
-    # GeoColour also drives the Budva verdict (state + %): read the sky straight
-    # off the same image. Cloud = bright + near-neutral; sun-blocking = very
-    # bright. No cloud-top height/type from RGB. Set False to use the L2 verdict.
-    "use_geocolour_verdict": True,
+    # GeoColour is a RENDERED RGB picture, not a measurement: its brightness reads
+    # as "cloud" over sun-glint on the sea, snow, and low sun, and at night means
+    # cloud-top temperature, not albedo (PDF Section 5). So by default the verdict
+    # comes from the L2 retrievals (CLM presence + OCA COT + solar zenith) and
+    # GeoColour is the display MAP only. Set True to drive the verdict from RGB
+    # brightness again — but then it is only used by day with the sun high enough
+    # (see geocolour_verdict_day_only / geocolour_max_sza); otherwise it falls
+    # back to L2 so glint/twilight/night can't produce a false "cloudy".
+    "use_geocolour_verdict": False,
+    "geocolour_verdict_day_only": True,  # never trust RGB brightness at night
+    "geocolour_max_sza": 70.0,           # ...nor when the sun is low (glint/shadow)
     "geocolour_sample_km": 6.0,     # disc radius around Budva for the read
     "geocolour_bright_min": 150,    # max(R,G,B) >= this & near-neutral = cloud
     "geocolour_sat_max": 40,        # max(R,G,B)-min(R,G,B) <= this = near-neutral
@@ -201,36 +208,37 @@ CLOUDS = {
     "height_low_max_m": 2000.0,
     "height_mid_max_m": 6000.0,
 
-    # Optical thickness: thin vs thick (COT ~3.6 is the cirrus/altostratus
-    # boundary; round to 3.0 for "thin").
+    # Optical thickness: thin vs thick for the SUN/SHADE call (COT ~3 = the cirrus
+    # boundary where the disc is still clearly visible -> "sun gets through").
     "cot_thin_max": 3.0,
 
-    # --- Optical-thickness gating (the FCI L2 CLM mask OVER-DETECTS cloud) ---
-    # The CLM flags optically thin cloud as "cloud filled (opaque)" (verified:
-    # ~88% of code-3 pixels have COT < 5, e.g. Budva read code 3 at COT 2.3 on a
-    # sunny day). So we don't trust the CLM opaque flag alone for "is the sun
-    # blocked"; OCA cloud optical thickness (COT) is the arbiter, which makes the
-    # verdict match the visible (GeoColour) sky:
-    #   * a pixel is SUN-BLOCKING (opaque layer) only if COT >= cot_block_min,
-    #   * a pixel counts as cloud at all (total/frac) only if COT >= cot_cloud_min.
-    # cot_block_min ~5 reproduces EUMETView's clear/cloudy split closely; tune if
-    # the field still reads too cloudy (raise) or drops real cloud (lower). When
-    # OCA is unavailable for a frame we fall back to the raw CLM flags.
-    # cot_cloud_min is set EQUAL to cot_block_min so "any cloud" and "sun-blocking"
-    # coincide — that matches what the visible (GeoColour) eye sees for this
-    # over-detecting product, and stops the preview PNG from washing clear areas
-    # with a faint veil. Lower it (e.g. 3.0) to reintroduce a thin-veil band for
-    # COT in [cot_cloud_min, cot_block_min) if you want "sun gets through" notes.
+    # --- TWO SEPARATE AXES (PDF Section 3) ----------------------------------
+    # 1) PRESENCE ("is there cloud") comes from the CLM mask ONLY and is NEVER
+    #    gated on COT — optically thin cirrus IS cloud and must be counted. (This
+    #    is the bug the PDF flags: a COT cutoff on presence deletes real cirrus.)
+    # 2) SUN-BLOCKING ("is the sun blocked") = optical thickness AND sun geometry:
+    #    a pixel blocks the sun when its SLANT optical depth (COT / cos SZA)
+    #    crosses cot_block_min, so the same cloud blocks more when the sun is low.
+    #    Ice cloud forward-scatters, so its blocking threshold is raised by
+    #    sun_ice_factor. At night (SZA >= sun_night_sza) OCA COT is unusable, so we
+    #    fall back to CLM presence + CTTH and make NO sun claim.
+    # cot_block_min ~5 reproduces the clear/cloudy split closely at high sun; the
+    # /cos(SZA) slant term lowers it automatically toward sunrise/sunset.
     "cot_block_min": 5.0,
-    "cot_cloud_min": 5.0,
+    "sun_night_sza": 80.0,       # SZA at/above which we report no sun verdict
+    "sun_ice_factor": 1.5,       # ice cloud needs ~50% more COT to block the sun
 
-    # Sky-blocking weight for CONTAMINATED (semitransparent, CLM code 2) cloud.
-    # Effective sky cover = opaque + semi_sky_weight*(total - opaque). Set to 0:
-    # ONLY genuinely OPAQUE cloud (CLM code 3) drives clear/partly/overcast;
-    # semitransparent cirrus is reported as a "thin veil, sun gets through" note
-    # but never counts as cloudiness (matches the from-the-ground experience).
+    # Parallax: MTG sits at 0N,0E so cloud over Budva (satellite zenith ~52 deg)
+    # appears shifted ~1.3x its height toward the NE. The sampling disc (>=10 km)
+    # already absorbs this; set True to additionally shift the sun/shade COT
+    # sample toward where overhead cloud appears (uses the cloud-top height).
+    "parallax_correct": False,
+
+    # Sky-blocking weight for CONTAMINATED (semi-transparent) cloud in the
+    # clear/partly/overcast level. Effective sky cover = opaque + semi_sky_weight
+    # *(presence - opaque). 0 = only genuinely sun-blocking cloud sets the level;
+    # thin cirrus shows as a "thin veil / sun gets through" note, never overcast.
     "semi_sky_weight": 0.0,
-    "opacity_cot_scale": 4.0,    # (unused now; legacy)
 
     # Advection nowcast horizon + step (mirror the radar nowcast windows).
     "nowcast_lead_max_min": 120,

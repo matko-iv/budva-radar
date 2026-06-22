@@ -68,13 +68,20 @@ def build_status(field, prev_field, data_source):
     # can't be fetched.
     gc_rgb = None
     gc_time = None
-    if cfg.get("use_geocolour_map", True) or cfg.get("use_geocolour_verdict", True):
+    if cfg.get("use_geocolour_map", True) or cfg.get("use_geocolour_verdict", False):
         try:
             gc_rgb, gc_time = visible.fetch_geocolour(cfg)
         except Exception as e:
             print(f"  GeoColour unavailable ({e}); using L2 field", file=sys.stderr)
 
-    if gc_rgb is not None and cfg.get("use_geocolour_verdict", True):
+    # Default verdict source is the L2 retrieval (CLM presence + OCA COT + solar
+    # zenith). GeoColour is a rendered picture, not a measurement, so it only
+    # drives the verdict when explicitly opted in AND the sun is high enough that
+    # brightness is a usable cloud proxy (no glint/twilight/night); otherwise it
+    # falls back to L2 (PDF Section 5).
+    use_gc = (gc_rgb is not None and cfg.get("use_geocolour_verdict", False)
+              and visible.geocolour_verdict_ok(cfg, loc, gc_time))
+    if use_gc:
         sky = visible.budva_sky_from_geocolour(gc_rgb, cfg, loc)
         facts = visible.geocolour_facts(sky, loc, cfg, motion=mot)
         verdict_source = "GeoColour"

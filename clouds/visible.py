@@ -23,9 +23,30 @@ import urllib.request
 import numpy as np
 from PIL import Image, ImageDraw
 
+from clouds import solar
+
 # WMS defaults (overridable via config.CLOUDS["geocolour_wms"/"geocolour_layer"]).
 _WMS = "https://view.eumetsat.int/geoserver/wms"
 _LAYER = "mtg_fd:rgb_geocolour"
+
+
+def geocolour_verdict_ok(cfg, loc, when=None):
+    """Is the GeoColour RGB a usable cloud proxy for the verdict right now?
+
+    Only by day with the sun high enough: GeoColour brightness reads as false
+    "cloud" over sun-glint on the sea, on snow, at low sun and at night (where
+    brightness is cloud-top temperature, not albedo). When `geocolour_verdict_day_only`
+    is set we require a daytime frame with SZA <= geocolour_max_sza; otherwise the
+    caller falls back to the L2 verdict (PDF Section 5)."""
+    if not cfg.get("geocolour_verdict_day_only", True):
+        return True
+    if not when:
+        return False
+    try:
+        sza = solar.solar_zenith_deg(when, loc["lat"], loc["lon"])
+    except Exception:
+        return False
+    return sza <= float(cfg.get("geocolour_max_sza", 70.0))
 
 
 def latest_time(cfg, timeout=30):
