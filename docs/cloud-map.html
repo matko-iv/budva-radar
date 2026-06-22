@@ -185,11 +185,31 @@
     document.getElementById("status").textContent = " " + name + " (" + lat.toFixed(3) + ", " + lon.toFixed(3) + ")";
   }
 
+  // Footer snapshot time: show LOCAL time + age + UTC, so a UTC-only string is
+  // never mistaken for "stale by 2-3h". That gap is just your timezone plus the
+  // ~20-35 min EUMETSAT dissemination latency of the newest GeoColour/L2 frame —
+  // this is the freshest frame the public WMS publishes.
+  function _fmtSensing(iso) {
+    if (!iso) return "?";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    var p = function (n) { return (n < 10 ? "0" : "") + n; };
+    var loc = p(d.getHours()) + ":" + p(d.getMinutes());
+    var utc = p(d.getUTCHours()) + ":" + p(d.getUTCMinutes());
+    var age = Math.max(0, Math.round((Date.now() - d.getTime()) / 60000));
+    return loc + " (lokalno) · prije ~" + age + " min · " + utc + " UTC";
+  }
+  function updateStime() {
+    var el = document.getElementById("stime");
+    if (el) el.textContent = _fmtSensing(D.source && D.source.sensing_time);
+  }
+
   function wireApp() {
     document.getElementById("boot-section").hidden = true;
     document.getElementById("app").hidden = false;
     document.getElementById("src").textContent = (D.source && D.source.data_source) || "?";
-    document.getElementById("stime").textContent = (D.source && D.source.sensing_time) || "?";
+    updateStime();
+    setInterval(updateStime, 60000);   // keep "prije N min" honest if left open
 
     canvas.addEventListener("click", function (ev) {
       var rect = canvas.getBoundingClientRect();
