@@ -102,6 +102,14 @@ def main():
     # ---- Part B: synthetic branch coverage ------------------------------
     dom_severe = {"dist_km": 40.0, "max_dbz": 57.5, "bearing_cardinal": "W",
                   "eta_minutes": 35.0, "intensity_label": "extreme (hail core)"}
+    # Same severe cell but CPA-classified HIT -> SEVERE fires (PDF Part E gate).
+    dom_severe_hit = {"dist_km": 30.0, "max_dbz": 57.5, "bearing_cardinal": "W",
+                      "eta_minutes": 25.0, "intensity_label": "extreme (hail core)",
+                      "classification": "HIT"}
+    # Severe cell that BYPASSes -> stays APPROACHING/regional, NOT a point SEVERE.
+    dom_severe_bypass = {"dist_km": 30.0, "max_dbz": 57.5, "bearing_cardinal": "W",
+                         "eta_minutes": 25.0, "intensity_label": "extreme (hail core)",
+                         "classification": "BYPASS"}
     dom_mod = {"dist_km": 60.0, "max_dbz": 37.5, "bearing_cardinal": "NW",
                "eta_minutes": 55.0, "intensity_label": "moderate rain"}
     dom_far = {"dist_km": 209.0, "max_dbz": 67.5, "bearing_cardinal": "SE",
@@ -111,6 +119,10 @@ def main():
         "severe overhead": synth_source(rain_at_loc=True, cw=(0.2, "N", 52.5)),
         "severe approaching": synth_source(approaching=True, dom=dom_severe,
                                            cw=(30.0, "W", 32.5)),
+        "severe approaching HIT": synth_source(approaching=True, dom=dom_severe_hit,
+                                               cw=(30.0, "W", 32.5), eta=25.0),
+        "severe approaching BYPASS": synth_source(approaching=True, dom=dom_severe_bypass,
+                                                  cw=(30.0, "W", 32.5), eta=25.0),
         "approaching": synth_source(approaching=True, dom=dom_mod,
                                     cw=(45.0, "NW", 27.5), eta=50.0),
         "bypassing": synth_source(cw=(8.0, "NE", 24.5)),

@@ -44,10 +44,13 @@
     const threat = domInRange ? {
       dbz: dom.max_dbz, km: dom.dist_km, cardinal: dom.bearing_cardinal,
       eta: dom.eta_minutes, label: dom.intensity_label,
+      // CPA classification (PDF Part E): SEVERE-approaching is gated on this
+      // being a HIT, so a distant bypassing/receding severe cell stays regional.
+      cpaClass: dom.classification,
     } : (app.closest_rain_km != null && app.closest_rain_km <= VICINITY_MAX_KM ? {
       dbz: app.closest_rain_intensity_dbz, km: app.closest_rain_km,
       cardinal: app.closest_rain_bearing_cardinal, eta: app.eta_minutes,
-      label: app.closest_rain_intensity_label,
+      label: app.closest_rain_intensity_label, cpaClass: null,
     } : null);
     // Displayed km/intensity/dBZ = the LOCAL closest wet pixel (see closestWet),
     // so Budva reads the same magnitude as any other point. The dominant cell

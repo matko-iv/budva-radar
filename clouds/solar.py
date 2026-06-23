@@ -74,6 +74,43 @@ def cos_zenith(dt, lat, lon):
     return math.cos(math.radians(solar_zenith_deg(dt, lat, lon)))
 
 
+def solar_azimuth_deg(dt, lat, lon):
+    """Solar azimuth (degrees, 0 = N, 90 = E, clockwise) — needed for the
+    sun-glint geometry (PDF Part A1). NOAA solar-position algorithm."""
+    t = _to_utc(dt)
+    doy = t.timetuple().tm_yday
+    hour = t.hour + t.minute / 60.0 + t.second / 3600.0
+    gamma = 2.0 * math.pi / 365.0 * (doy - 1 + (hour - 12.0) / 24.0)
+    eqtime = 229.18 * (
+        0.000075 + 0.001868 * math.cos(gamma) - 0.032077 * math.sin(gamma)
+        - 0.014615 * math.cos(2 * gamma) - 0.040849 * math.sin(2 * gamma))
+    decl = (0.006918 - 0.399912 * math.cos(gamma) + 0.070257 * math.sin(gamma)
+            - 0.006758 * math.cos(2 * gamma) + 0.000907 * math.sin(2 * gamma)
+            - 0.002697 * math.cos(3 * gamma) + 0.00148 * math.sin(3 * gamma))
+    tst = hour * 60.0 + eqtime + 4.0 * lon
+    ha = math.radians(tst / 4.0 - 180.0)
+    latr = math.radians(lat)
+    # Azimuth from SOUTH (positive west), then rotate to from-north clockwise.
+    az = math.atan2(math.sin(ha),
+                    math.cos(ha) * math.sin(latr) - math.tan(decl) * math.cos(latr))
+    return (math.degrees(az) + 180.0) % 360.0
+
+
+def glint_angle(sza_deg, vza_deg, saa_deg, vaa_deg):
+    """Sun-glint angle (degrees) between the satellite view direction and the
+    SPECULAR reflection of the sun (PDF Part A1). Small angles (< ~25-30 deg)
+    mark the glint zone over sea, where specular reflectance trips cloud tests
+    and inflates the cloud-presence number. `*_aa` are azimuths (deg).
+
+        cos(glint) = cos(VZA)cos(SZA) - sin(VZA)sin(SZA)cos(VAA - SAA)
+    """
+    sza, vza = math.radians(sza_deg), math.radians(vza_deg)
+    draa = math.radians(float(vaa_deg) - float(saa_deg))
+    c = math.cos(vza) * math.cos(sza) - math.sin(vza) * math.sin(sza) * math.cos(draa)
+    c = max(-1.0, min(1.0, c))
+    return math.degrees(math.acos(c))
+
+
 def is_night(sza_deg, night_sza=NIGHT_SZA_DEG):
     """True when the sun is too low for a reliable sun/shade (OCA) verdict."""
     return sza_deg is not None and sza_deg >= night_sza
@@ -98,6 +135,37 @@ def slant_cot(cot, sza_deg):
     if mu0 <= 0.0:
         return float("inf")
     return float(cot) / mu0
+
+
+def cmf(cot, sza_deg):
+    """Cloud Modification Factor CMF = GHI_cloudy / GHI_clear (PDF Part A2).
+
+    Papachristopoulou et al. (2024, AMT 17, 1851-1877, doi:10.5194/amt-17-1851-
+    2024), Eq. 2:  CMF = 1 - tanh(b * COT**a), with a, b 4th-order polynomials in
+    SZA (degrees). Ranges 0 (overcast) -> 1 (clear). This is the physically
+    correct "is it actually sunny" quantity (global irradiance), unlike the
+    direct-beam transmittance, because it keeps thin/forward-scattering cloud
+    bright.
+
+    !!! VERIFICATION PENDING — DIAGNOSTIC ONLY, NOT USED FOR THE VERDICT !!!
+    The coefficients below are transcribed verbatim from the paper, but with the
+    literal `tanh(b * COT**a)` grouping they are degenerate (CMF ~ 0 for every
+    COT >= ~0.1 at all SZA — the opposite of the paper's stated behaviour). The
+    grouping/coefficients must be confirmed against the TYPESET Eq. 2 / Fig. 2a
+    before this can replace `sun_state()`. Until then `cloud_facts` reports it as
+    a labelled diagnostic and the sun/shade verdict stays on `sun_state()`.
+
+    Clear (COT 0 or None) -> 1.0, which is the one reliable, unambiguous limit.
+    """
+    if cot is None or cot <= 0.0:
+        return 1.0
+    sza = 0.0 if sza_deg is None else float(sza_deg)
+    a = (2.24e-1 + 2.81e-4 * sza - 2.18e-5 * sza**2
+         + 3.71e-7 * sza**3 - 2.65e-9 * sza**4)
+    b = (12.2 + 5.27e-3 * sza - 2.24e-3 * sza**2
+         + 8.33e-6 * sza**3 + 3.94e-8 * sza**4)
+    val = 1.0 - math.tanh(b * float(cot) ** a)
+    return max(0.0, min(1.0, val))
 
 
 def sun_state(cot, sza_deg, phase=None, *, cot_thin=3.0, cot_block=5.0,

@@ -37,6 +37,15 @@
     return Math.round(km).toString();
   }
 
+  // Honest expectations (PDF Part C4/E): flag an ETA beyond the deterministic
+  // skill horizon as probabilistic. Mirrors radar/verdict.py DETERMINISTIC_ETA.
+  var DETERMINISTIC_ETA_MAX_MIN = 30;
+  function etaText(eta) {
+    if (eta == null || isNaN(eta)) return '';
+    var r = Math.round(eta);
+    return ', ETA ~' + r + ' min' + (r > DETERMINISTIC_ETA_MAX_MIN ? ' (probabilistic)' : '');
+  }
+
   // state -> banner styling + base headline (location is appended by interpret()).
   var STATE_META = {
     SEVERE:      { cls: 'severe', bg: '#6a1b9a', fg: '#fff',   head: 'SEVERE STORM' },
@@ -58,13 +67,32 @@
     var where = '~' + fmtKm(facts.km) + ' km' + (facts.cardinal ? ' ' + facts.cardinal : '');
     var state, narrative;
 
-    // SEVERE-storm verdict removed — it false-triggered on distant cells.
-    if (facts.rainAtLocation) {
+    // SEVERE — re-gated on the CPA result (PDF Part E). Overhead severe (raining
+    // here, dbz>=SEVERE) is a HIT by definition; severe-APPROACHING fires only
+    // when the dominant cell is a CPA HIT, so a distant bypassing/receding severe
+    // cell no longer false-triggers a point alert (the reason it was removed).
+    var threat = facts.threat;
+    var severeHere = !!facts.rainAtLocation && facts.dbz != null && !isNaN(facts.dbz)
+      && facts.dbz >= SEVERE_DBZ;
+    var severeApproaching = !!facts.approaching && !!(threat && threat.dbz != null
+      && !isNaN(threat.dbz) && threat.dbz >= SEVERE_DBZ && threat.cpaClass === 'HIT');
+
+    if (severeHere) {
+      state = 'SEVERE';
+      narrative = 'Severe storm overhead — ' + intensity + dbzTxt + '.';
+    } else if (facts.rainAtLocation) {
       state = 'RAINING';
       narrative = 'Raining now — ' + intensity + dbzTxt + '.';
+    } else if (severeApproaching) {
+      state = 'SEVERE';
+      var tEta = etaText(threat.eta);
+      var tWhere = '~' + fmtKm(threat.km) + ' km' + (threat.cardinal ? ' ' + threat.cardinal : '');
+      var tDbz = (threat.dbz != null && !isNaN(threat.dbz)) ? ' (' + Math.round(threat.dbz) + ' dBZ)' : '';
+      var tLabel = threat.label || skalaIntensity(threat.dbz);
+      narrative = 'Severe storm approaching — ' + tLabel + tDbz + ', ' + tWhere + tEta + '.';
     } else if (facts.approaching) {
       state = 'APPROACHING';
-      var eta = (facts.eta != null && !isNaN(facts.eta)) ? ', ETA ~' + Math.round(facts.eta) + ' min' : '';
+      var eta = etaText(facts.eta);
       narrative = 'Rain approaching — ' + intensity + ', ' + where + eta + '.';
     } else if (facts.anyRain && facts.km != null && !isNaN(facts.km) && facts.km <= SKALA_VICINITY_KM) {
       // "nearby" only within ~20 km — never call distant rain nearby.

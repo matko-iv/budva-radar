@@ -263,7 +263,10 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time, clm_enum=None):
     # are separate flags. contaminated (thin/partial) and filled (opaque) are BOTH
     # cloud. Falls back to the documented heritage integers if no enum is present.
     enum = clm_enum or clmcat.enum_from_attrs(dict(clm_da.attrs))
-    cats = clmcat.categorize(cs, enum or None)
+    # N-adjacent spatial coherence de-speckles isolated coastline false cloud so
+    # the presence number is not inflated at the Budva coastal pixel (PDF A1).
+    _coh = int((config.CLOUDS or {}).get("coherence_min_neighbors", 0))
+    cats = clmcat.categorize(cs, enum or None, coherence_min_neighbors=_coh)
     nodata = cats["nodata"]
     contaminated, filled = cats["contaminated"], cats["filled"]
     cloud_any = cats["cloud_any"]               # contaminated OR filled = presence

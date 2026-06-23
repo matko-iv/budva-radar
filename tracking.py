@@ -194,6 +194,13 @@ def update_summaries(current_cells, previous_summaries, scene_motion, dt_min=Non
             elif dbz_trend_per_min < -0.5: trend = "decaying"
             else: trend = "steady"
 
+            # 3-D growth/decay signal (PDF C2/B2): VIL trend when both frames
+            # carry a full-volume column over the cell (ORD path). None on the
+            # PNG path / overshot cells -> the survival model uses the dBZ trend.
+            vil_now, vil_prev = cell.get("vil_kg_m2"), pc.get("vil_kg_m2")
+            vil_trend_per_min = ((vil_now - vil_prev) / dt_min
+                                 if vil_now is not None and vil_prev is not None else None)
+
             summaries.append({
                 "id": best_match["id"],
                 "latest": cell,
@@ -204,6 +211,8 @@ def update_summaries(current_cells, previous_summaries, scene_motion, dt_min=Non
                 "direction_deg": round(direction_deg, 1),
                 "direction_cardinal": calibration.bearing_to_cardinal(direction_deg),
                 "dbz_trend_per_min": round(dbz_trend_per_min, 2),
+                "vil_trend_per_min": (round(vil_trend_per_min, 3)
+                                      if vil_trend_per_min is not None else None),
                 "trend": trend,
                 "path_min_edge_km": min(best_match.get("path_min_edge_km", 1e9), cell["edge_km"])
             })
@@ -219,6 +228,7 @@ def update_summaries(current_cells, previous_summaries, scene_motion, dt_min=Non
                 "direction_deg": scene_motion.get("direction_deg") if scene_motion else None,
                 "direction_cardinal": scene_motion.get("direction_cardinal") if scene_motion else None,
                 "dbz_trend_per_min": 0.0,
+                "vil_trend_per_min": None,   # need >=2 frames for a trend
                 "trend": "steady",
                 "path_min_edge_km": cell["edge_km"]
             })

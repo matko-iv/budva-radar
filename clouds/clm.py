@@ -60,11 +60,32 @@ def _category_of(name):
     return None
 
 
-def categorize(codes, enum_dict=None):
+def spatial_coherence(mask, min_neighbors=2):
+    """N-adjacent spatial-coherence filter (PDF Part A1): keep a cloudy pixel
+    only if at least `min_neighbors` of its 8 neighbours are also cloudy. A lone
+    cloudy pixel adjacent to the coast is almost always a false alarm (the
+    'negative coastline effect'); requiring more than one cloudy pixel removes it.
+    Pure numpy (3x3 neighbour count via padded shifts)."""
+    m = np.asarray(mask, dtype=bool)
+    if not min_neighbors or min_neighbors <= 0:
+        return m.copy()
+    p = np.pad(m.astype(np.int16), 1)
+    neigh = (p[:-2, :-2] + p[:-2, 1:-1] + p[:-2, 2:]
+             + p[1:-1, :-2] + p[1:-1, 2:]
+             + p[2:, :-2] + p[2:, 1:-1] + p[2:, 2:])
+    return m & (neigh >= int(min_neighbors))
+
+
+def categorize(codes, enum_dict=None, coherence_min_neighbors=0):
     """Classify a CLM `cloud_state` array into boolean masks by meaning.
 
     Returns a dict of boolean arrays: nodata, clear, contaminated, filled,
     snow_ice, plus cloud_any (= contaminated | filled). NaN -> nodata.
+
+    When `coherence_min_neighbors` > 0, applies the N-adjacent spatial-coherence
+    filter (PDF Part A1) to cloud_any: isolated cloudy pixels (coastline false
+    alarms) are dropped and reclassified as clear, so the PRESENCE number is not
+    inflated by speckle. Thin cirrus in coherent regions is still kept.
     """
     arr = np.asarray(codes, dtype="float64")
     enum = enum_dict or HERITAGE_ENUM
@@ -82,6 +103,13 @@ def categorize(codes, enum_dict=None):
         if cat is None:
             continue
         masks[cat] |= (arr == value)
+
+    if coherence_min_neighbors and coherence_min_neighbors > 0:
+        coherent = spatial_coherence(contaminated | filled, coherence_min_neighbors)
+        dropped = (contaminated | filled) & ~coherent
+        contaminated = contaminated & coherent
+        filled = filled & coherent
+        clear = clear | dropped            # isolated false cloud -> clear
 
     return {
         "nodata": nodata,

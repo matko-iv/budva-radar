@@ -25,6 +25,7 @@
     SEVERE_DBZ: 50.0,
     EXTREME_DBZ: 55.0,
     NOWCAST_MIN_LIFETIME_MIN: 15.0,
+    VIL_RAIN_FLOOR: 0.5,
     NOWCAST_REACH_BUFFER_KM: 5.0,
     NOWCAST_MAX_SPEED_KMH: 120.0,
     NOWCAST_SPEED_FACTORS: [0.8, 0.9, 1.0, 1.1, 1.2],
@@ -41,7 +42,18 @@
 
   var rad = function (d) { return d * Math.PI / 180.0; };
   var round3 = function (x) { return Math.round(x * 1000) / 1000; };
+  var round2 = function (x) { return Math.round(x * 100) / 100; };
   var round1 = function (x) { return Math.round(x * 10) / 10; };
+
+  // nowcast.closest_point_of_approach — time + miss distance of the closest
+  // approach of a cell (relative position rx,ry; velocity vx,vy) to a fixed
+  // point. tCpa <= 0 => closest approach in the PAST (receding). (PDF Part E)
+  function closestPointOfApproach(rx, ry, vx, vy) {
+    var vv = vx * vx + vy * vy;
+    if (vv <= 1e-12) return [0.0, Math.hypot(rx, ry)];
+    var tCpa = -(rx * vx + ry * vy) / vv;
+    return [tCpa, Math.hypot(rx + vx * tCpa, ry + vy * tCpa)];
+  }
 
   // colormap.classify_intensity
   function classifyIntensity(dbz) {
@@ -66,7 +78,16 @@
   }
 
   // nowcast._lifetime_min — survival timescale (min); null = survives the window.
+  // Prefers the 3-D VIL trend (PDF C2/B2) when the cell carries a volume column,
+  // else falls back to the 2-D dBZ trend.
   function lifetimeMin(cell) {
+    var vilSlope = cell.vil_trend_per_min;
+    var vilNow = cell.vil_kg_m2;
+    if (vilSlope != null && vilNow != null) {
+      if (vilSlope >= -1e-4) return null;
+      var headV = Math.max(parseFloat(vilNow) - C.VIL_RAIN_FLOOR, 0.0);
+      return Math.max(headV / Math.abs(vilSlope), C.NOWCAST_MIN_LIFETIME_MIN);
+    }
     var slope = cell.dbz_trend_per_min;
     if (slope === null || slope === undefined || slope >= -1e-3) return null;
     var head = Math.max(cell.max_dbz - C.RAIN_DBZ_THRESHOLD, 0.0);
@@ -249,11 +270,37 @@
     // nowcast.py; domA.edge_km is already relative to the assessed point).
     var pLead = agg[String(C.APPROACH_LEAD_MIN)];
     if (pLead === undefined) pLead = pRain;
+
+    // CPA classification of the dominant cell (PDF Part E): HIT / BYPASS /
+    // RECEDING from its deterministic velocity vector, relative to the point.
+    var kx2 = 111.32 * Math.cos(rad(latP));
+    var dxe = (domCell.lon - lonP) * kx2;
+    var dyn = (domCell.lat - latP) * 110.57;
+    var domEdge = Math.max(0.0, Math.hypot(dxe, dyn) - domCell.equiv_diam_km / 2.0);
+    var reach = domCell.equiv_diam_km / 2.0 + C.NOWCAST_REACH_BUFFER_KM;
+    var spd = domCell.speed_kmh, ddir = domCell.direction_deg;
+    var classification = null, tCpa = null, miss = null;
+    if (domEdge <= 0.0) {
+      classification = 'HIT';
+    } else if (spd != null && ddir != null
+               && Math.min(parseFloat(spd) || 0.0, C.NOWCAST_MAX_SPEED_KMH) >= 1.0) {
+      var v2 = Math.min(parseFloat(spd), C.NOWCAST_MAX_SPEED_KMH) / 60.0;
+      var cpa = closestPointOfApproach(dxe, dyn, v2 * Math.sin(rad(ddir)), v2 * Math.cos(rad(ddir)));
+      tCpa = cpa[0]; miss = cpa[1];
+      if (tCpa <= 0.0) classification = 'RECEDING';
+      else if (miss <= reach) classification = 'HIT';
+      else classification = 'BYPASS';
+    }
+    dominant.classification = classification;
+    dominant.t_cpa_min = tCpa === null ? null : round1(tCpa);
+    dominant.miss_km = miss === null ? null : round2(miss);
+
     return {
       p_rain: pRain,
       eta_minutes: domA.eta_min,
       n_cells_considered: per.length,
       approaching: pLead >= C.P_APPROACH_THRESHOLD && domA.edge_km <= C.APPROACH_MAX_DIST_KM,
+      bypassing: classification === 'BYPASS',
       dominant: dominant,
       p_by_lead: agg,
     };
@@ -262,6 +309,7 @@
   return {
     arrivalNowcast: arrivalNowcast,
     cellArrival: cellArrival,
+    closestPointOfApproach: closestPointOfApproach,
     lifetimeMin: lifetimeMin,
     classifyIntensity: classifyIntensity,
     bearingToCardinal: bearingToCardinal,

@@ -78,8 +78,11 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
     latest_path = frames[-1]
     latest_rgb = _load_rgb(latest_path)
     
-    # 1. Global motion vector (from motion.py)
+    # 1. Global motion vector (from motion.py) + the block/TREC dense motion
+    # field (PDF Part B1): the single global vector assumes rigid-block motion;
+    # the field captures differential motion/growth for advection.
     motion_info = None
+    motion_field = None
     if len(frames) >= 2:
         prev_path = frames[-2]
         try:
@@ -94,6 +97,10 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
                 motion_info["speed_kmh"] = motion.estimate_kmh_from_motion(motion_info, dt_min)
                 conf = motion_info.get("confidence", 0) or 0
                 motion_info["confidence_band"] = "high" if conf >= config.MOTION_MIN_CORRELATION else "low"
+            try:
+                motion_field = motion.motion_field(prev_rgb, latest_rgb, source_id)
+            except Exception as fe:
+                print(f"  [{source_id}] motion field failed: {fe}")
         except Exception as e:
             motion_info = {"error": str(e)}
 
@@ -112,9 +119,23 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
             print(f"  [{source_id}] ORD unavailable, PNG fallback: {e}")
 
     # 2. STAGE 2: Object Extraction & ring sampling (ORD raw-dBZ or PNG colours)
+    ord_volume = None
     if ord_grid is not None:
         data_source = "ord_pvol"
         current_cells = ord_mod.cells_from_grid(ord_grid, location["lat"], location["lon"])
+        # Per-cell full-volume products (PDF C2/B2) attached BEFORE tracking, so
+        # update_summaries can compute the VIL trend across frames. One volume
+        # read, reused by STAGE 4b for the Budva column.
+        try:
+            from radar import volume as volume_mod
+            ord_volume = volume_mod.read_volume(vol_path)
+            for c in current_cells:
+                prof = volume_mod.column_profile_at(ord_volume, c["lat"], c["lon"])
+                prod = volume_mod.column_products(prof["heights_m"], prof["dbz"])
+                c["vil_kg_m2"] = prod["vil_kg_m2"]
+                c["echo_top_m"] = prod["echo_top_m"]
+        except Exception as e:
+            print(f"  [{source_id}] per-cell volume products failed: {e}")
         try:
             rings = ord_mod.sample_rings(ord_grid, location["lat"], location["lon"], radii_km)
         except Exception as e:
@@ -192,6 +213,36 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         except Exception as e:
             print(f"  [{source_id}] VRADH rotation check failed: {e}")
 
+    # STAGE 4b: full-volume column products over the location (PDF Part C2/C1).
+    # VIL / 18-dBZ echo-top / VIL-density from ALL sweeps, the ZDR-column updraft
+    # proxy, and the surface-rain confidence cue — the lowest beam is ~2.5 km up
+    # over Budva at 130 km, so an aloft echo is NOT guaranteed to reach ground.
+    # Purely additive (shipped under source.volume); the verdict is untouched.
+    volume_products = None
+    if ord_grid is not None and ord_volume is not None:
+        try:
+            from radar import volume as volume_mod
+            vol = ord_volume
+            prof = volume_mod.column_profile_at(vol, location["lat"], location["lon"])
+            prod = volume_mod.column_products(prof["heights_m"], prof["dbz"])
+            fl_m = float(getattr(config, "FREEZING_LEVEL_M", 3500.0))
+            zdr_col = volume_mod.zdr_column(prof["heights_m"], prof["zdr"],
+                                            prof["dbz"], fl_m)
+            low_beam = prof["heights_m"][0] if prof["heights_m"] else None
+            srconf = volume_mod.surface_rain_confidence(low_beam)
+            volume_products = {
+                **prod,
+                "n_levels": len(prof["heights_m"]),
+                "lowest_beam_m": low_beam,
+                "ground_range_km": prof["ground_range_km"],
+                "zdr_column": zdr_col,
+                "surface_rain_confidence": srconf["confidence"],
+                "surface_rain_confidence_reason": srconf["reason"],
+                "freezing_level_m": fl_m,
+            }
+        except Exception as e:
+            print(f"  [{source_id}] volume products failed: {e}")
+
     # Convert probabilistic nowcast into Legacy states to satisfy the UI/Verification.
     # IMPORTANT: the cell detector finds cells across the WHOLE image — for the
     # OPERA composite that is all of Europe — so a storm 3000 km away must NOT
@@ -204,6 +255,25 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
               if c.get("edge_km") is not None and c["edge_km"] <= VICINITY_MAX_KM]
     nearest = min(nearby, key=lambda c: c["edge_km"]) if nearby else None
     dom = nowcast_results["dominant"]
+
+    # Coastal-arrival score for the dominant cell (PDF Part C3): combine the
+    # base arrival probability with the growth/decay trend and the Dinaric-ridge
+    # dissipation filter (cells that must descend the seaward slope are
+    # down-weighted). Additive; shipped under nowcast_details.coastal_arrival.
+    if dom:
+        from radar import coastal as coastal_mod
+        dom_summ = next((s for s in cell_summaries
+                         if s.get("id") == dom.get("track_id")), None)
+        descends = coastal_mod.descends_seaward(
+            dom.get("bearing_deg"),
+            dom_summ.get("direction_deg") if dom_summ else None)
+        ca = coastal_mod.coastal_arrival_score(
+            base_prob=nowcast_results.get("p_rain", 0.0),
+            vil_trend_per_min=dom_summ.get("vil_trend_per_min") if dom_summ else None,
+            dbz_trend_per_min=dom_summ.get("dbz_trend_per_min") if dom_summ else None,
+            descends_ridge=descends)
+        ca["descends_seaward"] = descends
+        nowcast_results["coastal_arrival"] = ca
 
     if nowcast_results["approaching"] and dom:
         # the arriving cell drives the headline numbers
@@ -265,6 +335,8 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
                 "direction_deg": s.get("direction_deg"),
                 "dbz_trend_per_min": s.get("dbz_trend_per_min"),
                 "trend": s.get("trend"),
+                "vil_kg_m2": c.get("vil_kg_m2"),
+                "vil_trend_per_min": s.get("vil_trend_per_min"),
             })
 
     return {
@@ -274,12 +346,14 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         "frame_timestamp": frame_ts,
         "data_source": data_source,
         "motion": motion_info,
+        "motion_field": motion_field,
         "approaching": approaching_legacy,
         "storm_mode": storm_mode,
         "scenario": scenario,
         "zr_scenario": "convective" if storm_mode["n_convective"] > 0 else "stratiform",
         "rings": rings,
         "cells": cells_catalog,
+        "volume": volume_products,
     }
 
 

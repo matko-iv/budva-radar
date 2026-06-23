@@ -132,6 +132,26 @@ NOWCAST_DIR_SPREAD_CONVECTIVE_DEG = 15.0 # Erratic movement base spread
 NOWCAST_DIR_SPREAD_STRATIFORM_DEG = 5.0   # Steady movement base spread
 NOWCAST_DIR_GROWTH_DEG_PER_MIN = 0.1     # Cone widening factor over time
 
+# Full-volume radar products (PDF Part C2/C1, radar/volume.py). Environmental
+# 0 C (freezing) level used as the base of the ZDR-column updraft proxy. This is
+# a SEASONAL placeholder (Adriatic summer ~3.5-4 km, winter ~1-2 km); ideally
+# fed from NWP. ZDR columns are only the part of ZDR>=1 dB ABOVE this level.
+FREEZING_LEVEL_M = 3500.0
+
+# VIL (kg/m2) below which a column carries negligible rain — the floor the
+# survival model decays a collapsing cell's VIL toward (PDF Part C2/B2). Used as
+# the 3-D analogue of RAIN_DBZ_THRESHOLD in nowcast._lifetime_min.
+VIL_RAIN_FLOOR = 0.5
+
+# Coastal-arrival score (PDF Part C3, radar/coastal.py). Budva-specific: open
+# sea lies to the SW (~225 deg), the Dinaric/Rumija ridge inland to the NE. A
+# cell that is inland AND steered seaward must DESCEND the seaward slope, where
+# subsidence warming/drying promotes dissipation -> down-weight its arrival.
+# These are physically-motivated starting points to TUNE against verification,
+# not validated local climatology.
+COASTAL_SEAWARD_AZIMUTH_DEG = 225.0   # direction from Budva toward open sea
+COASTAL_RIDGE_DISSIPATION = 0.5       # arrival multiplier for seaward-descending cells
+
 # ============================================================================
 # Clouds (EUMETSAT satellite cloud-cover module) — parallel to the radar module
 # ============================================================================
@@ -203,6 +223,12 @@ CLOUDS = {
     # otherwise partly.
     "frac_clear_max": 0.20,
     "frac_overcast_min": 0.80,
+
+    # N-adjacent spatial-coherence on the CLM presence mask (PDF Part A1): a
+    # cloudy pixel is only counted if >= this many of its 8 neighbours are also
+    # cloudy. Drops isolated coastline false-cloud (Budva is a coastal pixel —
+    # the textbook worst case) so PRESENCE isn't inflated by speckle. 0 = off.
+    "coherence_min_neighbors": 2,
 
     # Cloud-top height bands (m): low <2 km, mid 2-6 km, high >6 km (WMO-ish).
     "height_low_max_m": 2000.0,

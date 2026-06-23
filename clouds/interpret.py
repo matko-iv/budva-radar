@@ -125,7 +125,7 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
         parallax_km = round(calibration.haversine_km(lat, lon, s_lat, s_lon), 1)
     cot_med = field.sample_cloudy("cot", s_lat, s_lon, now_radius, reducer="median")
 
-    sun_state = transmittance = None
+    sun_state = transmittance = cmf_diag = None
     if not is_night:
         sun_state = solar.sun_state(
             cot_med, sza if sza is not None else 0.0, phase,
@@ -134,6 +134,10 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
             ice_factor=float(cfg.get("sun_ice_factor", solar.ICE_FORWARD_SCATTER)))
         transmittance = solar.direct_transmittance(
             cot_med or 0.0, sza if sza is not None else 0.0)
+        # Cloud Modification Factor (PDF Part A2) — DIAGNOSTIC ONLY: the sun/shade
+        # verdict stays on the Beer-Lambert sun_state above until the published
+        # CMF fit is verified (see solar.cmf docstring).
+        cmf_diag = solar.cmf(cot_med or 0.0, sza if sza is not None else 0.0)
 
     thin_veil = bool(frac is not None and frac > cfg["frac_clear_max"]
                      and sky_cover is not None and sky_cover <= cfg["frac_clear_max"])
@@ -174,6 +178,7 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
         "isNight": is_night,
         "sunState": sun_state,
         "sunTransmittance": None if transmittance is None else round(transmittance, 3),
+        "cmfDiag": None if cmf_diag is None else round(cmf_diag, 3),
         "cotMedian": None if cot_med is None else round(cot_med, 1),
         "satelliteZenithDeg": sat_zen,
         "parallaxShiftKm": parallax_km,

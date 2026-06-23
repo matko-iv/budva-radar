@@ -127,6 +127,108 @@ def compute_motion_vector(rgb_prev, rgb_curr, source, lat_c, lon_c,
     }
 
 
+# ---------------------------------------------------------------------------
+# Block / TREC dense motion field (PDF Part B1)
+# ---------------------------------------------------------------------------
+# A single global cross-correlation vector assumes the whole scene moves as one
+# rigid block — false whenever there is differential motion, growth, or rotation.
+# TREC (Tracking Radar Echoes by Correlation) tiles the field and correlates each
+# block independently, yielding a LOCAL motion vector per tile. `field_median`
+# gives a robust scene motion (outlier-resistant) for consumers that still want a
+# single vector. Dependency-free: scipy.correlate2d, the repo's existing tool.
+
+def _best_shift(prev, curr, max_shift_px):
+    """Best (dx, dy) pixel shift of `prev`->`curr` by cross-correlation, with the
+    peak-correlation confidence. dx>0 = east, dy>0 = south (image y points down).
+    None when either patch has no signal."""
+    if prev.sum() < 1e-9 or curr.sum() < 1e-9:
+        return None
+    corr = correlate2d(curr, prev, mode="full", boundary="fill", fillvalue=0)
+    cy_c, cx_c = corr.shape[0] // 2, corr.shape[1] // 2
+    sub = corr[cy_c - max_shift_px: cy_c + max_shift_px + 1,
+               cx_c - max_shift_px: cx_c + max_shift_px + 1]
+    dy_idx, dx_idx = np.unravel_index(int(np.argmax(sub)), sub.shape)
+    dx = int(dx_idx - max_shift_px)
+    dy = int(dy_idx - max_shift_px)
+    norm = np.sqrt((prev ** 2).sum() * (curr ** 2).sum())
+    conf = float(sub.max() / norm) if norm > 0 else 0.0
+    return dx, dy, conf
+
+
+def trec_field(prev, curr, block_px=64, max_shift_px=20, min_signal=0.5,
+               min_conf=0.2):
+    """Dense/sparse TREC motion field over two intensity grids: a list of
+    ``{row, col, dx, dy, confidence}`` (block-centre pixel + local shift) for
+    every tile that has enough signal and a confident match."""
+    H, W = prev.shape
+    half = block_px // 2
+    vectors = []
+    for r0 in range(0, H - block_px + 1, block_px):
+        for c0 in range(0, W - block_px + 1, block_px):
+            bp = prev[r0:r0 + block_px, c0:c0 + block_px]
+            bc = curr[r0:r0 + block_px, c0:c0 + block_px]
+            if bp.sum() < min_signal or bc.sum() < min_signal:
+                continue
+            res = _best_shift(bp, bc, max_shift_px)
+            if res is None:
+                continue
+            dx, dy, conf = res
+            if conf < min_conf:
+                continue
+            vectors.append({"row": r0 + half, "col": c0 + half,
+                            "dx": dx, "dy": dy, "confidence": round(conf, 3)})
+    return vectors
+
+
+def field_median(vectors):
+    """Outlier-robust scene motion from a TREC field: component-wise median of
+    the block vectors. ``None`` for an empty field."""
+    if not vectors:
+        return None
+    dxs = [v["dx"] for v in vectors]
+    dys = [v["dy"] for v in vectors]
+    return {"dx": float(np.median(dxs)), "dy": float(np.median(dys)),
+            "n": len(vectors)}
+
+
+def motion_field(rgb_prev, rgb_curr, source, block_km=80, max_shift_px=20):
+    """Geo-located TREC motion field from two RGB frames: each block vector is
+    annotated with its lat/lon and compass direction/speed, ready to advect a
+    field with DIFFERENTIAL motion (PDF Part B1). Returns
+    ``{vectors:[...], median:{dx,dy,n}, px_per_km, block_px}`` or None."""
+    cal = calibration.get_calibration(source)
+    cx, cy = cal.latlon_to_pixel(0.0, 0.0)  # placeholder; px scale below
+    # pixel scale from 1 deg latitude at the frame centre
+    H, W = rgb_prev.shape[:2]
+    clat, clon = cal.pixel_to_latlon(W / 2.0, H / 2.0)
+    bx, by = cal.latlon_to_pixel(clat, clon)
+    px_n, py_n = cal.latlon_to_pixel(clat + 1.0, clon)
+    px_per_km = float(np.hypot(px_n - bx, py_n - by) / 111.32)
+    block_px = max(24, int(block_km * px_per_km))
+
+    g_prev = _to_intensity_grid(rgb_prev, source)
+    g_curr = _to_intensity_grid(rgb_curr, source)
+    vecs = trec_field(g_prev, g_curr, block_px=block_px, max_shift_px=max_shift_px)
+    out = []
+    for v in vecs:
+        lat, lon = cal.pixel_to_latlon(v["col"], v["row"])
+        dx, dy = v["dx"], v["dy"]
+        direction = (None if dx == 0 and dy == 0
+                     else float((np.degrees(np.arctan2(dx, -dy)) + 360) % 360))
+        out.append({
+            "lat": round(lat, 4), "lon": round(lon, 4),
+            "dx_px": dx, "dy_px": dy, "confidence": v["confidence"],
+            "speed_px_per_frame": round(float(np.hypot(dx, dy)), 2),
+            "direction_deg": None if direction is None else round(direction, 1),
+            "direction_cardinal": (calibration.bearing_to_cardinal(direction)
+                                   if direction is not None else None),
+        })
+    if not out:
+        return None
+    return {"vectors": out, "median": field_median(vecs),
+            "px_per_km": round(px_per_km, 3), "block_px": block_px}
+
+
 def estimate_kmh_from_motion(motion_dict, frame_dt_minutes):
     """Convert px/frame to km/h using calibration and frame interval (minutes)."""
     if motion_dict is None:

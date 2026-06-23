@@ -19,6 +19,10 @@ import math
 SKALA_VICINITY_KM = 20
 SEVERE_DBZ = 50
 VICINITY_MAX_KM = 150  # mirrors skala-sections.js bound (max SAMPLE_RADII_KM)
+# Honest expectations (PDF Part C4/E): deterministic cell-arrival skill is only
+# ~30-60 min, so an ETA beyond this is flagged probabilistic, never shown as a
+# single hard number. Mirrored in docs/skala-text.js.
+DETERMINISTIC_ETA_MAX_MIN = 30
 
 STATE_META = {
     "SEVERE":      {"cls": "severe", "bg": "#6a1b9a", "fg": "#fff",    "head": "SEVERE STORM"},
@@ -67,6 +71,16 @@ def _smjer_sr(cardinal):
     return _CARD_SR.get(cardinal, cardinal) if cardinal else ""
 
 
+def _eta_text(eta, prob=" (probabilistic)"):
+    """ETA clause, flagging anything beyond the deterministic skill horizon as
+    probabilistic (PDF Part C4/E). Empty string when there is no ETA."""
+    if eta is None:
+        return ""
+    r = _round(eta)
+    tail = prob if r > DETERMINISTIC_ETA_MAX_MIN else ""
+    return f", ETA ~{r} min{tail}"
+
+
 def _fmt_km(km):
     if km is None:
         return "?"
@@ -103,12 +117,17 @@ def facts_from_source(src, loc_name):
     if dom_in_range:
         threat = {"dbz": dom.get("max_dbz"), "km": dom.get("dist_km"),
                   "cardinal": dom.get("bearing_cardinal"),
-                  "eta": dom.get("eta_minutes"), "label": dom.get("intensity_label")}
+                  "eta": dom.get("eta_minutes"), "label": dom.get("intensity_label"),
+                  # CPA classification of the dominant cell (PDF Part E): SEVERE at
+                  # the point is gated on this being a HIT, so a distant cell that
+                  # BYPASSes or is RECEDING never raises a point severe alert.
+                  "cpaClass": dom.get("classification")}
     elif app.get("closest_rain_km") is not None and app["closest_rain_km"] <= VICINITY_MAX_KM:
         threat = {"dbz": app.get("closest_rain_intensity_dbz"), "km": app.get("closest_rain_km"),
                   "cardinal": app.get("closest_rain_bearing_cardinal"),
                   "eta": app.get("eta_minutes"),
-                  "label": app.get("closest_rain_intensity_label")}
+                  "label": app.get("closest_rain_intensity_label"),
+                  "cpaClass": None}
     else:
         threat = None
 
@@ -141,8 +160,14 @@ def interpret(facts):
     where = f"~{_fmt_km(km)} km" + (f" {facts['cardinal']}" if facts.get("cardinal") else "")
 
     threat = facts.get("threat")
+    # Severe-APPROACHING is gated on the dominant cell being a CPA HIT (PDF Part
+    # E): a severe cell that BYPASSes or is RECEDING is a regional event, not a
+    # point alert — this is what prevents the distant-cell false-trigger that the
+    # JS interpreter had removed the SEVERE state for. Overhead severe (raining
+    # here, dbz>=SEVERE) is a HIT by definition and needs no extra gate.
     severe_approaching = bool(facts.get("approaching")) and bool(
-        threat and threat.get("dbz") is not None and threat["dbz"] >= SEVERE_DBZ)
+        threat and threat.get("dbz") is not None and threat["dbz"] >= SEVERE_DBZ
+        and threat.get("cpaClass") == "HIT")
     severe_here = bool(facts.get("rainAtLocation")) and dbz is not None and dbz >= SEVERE_DBZ
 
     if severe_here:
@@ -153,7 +178,7 @@ def interpret(facts):
         narrative = f"Raining now — {intensity}{dbz_txt}."
     elif severe_approaching:
         state = "SEVERE"
-        t_eta = f", ETA ~{_round(threat['eta'])} min" if threat.get("eta") is not None else ""
+        t_eta = _eta_text(threat.get("eta"))
         t_where = f"~{_fmt_km(threat.get('km'))} km" + (
             f" {threat['cardinal']}" if threat.get("cardinal") else "")
         t_dbz = f" ({_round(threat['dbz'])} dBZ)" if threat.get("dbz") is not None else ""
@@ -161,7 +186,7 @@ def interpret(facts):
         narrative = f"Severe storm approaching — {t_label}{t_dbz}, {t_where}{t_eta}."
     elif facts.get("approaching"):
         state = "APPROACHING"
-        eta = f", ETA ~{_round(facts['eta'])} min" if facts.get("eta") is not None else ""
+        eta = _eta_text(facts.get("eta"))
         narrative = f"Rain approaching — {intensity}, {where}{eta}."
     elif facts.get("anyRain") and km is not None and km <= SKALA_VICINITY_KM:
         state = "BYPASSING"
@@ -206,14 +231,14 @@ def serbian_line(facts, res):
         return {"text": f"pada kiša u Budvi — {_intenzitet_sr(dbz)}",
                 "bold": "pada kiša u Budvi", "color": "#bf360c", "weight": 700}
     if severe_approaching and threat:
-        t_eta = f", ETA ~{_round(threat['eta'])} min" if threat.get("eta") is not None else ""
+        t_eta = _eta_text(threat.get("eta"), prob=" (procjena)")
         t_dbz = f" ({_round(threat['dbz'])} dBZ)" if threat.get("dbz") is not None else ""
         text = (f"jako nevrijeme se približava — {_intenzitet_sr(threat.get('dbz'))}{t_dbz}, "
                 f"~{_fmt_km(threat.get('km'))} km {_smjer_sr(threat.get('cardinal'))}{t_eta}")
         return {"text": text, "bold": "jako nevrijeme se približava",
                 "color": "#6a1b9a", "weight": 700}
     if state == "APPROACHING":
-        eta = f", ETA ~{_round(facts['eta'])} min" if facts.get("eta") is not None else ""
+        eta = _eta_text(facts.get("eta"), prob=" (procjena)")
         text = (f"kiša se približava — {_intenzitet_sr(dbz)}, "
                 f"~{_fmt_km(km)} km {_smjer_sr(facts.get('cardinal'))}{eta}")
         return {"text": text, "bold": "kiša se približava",

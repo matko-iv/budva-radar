@@ -67,6 +67,8 @@ def catalog_from_summaries(summaries):
             "cell_type": c["cell_type"], "speed_kmh": s.get("speed_kmh"),
             "direction_deg": s.get("direction_deg"),
             "dbz_trend_per_min": s.get("dbz_trend_per_min"), "trend": s.get("trend"),
+            "vil_kg_m2": c.get("vil_kg_m2"),
+            "vil_trend_per_min": s.get("vil_trend_per_min"),
         })
     return cat
 
@@ -101,6 +103,9 @@ def compare(py, js, label, fails, check_geometry=True, dist_rel_tol=0.01):
         bad(f"eta {py['eta_minutes']} vs {js['eta_minutes']}")
     if bool(py["approaching"]) != bool(js["approaching"]):
         bad(f"approaching {py['approaching']} vs {js['approaching']}")
+    # CPA classification (PDF Part E) — decision-relevant, no rounding ambiguity.
+    if bool(py.get("bypassing")) != bool(js.get("bypassing")):
+        bad(f"bypassing {py.get('bypassing')} vs {js.get('bypassing')}")
     if py["n_cells_considered"] != js["n_cells_considered"]:
         bad(f"n_cells {py['n_cells_considered']} vs {js['n_cells_considered']}")
     dpy, djs = py.get("dominant"), js.get("dominant")
@@ -116,7 +121,8 @@ def compare(py, js, label, fails, check_geometry=True, dist_rel_tol=0.01):
     if not _approx(dpy["eta_minutes"], djs["eta_minutes"], TOL_ETA):
         bad(f"dom.eta {dpy['eta_minutes']} vs {djs['eta_minutes']}")
     # cell-intrinsic properties (independent of assessed point)
-    for key in ("intensity_label", "cell_type", "trend", "direction_cardinal"):
+    for key in ("intensity_label", "cell_type", "trend", "direction_cardinal",
+                "classification"):
         if dpy.get(key) != djs.get(key):
             bad(f"dom.{key} {dpy.get(key)!r} vs {djs.get(key)!r}")
     if check_geometry:
@@ -130,7 +136,7 @@ def compare(py, js, label, fails, check_geometry=True, dist_rel_tol=0.01):
 
 
 def synth(cid, clat, clon, equiv, max_dbz, cell_type, speed, direction,
-          dbz_trend, trend, lat_c, lon_c):
+          dbz_trend, trend, lat_c, lon_c, vil_kg_m2=None, vil_trend_per_min=None):
     """Build a (summary, catalog) pair consistent with how the pipeline shapes
     cells, so Python arrival_nowcast and the JS catalog see identical geometry."""
     kx = 111.32 * math.cos(math.radians(lat_c))
@@ -143,12 +149,15 @@ def synth(cid, clat, clon, equiv, max_dbz, cell_type, speed, direction,
     dir_card = None if direction is None else calibration.bearing_to_cardinal(direction)
     latest = {"lat": clat, "lon": clon, "equiv_diam_km": equiv, "max_dbz": max_dbz,
               "cell_type": cell_type, "edge_km": edge, "contains_location": edge <= 0,
-              "bearing_deg": bearing, "bearing_cardinal": calibration.bearing_to_cardinal(bearing)}
+              "bearing_deg": bearing, "bearing_cardinal": calibration.bearing_to_cardinal(bearing),
+              "vil_kg_m2": vil_kg_m2}
     summ = {"id": cid, "latest": latest, "speed_kmh": speed, "direction_deg": direction,
-            "direction_cardinal": dir_card, "dbz_trend_per_min": dbz_trend, "trend": trend}
+            "direction_cardinal": dir_card, "dbz_trend_per_min": dbz_trend, "trend": trend,
+            "vil_trend_per_min": vil_trend_per_min}
     cat = {"id": cid, "lat": clat, "lon": clon, "equiv_diam_km": equiv,
            "max_dbz": max_dbz, "cell_type": cell_type, "speed_kmh": speed,
-           "direction_deg": direction, "dbz_trend_per_min": dbz_trend, "trend": trend}
+           "direction_deg": direction, "dbz_trend_per_min": dbz_trend, "trend": trend,
+           "vil_kg_m2": vil_kg_m2, "vil_trend_per_min": vil_trend_per_min}
     return summ, cat
 
 
@@ -197,11 +206,20 @@ def main():
         ("passed01", LAT, LON + 0.0971, 10.0, 36.0, "convective", 40.0, 90.0, -0.5, "decaying"),
         # mirror-image control: edge ~3 km W, moving E TOWARD the point -> p 1
         ("immin001", LAT, LON - 0.0971, 10.0, 36.0, "convective", 40.0, 90.0, 0.0, "steady"),
+        # tangential bypass: ~40 km E, ~8 km S, moving due north -> the central
+        # track misses by ~40 km (BYPASS); exercises the CPA classifier (Part E).
+        ("byp00001", LAT - 0.0723, LON + 0.4854, 10.0, 46.0, "convective", 55.0, 0.0, 0.0, "steady"),
     ]
     for (cid, clat, clon, eq, dbz, ct, sp, di, tr, trend) in specs:
         s, c = synth(cid, clat, clon, eq, dbz, ct, sp, di, tr, trend, LAT, LON)
         summ.append(s)
         cat.append(c)
+    # VIL-trend cell (PDF C2/B2): carries a volume column, so the survival model
+    # uses the FALLING VIL (not the flat dBZ) -> exercises the 3-D path in parity.
+    sv, cv = synth("vil00001", LAT + 0.50, LON, 14.0, 44.0, "convective", 50.0,
+                   180.0, 0.0, "steady", LAT, LON, vil_kg_m2=6.0, vil_trend_per_min=-0.6)
+    summ.append(sv)
+    cat.append(cv)
     print(f"Part B: {len(summ)} synthetic cells")
     py_b = nowcast.arrival_nowcast(summ, LAT, LON)
     compare(py_b, run_js(cat, LAT, LON), "synth@budva", fails)

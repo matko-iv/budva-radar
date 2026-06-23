@@ -245,6 +245,6 @@ def cloud_verdict(status):
                    "cloudAtLocation", "approaching", "clearing", "etaMin",
                    "heightBand", "thickness", "phase", "cloudTypeLabel",
                    "cloudTopHeightM", "cloudTopTempC", "szaDeg", "isNight",
-                   "sunState", "sunTransmittance", "cotMedian",
+                   "sunState", "sunTransmittance", "cmfDiag", "cotMedian",
                    "satelliteZenithDeg", "parallaxShiftKm")},
     }

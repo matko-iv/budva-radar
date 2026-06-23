@@ -75,6 +75,35 @@ def test_enum_from_flag_attrs():
     assert enum == FILE_ENUM, enum
 
 
+def test_spatial_coherence_drops_isolated_pixel():
+    # A lone cloudy pixel (the textbook coastline false alarm) has 0 cloudy
+    # neighbours -> dropped by the N-adjacent test (PDF Part A1).
+    m = np.zeros((5, 5), dtype=bool)
+    m[2, 2] = True
+    out = clm.spatial_coherence(m, min_neighbors=2)
+    assert not out.any(), "isolated cloudy pixel should be dropped"
+
+
+def test_spatial_coherence_keeps_solid_block():
+    m = np.zeros((6, 6), dtype=bool)
+    m[1:4, 1:4] = True                      # 3x3 solid block
+    out = clm.spatial_coherence(m, min_neighbors=2)
+    assert out[2, 2], "centre of a solid block must survive"
+    assert out.sum() >= 5
+
+
+def test_categorize_coherence_despeckles_cloud_any():
+    codes = np.full((6, 6), 1.0)            # all cloud_free (heritage 1)
+    codes[0, 0] = 2.0                       # isolated contaminated (coast false alarm)
+    codes[2:4, 2:4] = 3.0                   # solid 2x2 filled block
+    base = clm.categorize(codes)
+    assert bool(base["cloud_any"][0, 0]) is True   # counted before coherence
+    out = clm.categorize(codes, coherence_min_neighbors=2)
+    assert bool(out["cloud_any"][0, 0]) is False, "isolated coastal pixel kept"
+    assert bool(out["clear"][0, 0]) is True, "dropped pixel should become clear"
+    assert bool(out["cloud_any"][2, 2]) is True, "solid block must survive"
+
+
 def main():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     fails = []

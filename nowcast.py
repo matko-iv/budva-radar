@@ -43,12 +43,50 @@ LEAD_BUCKETS = (15, 30, 60, 120)
 
 
 # ---------------------------------------------------------------------------
+# Closest point of approach (PDF Part E)
+# ---------------------------------------------------------------------------
+def closest_point_of_approach(rx, ry, vx, vy):
+    """Time and miss distance of the closest approach of a cell to a fixed point.
+
+    `rx, ry` is the cell position RELATIVE to the point (km, east/north) and
+    `vx, vy` is the cell velocity (km/min, east/north); the point is stationary.
+
+      t_cpa = -(r0 . v) / (v . v)      (set 0 when the cell is ~stationary)
+      d_min = | r0 + v * t_cpa |       (the miss distance at closest approach)
+
+    Returns ``(t_cpa, d_min)``. ``t_cpa <= 0`` means the closest approach is in
+    the PAST — the cell is already receding (TCAS tau / storm-track projection).
+    This is the exact, sign-correct replacement for the instantaneous range-rate
+    test, so a tangential pass (near-zero range rate, large miss) is no longer
+    mistaken for an on-location hit.
+    """
+    vv = vx * vx + vy * vy
+    if vv <= 1e-12:                       # stationary -> closest approach is now
+        return 0.0, math.hypot(rx, ry)
+    t_cpa = -(rx * vx + ry * vy) / vv
+    mx = rx + vx * t_cpa
+    my = ry + vy * t_cpa
+    return t_cpa, math.hypot(mx, my)
+
+
+# ---------------------------------------------------------------------------
 # Arrival probability
 # ---------------------------------------------------------------------------
 def _lifetime_min(summary, latest):
     """Survival timescale (min). None means 'steady/growing -> survives the
-    lead window'. For a decaying core: time for max_dBZ to fall to the rain
-    threshold at the observed decay rate (floored)."""
+    lead window'. For a decaying core: time to fall to a rain-bearing floor at
+    the observed decay rate (floored at NOWCAST_MIN_LIFETIME_MIN).
+
+    PREFERS the 3-D VIL trend (PDF Part C2/B2) — VIL tracks the mixed-phase
+    updraft far better than peak reflectivity — and falls back to the 2-D dBZ
+    trend when no full-volume column is available (PNG path / overshot cells)."""
+    vil_slope = summary.get("vil_trend_per_min")
+    vil_now = (latest or {}).get("vil_kg_m2")
+    if vil_slope is not None and vil_now is not None:
+        if vil_slope >= -1e-4:
+            return None                          # steady/intensifying -> survives
+        head = max(float(vil_now) - config.VIL_RAIN_FLOOR, 0.0)
+        return max(head / abs(vil_slope), config.NOWCAST_MIN_LIFETIME_MIN)
     slope = summary.get("dbz_trend_per_min")
     if slope is None or slope >= -1e-3:
         return None
@@ -237,12 +275,42 @@ def arrival_nowcast(summaries, lat_c, lon_c):
     dxe = (c["lon"] - lon_c) * kx
     dyn = (c["lat"] - lat_c) * 110.57
     dom_edge_pt = max(0.0, math.hypot(dxe, dyn) - c["equiv_diam_km"] / 2.0)
+
+    # Closest-point-of-approach classification of the dominant cell (PDF Part E):
+    # HIT / BYPASS / RECEDING from its DETERMINISTIC velocity vector, relative to
+    # the assessed point. This is the deterministic central trajectory — the
+    # probabilistic cone (p_rain) can still clip the point at the cone edges even
+    # when the central track BYPASSes, so the two are reported independently and
+    # the verdict reconciles them (BYPASS shown only when not approaching).
+    reach = c["equiv_diam_km"] / 2.0 + config.NOWCAST_REACH_BUFFER_KM
+    spd = dom_s.get("speed_kmh")
+    ddir = dom_s.get("direction_deg")
+    classification = None
+    t_cpa = miss = None
+    if dom_edge_pt <= 0.0:
+        classification = "HIT"                       # cell body over the point now
+    elif spd is not None and ddir is not None and float(spd or 0.0) >= 1.0:
+        v = min(float(spd), config.NOWCAST_MAX_SPEED_KMH) / 60.0   # km/min
+        vx = v * math.sin(math.radians(ddir))
+        vy = v * math.cos(math.radians(ddir))
+        t_cpa, miss = closest_point_of_approach(dxe, dyn, vx, vy)
+        if t_cpa <= 0.0:
+            classification = "RECEDING"
+        elif miss <= reach:
+            classification = "HIT"
+        else:
+            classification = "BYPASS"
+    dominant["classification"] = classification
+    dominant["t_cpa_min"] = round(t_cpa, 1) if t_cpa is not None else None
+    dominant["miss_km"] = round(miss, 2) if miss is not None else None
+
     return {
         "p_rain": p_rain,
         "eta_minutes": dom_a["eta_min"],
         "n_cells_considered": len(per),
         "approaching": bool(p_lead >= config.P_APPROACH_THRESHOLD
                             and dom_edge_pt <= config.APPROACH_MAX_DIST_KM),
+        "bypassing": classification == "BYPASS",
         "dominant": dominant,
         "p_by_lead": agg,
     }

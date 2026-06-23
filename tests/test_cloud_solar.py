@@ -85,6 +85,57 @@ def test_sun_state_night_returns_none():
     assert solar.sun_state(20.0, 85.0, phase="water") is None
 
 
+# --- Cloud Modification Factor (PDF Part A2; Papachristopoulou et al. 2024) ----
+# Implemented as a DIAGNOSTIC only (the verdict still uses Beer-Lambert sun_state)
+# because the published-fit coefficients, as transcribed, are degenerate. These
+# tests pin the documented functional LIMITS, which are reliable, not specific
+# mid-COT values (those need the typeset Eq.2 / Fig.2a to verify).
+
+def test_cmf_clear_sky_is_one():
+    # COT 0 (or None) -> CMF 1 (full clear-sky GHI). A reliable limit.
+    assert solar.cmf(0.0, 46.0) == 1.0
+    assert solar.cmf(None, 46.0) == 1.0
+
+
+def test_cmf_is_bounded_unit_interval():
+    for cot in (0.0, 0.5, 2.0, 5.0, 20.0, 100.0):
+        for sza in (0.0, 46.0, 70.0):
+            v = solar.cmf(cot, sza)
+            assert 0.0 <= v <= 1.0, f"CMF({cot},{sza})={v} out of [0,1]"
+
+
+def test_cmf_monotone_non_increasing_in_cot():
+    # Thicker cloud never lets MORE global irradiance through (CMF->0 as COT->inf).
+    sza = 46.0
+    prev = solar.cmf(0.0, sza)
+    for cot in (0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 50.0):
+        cur = solar.cmf(cot, sza)
+        assert cur <= prev + 1e-9, f"CMF not monotone at COT {cot}: {cur} > {prev}"
+        prev = cur
+
+
+# --- Sun-glint geometry (PDF Part A1) -----------------------------------------
+
+def test_solar_azimuth_noon_is_south():
+    # Summer-solstice ~solar noon over Budva: the sun is due south -> az ~180.
+    az = solar.solar_azimuth_deg(
+        datetime.datetime(2026, 6, 21, 10, 45, tzinfo=datetime.timezone.utc),
+        BUDVA_LAT, BUDVA_LON)
+    assert 170.0 < az < 190.0, f"solar azimuth {az:.1f} not ~south"
+
+
+def test_glint_angle_specular_is_small():
+    # Sensor on the specular reflection of the sun (VZA=SZA, view azimuth
+    # opposite the solar azimuth) -> glint angle ~0 (strong glint zone).
+    g = solar.glint_angle(40.0, 40.0, saa_deg=150.0, vaa_deg=330.0)
+    assert g < 5.0, f"specular glint angle {g:.1f} should be ~0"
+
+
+def test_glint_angle_away_from_specular_is_large():
+    g = solar.glint_angle(40.0, 40.0, saa_deg=150.0, vaa_deg=150.0)
+    assert g > 60.0, f"non-glint angle {g:.1f} should be large"
+
+
 def main():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     fails = []
