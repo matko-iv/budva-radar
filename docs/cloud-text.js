@@ -46,6 +46,11 @@
     return "partly";
   }
 
+  // By day, the sun genuinely getting through at the point (high CMF ->
+  // sunState "sunny") makes broken cloud read as a sunny headline, not "partly
+  // cloudy" (mirror clouds/verdict.py _sun_through; PDF Part A3).
+  function sunThrough(facts) { return !facts.isNight && facts.sunState === "sunny"; }
+
   function interpret(facts, params) {
     facts = facts || {}; var p = params || DEFAULTS;
     var loc = facts.locationName || "this location";
@@ -84,6 +89,10 @@
       } else if (level === "overcast") {
         state = "OVERCAST";
         narrative = "Overcast over " + loc + pctTxt + " — " + typ + tops + (night ? " (IR)" : "") + ".";
+      } else if (sunThrough(facts)) {
+        // broken/scattered cloud, but the sun gets through at the point
+        state = "CLEAR";
+        narrative = "Mostly sunny over " + loc + pctTxt + " — " + typ + ", sun gets through.";
       } else if (thin) {
         state = "PARTLY";
         narrative = night ? "Thin high cloud over " + loc + pctTxt + " (IR)."
@@ -118,6 +127,10 @@
         return { text: pt, bold: "tanak visoki oblak", color: "#f9a825", weight: 600 };
       }
       return { text: "djelimično oblačno nad Budvom" + pctTxt, bold: "djelimično oblačno nad Budvom", color: "#607d8b", weight: 600 };
+    }
+    var sky = skyCover(facts);
+    if (sunThrough(facts) && !facts.thinVeil && sky != null && sky > DEFAULTS.frac_clear_max) {
+      return { text: "pretežno sunčano nad Budvom — sunce probija" + pctTxt, bold: "pretežno sunčano nad Budvom", color: "#f9a825", weight: 600 };
     }
     if (facts.thinVeil) {
       var tail = night ? " (IR)" : ", sunce probija";

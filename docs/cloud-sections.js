@@ -41,7 +41,10 @@
     var map = { sunny: "sunce probija", dimmed: "sunce prigušeno", blocked: "sunce zaklonjeno" };
     var s = facts.sunState ? map[facts.sunState] : null;
     if (!s) return null;
-    if (facts.sunTransmittance != null) s += " (T≈" + Math.round(facts.sunTransmittance * 100) + "%)";
+    // Show the GLOBAL-irradiance CMF (the PDF's "is it sunny" number) — not the
+    // direct-beam transmittance, which reads a few % even when the scene is sunny.
+    if (facts.cmf != null) s += " (CMF≈" + Math.round(facts.cmf * 100) + "%)";
+    else if (facts.sunTransmittance != null) s += " (T≈" + Math.round(facts.sunTransmittance * 100) + "%)";
     return s;
   }
 
