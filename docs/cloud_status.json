@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-24T13:32:42",
+  "generated": "2026-06-24T13:38:37",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -10,44 +10,45 @@
     "ok": true,
     "sensing_time": "2026-06-24T11:10:00.000Z",
     "data_source": "EUMETSAT",
-    "verdict_source": "L2-COT",
+    "verdict_source": "L2-COT+GeoColour",
     "geocolour_time": "2026-06-24T11:10:00.000Z"
   },
   "motion": {
-    "direction_deg": 270.0,
-    "direction_cardinal": "W",
-    "speed_kmh": 44.4,
-    "confidence": 0.798
+    "direction_deg": null,
+    "direction_cardinal": null,
+    "speed_kmh": 0.0,
+    "confidence": 1.0
   },
   "facts": {
     "locationName": "Budva",
-    "cloudFracNow": 0.937,
-    "opaqueFracNow": 0.937,
-    "skyCoverEff": 0.937,
+    "cloudFracNow": 0.0,
+    "opaqueFracNow": 0.0,
+    "skyCoverEff": 0.0,
     "thinVeil": false,
-    "cloudAtLocation": true,
+    "cloudAtLocation": false,
+    "geocolourCapped": true,
     "approaching": false,
     "clearing": false,
     "etaMin": null,
-    "motionCardinal": "W",
-    "fromCardinal": "E",
-    "motionSpeedKmh": 44.4,
-    "cloudTopHeightM": 11901.0,
-    "cloudTopTempC": -63.6,
-    "heightBand": "high",
-    "opticalThickness": 187.8,
-    "thickness": "thick",
-    "phase": "ice",
-    "cloudTypeLabel": "high thick cloud (cirrostratus)",
-    "szaDeg": 19.5,
+    "motionCardinal": null,
+    "fromCardinal": null,
+    "motionSpeedKmh": null,
+    "cloudTopHeightM": null,
+    "cloudTopTempC": null,
+    "heightBand": null,
+    "opticalThickness": null,
+    "thickness": null,
+    "phase": null,
+    "cloudTypeLabel": null,
+    "szaDeg": 20.1,
     "isNight": false,
-    "sunState": "blocked",
-    "sunTransmittance": 0.0,
-    "cmf": 0.001,
-    "cotMedian": 178.4,
+    "sunState": "sunny",
+    "sunTransmittance": 1.0,
+    "cmf": 1.0,
+    "cotMedian": 0.0,
     "satelliteZenithDeg": 52.4,
     "parallaxShiftKm": null,
-    "sunOutlook": "Sky stays closed for the next ~2 h.",
+    "sunOutlook": "Sunny — sky stays clear for the next ~2 h.",
     "rings": [
       {
         "radius_km": 10,
@@ -79,54 +80,6 @@
       {
         "t": 0,
         "frac": 0.937
-      },
-      {
-        "t": 10,
-        "frac": 0.928
-      },
-      {
-        "t": 20,
-        "frac": 0.913
-      },
-      {
-        "t": 30,
-        "frac": 0.904
-      },
-      {
-        "t": 40,
-        "frac": 0.897
-      },
-      {
-        "t": 50,
-        "frac": 0.899
-      },
-      {
-        "t": 60,
-        "frac": 0.904
-      },
-      {
-        "t": 70,
-        "frac": 0.916
-      },
-      {
-        "t": 80,
-        "frac": 0.928
-      },
-      {
-        "t": 90,
-        "frac": 0.931
-      },
-      {
-        "t": 100,
-        "frac": 0.93
-      },
-      {
-        "t": 110,
-        "frac": 0.926
-      },
-      {
-        "t": 120,
-        "frac": 0.928
       }
     ]
   },
@@ -10697,11 +10650,11 @@
     ],
     "motion": {
       "dlat_per_min": -0.0,
-      "dlon_per_min": -0.009000205993652343,
-      "speed_kmh": 44.4,
-      "direction_deg": 270.0,
-      "direction_cardinal": "W",
-      "confidence": 0.798,
+      "dlon_per_min": 0.0,
+      "speed_kmh": 0.0,
+      "direction_deg": null,
+      "direction_cardinal": null,
+      "confidence": 1.0,
       "dt_min": 10.0
     }
   },
@@ -10728,46 +10681,46 @@
   "nwp_forecast_url": "https://matko-iv.github.io/vrijeme/forecast_data/forecast_48h.json",
   "summary": {
     "cloud_verdict": {
-      "state": "OVERCAST",
-      "headline": "OVERCAST — Budva",
-      "narrative": "Overcast over Budva (94%) — high thick cloud (cirrostratus), tops ~11901 m.",
+      "state": "CLEAR",
+      "headline": "CLEAR SKY — Budva",
+      "narrative": "Clear sky over Budva — no cloud incoming. Sunny — sky stays clear for the next ~2 h.",
       "style": {
-        "cls": "warn",
-        "bg": "#455a64",
-        "fg": "#fff",
-        "head": "OVERCAST"
+        "cls": "ok",
+        "bg": "#ffd54f",
+        "fg": "#3e2723",
+        "head": "CLEAR SKY"
       },
-      "line_sr": "oblačno nad Budvom (94%) — high thick cloud (cirrostratus)",
-      "line_sr_bold": "oblačno nad Budvom",
-      "color_sr": "#455a64",
-      "weight_sr": 700,
-      "sun_outlook": "Sky stays closed for the next ~2 h.",
+      "line_sr": "vedro nad Budvom",
+      "line_sr_bold": "vedro nad Budvom",
+      "color_sr": "#f9a825",
+      "weight_sr": 600,
+      "sun_outlook": "Sunny — sky stays clear for the next ~2 h.",
       "sun": {
-        "state": "blocked",
-        "en": "sun blocked",
-        "sr": "sunce zaklonjeno"
+        "state": "sunny",
+        "en": "sun gets through",
+        "sr": "sunce probija"
       },
       "facts": {
-        "cloudFracNow": 0.937,
-        "opaqueFracNow": 0.937,
-        "skyCoverEff": 0.937,
+        "cloudFracNow": 0.0,
+        "opaqueFracNow": 0.0,
+        "skyCoverEff": 0.0,
         "thinVeil": false,
-        "cloudAtLocation": true,
+        "cloudAtLocation": false,
         "approaching": false,
         "clearing": false,
         "etaMin": null,
-        "heightBand": "high",
-        "thickness": "thick",
-        "phase": "ice",
-        "cloudTypeLabel": "high thick cloud (cirrostratus)",
-        "cloudTopHeightM": 11901.0,
-        "cloudTopTempC": -63.6,
-        "szaDeg": 19.5,
+        "heightBand": null,
+        "thickness": null,
+        "phase": null,
+        "cloudTypeLabel": null,
+        "cloudTopHeightM": null,
+        "cloudTopTempC": null,
+        "szaDeg": 20.1,
         "isNight": false,
-        "sunState": "blocked",
-        "sunTransmittance": 0.0,
-        "cmf": 0.001,
-        "cotMedian": 178.4,
+        "sunState": "sunny",
+        "sunTransmittance": 1.0,
+        "cmf": 1.0,
+        "cotMedian": 0.0,
         "satelliteZenithDeg": 52.4,
         "parallaxShiftKm": null
       }
