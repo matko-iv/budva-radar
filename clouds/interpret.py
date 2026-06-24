@@ -65,16 +65,39 @@ def _sun_outlook(now_clear, approaching, clearing, overcast, eta, night=False):
     return "Variable — some sun likely."
 
 
-def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
+def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None, gc_sky=None):
     """Full facts dict for one point (verdict contract + descriptors + rings).
 
     Reports TWO independent axes (the PDF's core correction):
       * cloud PRESENCE  — cloudFracNow, from the CLM mask (thin cirrus counts);
       * SUN / SHADE     — sunState/transmittance, from OCA COT + the solar zenith.
+
+    `gc_sky` (optional) is a GeoColour read at the point — {cloudFrac, blockFrac}
+    from clouds.visible.budva_sky_from_geocolour — used as a DAYTIME cross-check
+    that vetoes the OCA optical-thickness over-read: OCA sometimes retrieves a
+    phantom thick high-ICE shield (COT up to its ~256 ceiling) where the visible
+    picture is clear (live bug: GeoColour 0% vs L2 93% "blocked" over Budva). When
+    supplied, the visible picture caps the L2 cloud DOWNWARD ONLY — it can shrink a
+    phantom but never ADD cloud, since sun-glint can falsely brighten GeoColour.
+    The caller passes it only when GeoColour is usable (day, sun high enough); at
+    night / low sun it must be None so RGB brightness never drives the verdict.
     """
     cfg = cfg or config.CLOUDS
+
+    # GeoColour daytime caps (downward only). gc_not_thick = the picture shows no
+    # optically-thick cloud over the point, so any high OCA COT there is a phantom.
+    gc_cloud_cap = gc_block_cap = None
+    gc_not_thick = False
+    if gc_sky is not None:
+        gc_cloud_cap = gc_sky.get("cloudFrac")
+        gc_block_cap = gc_sky.get("blockFrac")
+        gc_not_thick = (gc_block_cap is not None
+                        and gc_block_cap <= cfg["frac_clear_max"])
+
     nc = nowcast.point_nowcast(field, motion, lat, lon, cfg)
     frac = nc["cloudFracNow"]
+    if gc_cloud_cap is not None and frac is not None:
+        frac = min(frac, float(gc_cloud_cap))      # picture vetoes a phantom presence
 
     now_radius = config.SAMPLE_RADII_KM[0]
     desc_radius = config.SAMPLE_RADII_KM[1] if len(config.SAMPLE_RADII_KM) > 1 else 25
@@ -95,6 +118,8 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
     # — not the raw CLM presence total — drives the state.
     # sky_cover = opaque + semi_weight*(total - opaque); semi_weight defaults to 0.
     opaque_cover = field.cloud_fraction(lat, lon, now_radius, layer="opaque")
+    if gc_block_cap is not None and opaque_cover is not None:
+        opaque_cover = min(opaque_cover, float(gc_block_cap))  # picture caps sun-blocking
     if frac is None:
         sky_cover = None
     else:
@@ -109,6 +134,11 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
     cth_m = field.sample_cloudy("cth", lat, lon, desc_radius) if has_cloud else None
     cot = field.sample_cloudy("cot", lat, lon, desc_radius) if has_cloud else None
     phase = field.dominant_phase(lat, lon, desc_radius) if has_cloud else None
+    # The visible picture shows nothing optically thick here -> the OCA COT is the
+    # over-read; cap the DESCRIPTOR thickness so the label/table read "thin (cirrus)"
+    # consistently with the "sun gets through" verdict, not "thick (COT 256)".
+    if gc_not_thick and cot is not None:
+        cot = min(cot, cfg["cot_thin_max"])
 
     band = _height_band(cth_m, cfg)
     thick = _thickness(cot, cfg)
@@ -124,15 +154,24 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
         s_lat, s_lon = lat + dlat, lon + dlon
         parallax_km = round(calibration.haversine_km(lat, lon, s_lat, s_lon), 1)
     cot_med = field.sample_cloudy("cot", s_lat, s_lon, now_radius, reducer="median")
+    # Same veto on the SUN-axis COT: a phantom thick reading must not drive CMF->0
+    # ("sun blocked") when the picture shows the sun gets through. If the picture is
+    # CLEAR (capped presence below clear_max) there is effectively no cloud -> 0 COT
+    # (CMF 1, sunny); if it shows thin (not-thick) cloud, cap to the thin range.
+    if gc_sky is not None and cot_med is not None:
+        if frac is not None and frac <= cfg["frac_clear_max"]:
+            cot_med = 0.0
+        elif gc_not_thick:
+            cot_med = min(cot_med, cfg["cot_thin_max"])
 
     sun_state = transmittance = cmf_val = None
-    if not is_night:
+    if not is_night and cot_med is not None:
         ice_factor = float(cfg.get("sun_ice_factor", solar.ICE_FORWARD_SCATTER))
         # The sun/shade verdict runs on the GLOBAL-irradiance Cloud Modification
         # Factor (PDF Part A2), not the direct beam: thin/forward-scattering cloud
         # keeps the sky bright, so a cirrostratus over Budva reads "sunny" even
         # though its direct-beam transmittance is only a few percent.
-        cmf_val = solar.cmf(cot_med or 0.0, sza if sza is not None else 0.0,
+        cmf_val = solar.cmf(cot_med, sza if sza is not None else 0.0,
                             phase=phase, ice_factor=ice_factor)
         sun_state = solar.cmf_sun_state(
             cmf_val, sunny_min=float(cfg.get("cmf_sunny_min", 0.80)),
@@ -140,13 +179,29 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
         # Direct-beam transmittance retained as a labelled diagnostic only (the
         # legacy "is the sun blocked" number, which under-reads thin cloud).
         transmittance = solar.direct_transmittance(
-            cot_med or 0.0, sza if sza is not None else 0.0)
+            cot_med, sza if sza is not None else 0.0)
+    elif not is_night and sky_cover is not None:
+        # Picture-only field (HighSight / GeoColour): no OCA COT, so the brightness
+        # SUN-BLOCKING cover IS the "is the sun blocked" signal. Map it to the sun
+        # word with the same clear/overcast thresholds used for the cloud level
+        # (bright thick cloud -> blocked; clear -> sun through; between -> dimmed).
+        sun_state = ("blocked" if sky_cover >= cfg["frac_overcast_min"]
+                     else "sunny" if sky_cover <= cfg["frac_clear_max"]
+                     else "dimmed")
 
     thin_veil = bool(frac is not None and frac > cfg["frac_clear_max"]
                      and sky_cover is not None and sky_cover <= cfg["frac_clear_max"])
 
     now_clear = sky_cover is not None and sky_cover <= cfg["frac_clear_max"]
     overcast = sky_cover is not None and sky_cover >= cfg["frac_overcast_min"]
+
+    # Keep "cloud at location" consistent with the (possibly GeoColour-capped)
+    # presence — downward only, so a vetoed phantom no longer reads as cloud.
+    cloud_at_location = bool(nc["cloudAtLocation"]) and (
+        frac is not None and frac > cfg["frac_clear_max"])
+    gc_capped = bool(gc_sky is not None and (
+        (gc_cloud_cap is not None and nc["cloudFracNow"] is not None
+         and gc_cloud_cap < nc["cloudFracNow"]) or gc_not_thick))
 
     rings = []
     for r in config.SAMPLE_RADII_KM:
@@ -162,7 +217,8 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
         "opaqueFracNow": None if opaque_cover is None else round(opaque_cover, 3),
         "skyCoverEff": None if sky_cover is None else round(sky_cover, 3),
         "thinVeil": thin_veil,
-        "cloudAtLocation": nc["cloudAtLocation"],
+        "cloudAtLocation": cloud_at_location,
+        "geocolourCapped": gc_capped,
         "approaching": nc["approaching"],
         "clearing": nc["clearing"],
         "etaMin": nc["etaMin"],

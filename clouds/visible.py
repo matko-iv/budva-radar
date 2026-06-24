@@ -158,12 +158,15 @@ def _marker_xy(lat, lon, b, W, H):
     return x, y
 
 
-def render_map_png(cfg, loc, out_path, width=1000, time=None, source_image=None):
-    """Render the GeoColour map for the bbox with a Budva marker, save to
-    out_path, return (width, height) of the written PNG.
+def render_map_png(cfg, loc, out_path, width=1000, time=None, source_image=None,
+                   attribution="GeoColour © EUMETSAT/NASA"):
+    """Render a bbox map picture with a Budva marker, save to out_path, return
+    (width, height) of the written PNG.
 
     Pass source_image (a PIL Image already covering the bbox) to skip the network
-    fetch — used for offline/testing. Otherwise fetches from the EUMETView WMS.
+    fetch — used for offline/testing and for the HighSight picture. Otherwise
+    fetches from the EUMETView WMS. `attribution` is the credit text drawn in the
+    corner (e.g. "HighSight ©" for the HighSight source).
     """
     if source_image is not None:
         img = source_image.convert("RGB")
@@ -183,7 +186,7 @@ def render_map_png(cfg, loc, out_path, width=1000, time=None, source_image=None)
         draw.text((x + 11, y - 5), name, fill=(0, 0, 0, 160))
         draw.text((x + 10, y - 6), name, fill=(255, 255, 255, 255))
 
-    draw.text((4, H - 14), "GeoColour \u00a9 EUMETSAT/NASA", fill=(255, 255, 255, 175))
+    draw.text((4, H - 14), attribution, fill=(255, 255, 255, 175))
     img.save(out_path)
     return W, H
 

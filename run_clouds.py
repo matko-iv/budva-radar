@@ -16,7 +16,8 @@ from pathlib import Path
 import numpy as np
 
 import config
-from clouds import fetch, interpret, motion as cmotion, render, verdict, visible
+from clouds import (fetch, highsight, interpret, motion as cmotion, render,
+                    verdict, visible)
 from clouds.grid import CloudField, downsample_for_browser
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -54,9 +55,52 @@ def _render_map(field, cfg, loc, gc_rgb=None):
     return [W * PREVIEW_SCALE, H * PREVIEW_SCALE]
 
 
+def _highsight_parts(loc, cfg):
+    """Build the HighSight (picture) field + motion + facts + map, mirroring SKALA
+    RAIN: fetch the visible tiles, advect successive frames for the nowcast, read
+    the picture at every point. Returns (field, mot, facts, verdict_source,
+    img_size, sensing_time) or None if HighSight is unavailable (-> L2 fallback)."""
+    try:
+        hs_field, hs_rgb, hs_time = highsight.fetch_field(cfg)
+    except Exception as e:
+        print(f"  HighSight unavailable ({e}); falling back to L2", file=sys.stderr)
+        return None
+    highsight.save_frame(hs_field, hs_time, rgb_image=hs_rgb)
+    prev, curr = highsight.latest_two_fields()
+    field = curr or hs_field
+    mot = None
+    if prev is not None:
+        mot = cmotion.compute_motion(prev, field, loc["lat"], loc["lon"],
+                                     _dt_min(prev, field))
+    # Picture-only field (no OCA COT): cloud_facts runs the SAME advection nowcast
+    # and per-point disc reads, with the brightness sun-axis fallback.
+    facts = interpret.cloud_facts(field, mot, loc["lat"], loc["lon"], loc["name"], cfg)
+    try:
+        W, H = visible.render_map_png(cfg, loc, LATEST_PNG, source_image=hs_rgb,
+                                      attribution="HighSight ©")
+        img_size = [W, H]
+    except Exception as e:
+        print(f"  HighSight map render failed ({e})", file=sys.stderr)
+        render.to_png(field, LATEST_PNG, scale=PREVIEW_SCALE)
+        h, w = field.shape
+        img_size = [w * PREVIEW_SCALE, h * PREVIEW_SCALE]
+    return field, mot, facts, "HighSight", img_size, hs_time
+
+
 def build_status(field, prev_field, data_source):
     loc = config.LOCATION
     cfg = config.CLOUDS
+
+    # HighSight (visible picture) is the active interim source; the L2/GeoColour
+    # path below stays in place behind its flags for the ongoing L2 fix.
+    parts = _highsight_parts(loc, cfg) if cfg.get("use_highsight", False) else None
+    if parts is None and field is None:
+        raise RuntimeError("No cloud source (HighSight failed and no L2 frame).")
+    if parts is not None:
+        field, mot, facts, verdict_source, img_size, sensing_time = parts
+        source_name, gc_time = "HighSight satellite", None
+        return _assemble_status(field, mot, facts, verdict_source, img_size,
+                                sensing_time, gc_time, source_name, data_source, cfg, loc)
 
     mot = None
     if prev_field is not None:
@@ -86,19 +130,40 @@ def build_status(field, prev_field, data_source):
         facts = visible.geocolour_facts(sky, loc, cfg, motion=mot)
         verdict_source = "GeoColour"
     else:
-        facts = interpret.cloud_facts(field, mot, loc["lat"], loc["lon"], loc["name"], cfg)
-        verdict_source = "L2-COT"
+        # L2 verdict, with the GeoColour picture as a DAYTIME cross-check that vetoes
+        # the OCA optical-thickness over-read (a phantom thick high-ice shield where
+        # the picture is clear). Downward-only + day-gated, so glint/night can never
+        # ADD cloud; at night / low sun gc_sky stays None and pure L2 is used.
+        gc_sky = None
+        if (gc_rgb is not None and cfg.get("use_geocolour_crosscheck", True)
+                and visible.geocolour_verdict_ok(cfg, loc, gc_time)):
+            try:
+                gc_sky = visible.budva_sky_from_geocolour(gc_rgb, cfg, loc)
+            except Exception as e:
+                print(f"  GeoColour cross-check skipped ({e})", file=sys.stderr)
+        facts = interpret.cloud_facts(field, mot, loc["lat"], loc["lon"],
+                                      loc["name"], cfg, gc_sky=gc_sky)
+        verdict_source = ("L2-COT+GeoColour"
+                          if facts.get("geocolourCapped") else "L2-COT")
 
     # Preview PNG (north-up) + its pixel size, so the page can place the marker.
     # Reuses the already-fetched GeoColour image so the marker sits exactly on
     # the pixels the verdict measured.
     img_size = _render_map(field, cfg, loc, gc_rgb=gc_rgb)
+    sensing_time = gc_time or field.sensing_time
+    return _assemble_status(field, mot, facts, verdict_source, img_size,
+                            sensing_time, gc_time, "EUMETSAT cloud products",
+                            data_source, cfg, loc)
 
+
+def _assemble_status(field, mot, facts, verdict_source, img_size, sensing_time,
+                     gc_time, source_name, data_source, cfg, loc):
+    """Pack the common status dict (shared by the HighSight and L2 paths)."""
     status = {
         "generated": datetime.datetime.now().isoformat(timespec="seconds"),
         "location": loc,
-        "source": {"name": "EUMETSAT cloud products", "ok": True,
-                   "sensing_time": gc_time or field.sensing_time,
+        "source": {"name": source_name, "ok": True,
+                   "sensing_time": sensing_time,
                    "data_source": data_source, "verdict_source": verdict_source,
                    "geocolour_time": gc_time},
         "motion": None if mot is None else {
@@ -159,17 +224,24 @@ def run_demo():
 
 
 def run_live():
-    try:
-        meta = fetch.fetch_latest()
-        print(f"  fetch: {meta}")
-    except Exception as e:
-        print(f"  WARN: live fetch failed: {e}")
+    cfg = config.CLOUDS
+    highsight_on = cfg.get("use_highsight", False)
+    # In HighSight mode the visible picture is the source and needs NO EUMETSAT
+    # credentials, so skip the L2 live fetch entirely (the L2 fix runs separately).
+    # Cached L2 frames, if any, are still read for the fallback.
+    if not highsight_on:
+        try:
+            meta = fetch.fetch_latest()
+            print(f"  fetch: {meta}")
+        except Exception as e:
+            print(f"  WARN: live fetch failed: {e}")
     prev, curr = fetch.latest_two_fields()
-    if curr is None:
+    if curr is None and not highsight_on:
         print("  No cloud frames available. Add EUMETSAT creds + run "
               "`python -m clouds.discover`, or try `python run_clouds.py --demo`.")
         return None
-    return build_status(curr, prev, data_source="EUMETSAT")
+    data_source = "HighSight" if highsight_on else "EUMETSAT"
+    return build_status(curr, prev, data_source=data_source)
 
 
 def _write(status):

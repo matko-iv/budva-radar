@@ -46,6 +46,14 @@
   </section>
 
   <section id="app" hidden>
+    <div id="wip-note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;
+         padding:8px 12px;margin:0 0 10px;font-size:13px;color:#6d4c00;line-height:1.45;">
+      ⚠️ <b>Privremeno rješenje.</b> Radim na popravci L2 satelitske analize (OCA optička
+      debljina je davala lažnu oblačnost dok je vedro). U međuvremenu je SKALA CLOUD baziran na
+      <b>HighSight</b> satelitskoj slici — čita se sama slika (isti princip kao SKALA RAIN), pa
+      svaka tačka na mapi odgovara onome što se stvarno vidi.
+    </div>
+
     <div id="controls">
       <input id="city-input" placeholder="grad (Budva, Kotor, Bar…) ili klikni mapu" autocomplete="off">
       <button id="city-btn">setuj</button>
@@ -125,17 +133,8 @@
     clearSvg();
     var x = lonToX(lon), y = latToY(lat);
 
-    // --- sampling rings: white halo under a dashed blue ring (visible on any background) ---
-    var radii = params.sample_radii_km || [10, 25, 50];
-    radii.forEach(function (r) {
-      var rx = (r / (111.32 * Math.cos(lat * Math.PI / 180))) / (bbox.lon_max - bbox.lon_min) * W;
-      var ry = (r / 111.32) / (bbox.lat_max - bbox.lat_min) * H;
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: rx, ry: ry, fill: "none",
-        stroke: "#ffffff", "stroke-width": U * 1.4, "stroke-opacity": 0.55 }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: rx, ry: ry, fill: "none",
-        stroke: "#0d47a1", "stroke-width": U * 0.6, "stroke-opacity": 0.9,
-        "stroke-dasharray": (U * 2.4) + " " + (U * 1.8) }));
-    });
+    // Sampling rings removed — the map is now the plain HighSight picture with
+    // only the Budva marker (+ the clicked point and the motion arrow).
 
     // --- motion arrow: white outline + filled arrowhead ---
     var m = field.motion;

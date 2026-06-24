@@ -185,6 +185,22 @@ CLOUDS = {
     "use_geocolour_map": True,
     "geocolour_wms": "https://view.eumetsat.int/geoserver/wms",
     "geocolour_layer": "mtg_fd:rgb_geocolour",
+
+    # --- HighSight INTERIM source (clouds/highsight.py) -----------------------
+    # While the L2/OCA verdict is being repaired, drive SKALA CLOUD from the
+    # actual visible satellite PICTURE (HighSight XYZ tiles): cloud = bright/white
+    # against dark sea / green land. It reads the same way at EVERY point (fixes
+    # "only Budva is right") and nowcasts by advecting the picture frames (the
+    # SKALA RAIN principle). When True this OVERRIDES the L2/GeoColour verdict;
+    # the L2 code stays in place behind its flags for the ongoing fix. Tiles need
+    # an API key — set HIGHSIGHT_KEY in the env (+ a GitHub Actions secret).
+    "use_highsight": True,
+    "highsight_key_env": "HIGHSIGHT_KEY",
+    "highsight_zoom": 7,              # ~3x3 tiles over the bbox (~1.5 km/px)
+    "highsight_display_width": 1000,  # map PNG width (plate carree)
+    "highsight_bright_min": 150,      # max(R,G,B) >= this & near-neutral = cloud
+    "highsight_sat_max": 40,          # max-min <= this = near-neutral (white/grey)
+    "highsight_thick_min": 205,       # very bright = optically thick / sun-blocking
     # GeoColour is a RENDERED RGB picture, not a measurement: its brightness reads
     # as "cloud" over sun-glint on the sea, snow, and low sun, and at night means
     # cloud-top temperature, not albedo (PDF Section 5). So by default the verdict
@@ -194,6 +210,15 @@ CLOUDS = {
     # (see geocolour_verdict_day_only / geocolour_max_sza); otherwise it falls
     # back to L2 so glint/twilight/night can't produce a false "cloudy".
     "use_geocolour_verdict": False,
+    # Keep the quantitative L2 verdict (COT/height/phase/nowcast) but use the
+    # GeoColour picture as a DAYTIME cross-check that vetoes the OCA optical-
+    # thickness OVER-READ: OCA sometimes retrieves a phantom thick high-ice shield
+    # (COT to its ~256 ceiling) where the visible picture is clear, which drives a
+    # false "sun blocked / overcast" (the GeoColour 0% vs L2 93% bug over Budva).
+    # The picture caps the L2 cloud DOWNWARD ONLY (never adds cloud — sun-glint can
+    # falsely brighten it) and only by day with the sun high enough; otherwise pure
+    # L2 is used. Set False to disable the cross-check and use raw L2.
+    "use_geocolour_crosscheck": True,
     "geocolour_verdict_day_only": True,  # never trust RGB brightness at night
     "geocolour_max_sza": 70.0,           # ...nor when the sun is low (glint/shadow)
     "geocolour_sample_km": 6.0,     # disc radius around Budva for the read
