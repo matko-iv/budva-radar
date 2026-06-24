@@ -73,7 +73,10 @@
 
   function pointNowcast(field, motion, lat, lon, params) {
     var p = params || {};
-    var fracNow = cloudFraction(field, lat, lon, p.sample_radius_now_km || 10);
+    // Tight read so clicking a SMALL cloud registers it (a 10 km disc averages it
+    // into the surrounding clear sky and reads "clear"). Keep in sync with Python.
+    var nowR = p.point_read_radius_km || p.sample_radius_now_km || 10;
+    var fracNow = cloudFraction(field, lat, lon, nowR);
     var out = {
       cloudFracNow: fracNow == null ? null : +fracNow.toFixed(3),
       cloudAtLocation: fracNow != null && fracNow > p.frac_clear_max,
@@ -139,7 +142,7 @@
 
     // Effective sky cover: opaque cloud blocks fully, semitransparent counts
     // little (mirror clouds/interpret.py — uses the CLM-derived opaque layer).
-    var opq = opaqueFraction(field, lat, lon, p.sample_radius_now_km || 10);
+    var opq = opaqueFraction(field, lat, lon, p.point_read_radius_km || p.sample_radius_now_km || 10);
     var w = p.semi_sky_weight != null ? p.semi_sky_weight : 0.25;
     var sky = frac == null ? null : ((opq || 0) + w * Math.max(frac - (opq || 0), 0));
     var thinVeil = frac != null && frac > p.frac_clear_max
