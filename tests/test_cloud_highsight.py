@@ -3,8 +3,10 @@ brightness / reprojection only (no network), so they run offline.
 
 Run from repo root:  python tests/test_cloud_highsight.py   (exit 0 = pass)
 """
+import datetime
 import math
 import sys
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -91,6 +93,94 @@ def test_build_field_is_picture_only():
     assert np.nanmean(field.layers["frac"]) == 1.0           # all-white -> all cloud
     assert np.isnan(field.layers["cot"]).all()               # picture has no COT
     assert field.meta["source"] == "HighSight"
+
+
+# --- frame pinning: date / slot / sensing_time (the fix) ----------------------
+def test_date_param_format():
+    # matches the spec example: .../satellite/3/6/4?date=2025/01/04/0710
+    assert hs._date_param(datetime.datetime(2025, 1, 4, 7, 10)) == "2025/01/04/0710"
+
+
+def test_slot_iso_is_utc_z():
+    # sensing_time carries a 'Z' so the page reads age in UTC, not local
+    assert hs._slot_iso(datetime.datetime(2026, 6, 24, 8, 10, 0)) == "2026-06-24T08:10:00Z"
+
+
+def test_freshest_slot_floored_and_lagged():
+    slot = hs._freshest_slot({"highsight_lag_min": 30})
+    assert slot.minute % 10 == 0 and slot.second == 0 and slot.microsecond == 0
+    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    age_min = (now - slot).total_seconds() / 60.0
+    assert 29.0 <= age_min < 41.0, f"slot age {age_min:.1f} min outside [30,40) window"
+
+
+def test_ts_sha_handles_trailing_z():
+    ts, sha = hs._ts_sha("2026-06-24T08:10:00Z")
+    assert ts == "20260624_081000" and len(sha) == 12
+    assert hs._ts_sha("2026-06-24T08:10:00Z") == (ts, sha)   # stable
+
+
+def test_cache_roundtrip_lets_fetch_skip_download():
+    # save a frame, then _load_cached returns it -> fetch_field can skip the
+    # network for a slot we already hold (the HighSight tile-quota guard).
+    saved_dir = hs.FRAMES_DIR
+    with tempfile.TemporaryDirectory() as d:
+        hs.FRAMES_DIR = Path(d)
+        try:
+            t = "2026-06-24T08:10:00Z"
+            lats = np.linspace(44.0, 41.0, 8)
+            lons = np.linspace(16.0, 21.0, 8)
+            nan = np.full((8, 8), np.nan)
+            field = hs.CloudField(lats, lons, {
+                "mask": np.ones((8, 8)), "frac": np.ones((8, 8)),
+                "opaque": np.zeros((8, 8)), "ctt": nan, "cth": nan,
+                "cot": nan, "phase": nan},
+                meta={"sensing_time": t, "source": "HighSight"})
+            assert hs.save_frame(field, t)["fetched"] is True
+            assert hs.save_frame(field, t)["fetched"] is False        # deduped
+            cached = hs._load_cached(t)
+            assert cached is not None
+            f2, rgb = cached
+            assert rgb is None and np.nanmean(f2.layers["frac"]) == 1.0
+            assert hs._load_cached("2026-06-24T07:00:00Z") is None     # uncached slot
+        finally:
+            hs.FRAMES_DIR = saved_dir
+
+
+# --- tile-quota throttle ------------------------------------------------------
+def test_within_interval_throttle():
+    n = datetime.datetime(2026, 6, 24, 12, 0)
+    assert hs._within_interval(n, datetime.datetime(2026, 6, 24, 11, 30), 100) is True   # 30<100 skip
+    assert hs._within_interval(n, datetime.datetime(2026, 6, 24, 10, 0), 100) is False   # 120>100 fetch
+    assert hs._within_interval(n, None, 100) is False                                     # no cache
+    assert hs._within_interval(n, datetime.datetime(2026, 6, 24, 11, 30), 0) is False     # disabled
+
+
+def test_throttle_skips_download_for_recent_frame():
+    # A frame cached 20 min before the nominal slot, with a 100-min throttle, must
+    # be REUSED with zero tile downloads (this is what fits the monthly quota).
+    saved = (hs.FRAMES_DIR, hs._fetch_tile, hs._freshest_slot)
+    with tempfile.TemporaryDirectory() as d:
+        hs.FRAMES_DIR = Path(d)
+        calls = []
+        hs._freshest_slot = lambda cfg=None: datetime.datetime(2026, 6, 24, 12, 0)
+        hs._fetch_tile = lambda *a, **k: (calls.append(1) or
+                                          np.full((hs.TILE_PX, hs.TILE_PX, 3), 200, "uint8"))
+        try:
+            t_old = "2026-06-24T11:40:00Z"
+            lats = np.linspace(44, 41, 8); lons = np.linspace(16, 21, 8)
+            nan = np.full((8, 8), np.nan)
+            field = hs.CloudField(lats, lons, {
+                "mask": np.ones((8, 8)), "frac": np.ones((8, 8)), "opaque": np.zeros((8, 8)),
+                "ctt": nan, "cth": nan, "cot": nan, "phase": nan},
+                meta={"sensing_time": t_old, "source": "HighSight"})
+            hs.save_frame(field, t_old)
+            cfg = dict(__import__("config").CLOUDS); cfg["highsight_min_interval_min"] = 100
+            f, rgb, st = hs.fetch_field(cfg, key="K")
+            assert len(calls) == 0, f"throttle should skip download, got {len(calls)} fetches"
+            assert st == t_old, f"should reuse cached slot, got {st}"
+        finally:
+            hs.FRAMES_DIR, hs._fetch_tile, hs._freshest_slot = saved
 
 
 def main():

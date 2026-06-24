@@ -55,7 +55,9 @@ def point_nowcast(field, motion, lat, lon, cfg=None):
     """Run the field-advection nowcast for one point. Returns a dict with
     cloudFracNow / approaching / clearing / etaMin / series / motion summary."""
     cfg = cfg or config.CLOUDS
-    now_radius = config.SAMPLE_RADII_KM[0]   # innermost ring (~10 km)
+    # Tight point read so a small cloud at (lat,lon) isn't averaged into clear sky
+    # (the "clicked small cloud reads clear" bug); falls back to the innermost ring.
+    now_radius = cfg.get("point_read_radius_km", config.SAMPLE_RADII_KM[0])
     frac_now = field.cloud_fraction(lat, lon, now_radius)
 
     # A motion vector is usable only if confident, non-trivial, AND physically

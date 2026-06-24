@@ -99,7 +99,7 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None, gc_sky=None
     if gc_cloud_cap is not None and frac is not None:
         frac = min(frac, float(gc_cloud_cap))      # picture vetoes a phantom presence
 
-    now_radius = config.SAMPLE_RADII_KM[0]
+    now_radius = cfg.get("point_read_radius_km", config.SAMPLE_RADII_KM[0])
     desc_radius = config.SAMPLE_RADII_KM[1] if len(config.SAMPLE_RADII_KM) > 1 else 25
 
     # --- Solar geometry: the sun/shade axis is meaningless without it ---------

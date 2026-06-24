@@ -196,11 +196,35 @@ CLOUDS = {
     # an API key — set HIGHSIGHT_KEY in the env (+ a GitHub Actions secret).
     "use_highsight": True,
     "highsight_key_env": "HIGHSIGHT_KEY",
-    "highsight_zoom": 7,              # ~3x3 tiles over the bbox (~1.5 km/px)
+    "highsight_zoom": 5,              # 2 tiles over the bbox (~1.8 km/px @ 42N)
     "highsight_display_width": 1000,  # map PNG width (plate carree)
     "highsight_bright_min": 150,      # max(R,G,B) >= this & near-neutral = cloud
     "highsight_sat_max": 40,          # max-min <= this = near-neutral (white/grey)
     "highsight_thick_min": 205,       # very bright = optically thick / sun-blocking
+    # Frame pinning: request the slot this many minutes behind now (UTC), floored
+    # to the 10-min cadence. HighSight runs ~20 min late and rejects/zeroes
+    # too-recent requests, so 30 is a safe default; lower toward ~20 only if your
+    # runs reliably find it. The resolved slot's true time becomes sensing_time (no
+    # more "now" lie) and all tiles share it, so the mosaic is one coherent frame.
+    "highsight_lag_min": 30,
+    "highsight_max_lookback_slots": 3,  # step back up to N×10min if a slot isn't up yet
+    # --- Tile QUOTA throttle (Developer free tier = 5,000 tiles/month) --------
+    # Only DOWNLOAD a new frame every N minutes; between downloads the newest
+    # cached frame is reused (its honest age just grows). The loop can still run
+    # every few minutes for radar — this only gates the HighSight tile pulls.
+    #   monthly tiles ≈ tiles_per_frame × 44640 / N
+    #   tiles_per_frame ≈ 2 / 4 / 9 / 25 at zoom 5 / 6 / 7 / 8
+    # To fit 5,000/month:  N ≥ tiles_per_frame × 44640 / 5000, i.e.
+    #   zoom 7 (9 tiles): N ≥ ~81 min  -> ~as fresh as L2
+    #   zoom 6 (4 tiles): N ≥ ~36 min  -> FRESHER than L2, still in quota
+    #   zoom 5 (2 tiles): N ≥ ~18 min  -> freshest (current); 20 -> ~4,460/month
+    # So to beat L2's ~70-min latency, lower highsight_zoom AND this together.
+    # 0 disables the throttle (will blow the free quota at any useful cadence).
+    "highsight_min_interval_min": 20,
+    # Past-imagery loop on the cloud page: keep the last N hours of frames as a
+    # scrubbable history (rendered to docs/cloud_history/, manifest in field.history).
+    # At the 20-min cadence above, 2 h ≈ 6-7 frames. keep_frames must cover it.
+    "highsight_history_hours": 2.0,
     # GeoColour is a RENDERED RGB picture, not a measurement: its brightness reads
     # as "cloud" over sun-glint on the sea, snow, and low sun, and at night means
     # cloud-top temperature, not albedo (PDF Section 5). So by default the verdict
@@ -248,6 +272,14 @@ CLOUDS = {
     # otherwise partly.
     "frac_clear_max": 0.20,
     "frac_overcast_min": 0.80,
+
+    # Disc radius for the "is there cloud HERE now" point read (cloudFracNow /
+    # opaque / sun COT). Small on purpose: a 10 km disc averages a small cloud in
+    # with the surrounding clear sky and reads it below frac_clear_max, so clicking
+    # a small cloud said "clear". ~3 km (about one grid cell) registers a clicked
+    # small cloud (a single cloudy cell reads ~0.33, above clear_max) while still
+    # smoothing. The nowcast fan + the rings keep their own larger radii.
+    "point_read_radius_km": 3.0,
 
     # N-adjacent spatial-coherence on the CLM presence mask (PDF Part A1): a
     # cloudy pixel is only counted if >= this many of its 8 neighbours are also

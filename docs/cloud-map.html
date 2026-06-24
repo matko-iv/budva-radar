@@ -46,6 +46,12 @@
   </section>
 
   <section id="app" hidden>
+    <div id="wip-note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;
+         padding:8px 12px;margin:0 0 10px;font-size:13px;color:#6d4c00;line-height:1.45;">
+      <b>Privremeno rješenje.</b> Radim na popravci L2 satelitske analize (OCA optička
+      debljina je davala lažnu oblačnost dok je vedro). U međuvremenu je SKALA CLOUD baziran na
+      <b>HighSight</b> satelitskoj slici čita se sama slika (isti princip kao SKALA RAIN).
+    </div>
 
     <div id="controls">
       <input id="city-input" placeholder="grad (Budva, Kotor, Bar…) ili klikni mapu" autocomplete="off">
@@ -57,6 +63,12 @@
     <div id="map-wrap">
       <canvas id="canvas" width="100" height="100"></canvas>
       <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div id="history" style="display:none;align-items:center;gap:8px;margin:8px 0;font-size:13px;">
+      <button id="hist-play" title="pusti / pauziraj animaciju">▶</button>
+      <input id="hist-slider" type="range" min="0" max="0" value="0" step="1" style="flex:1;min-width:120px;">
+      <span class="dim" id="hist-time" style="min-width:175px;text-align:right;">—</span>
     </div>
 
     <div id="banner" class="alert">—</div>
@@ -109,6 +121,10 @@
   var svg = document.getElementById("overlay");
   var W = 100, H = 100;     // canvas pixel size (set on image load)
   var U = 1;                // overlay base unit (set from W on image load)
+  var history = field.history || [];                          // past-2h frames [{t,image}]
+  var curPt = { lat: CITIES.budva[0], lon: CITIES.budva[1] }; // last assessed point
+  var showingLatest = true;                                   // false while scrubbing
+  var playTimer = null;
 
   function lonToX(lon) { return (lon - bbox.lon_min) / (bbox.lon_max - bbox.lon_min) * W; }
   function latToY(lat) { return (bbox.lat_max - lat) / (bbox.lat_max - bbox.lat_min) * H; }
@@ -129,9 +145,10 @@
     // Sampling rings removed — the map is now the plain HighSight picture with
     // only the Budva marker (+ the clicked point and the motion arrow).
 
-    // --- motion arrow: white outline + filled arrowhead ---
+    // --- motion arrow: white outline + filled arrowhead (only on the latest
+    // frame; an old frame's "now" motion vector would be misleading) ---
     var m = field.motion;
-    if (m && m.direction_deg != null && m.speed_kmh > 0) {
+    if (showingLatest && m && m.direction_deg != null && m.speed_kmh > 0) {
       var br = m.direction_deg * Math.PI / 180;
       var dirx = Math.sin(br), diry = -Math.cos(br);
       var L = Math.max(U * 6, Math.min(U * 5 + m.speed_kmh * U * 0.14, U * 18));
@@ -173,6 +190,7 @@
     CLOUD_SECTIONS.renderBanner(document.getElementById("banner"), h);
     CLOUD_SECTIONS.renderFacts(document.getElementById("facts"), facts);
     CLOUD_SECTIONS.renderRings(document.getElementById("rings"), facts.rings);
+    curPt = { lat: lat, lon: lon };
     drawOverlay(lat, lon);
     document.getElementById("status").textContent = " " + name + " (" + lat.toFixed(3) + ", " + lon.toFixed(3) + ")";
   }
@@ -194,6 +212,61 @@
   function updateStime() {
     var el = document.getElementById("stime");
     if (el) el.textContent = _fmtSensing(D.source && D.source.sensing_time);
+  }
+
+  // ---- past-2h imagery loop (field.history) -------------------------------
+  function _fmtFrameTime(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso || "?";
+    var p = function (n) { return (n < 10 ? "0" : "") + n; };
+    var age = Math.max(0, Math.round((Date.now() - d.getTime()) / 60000));
+    return p(d.getHours()) + ":" + p(d.getMinutes()) + " · prije ~" + age + " min";
+  }
+
+  function showFrame(i) {
+    if (!history.length) return;
+    i = Math.max(0, Math.min(history.length - 1, i));
+    var fr = history[i];
+    var im = new Image();
+    im.onload = function () {
+      ctx.drawImage(im, 0, 0, W, H);
+      showingLatest = (i === history.length - 1);
+      drawOverlay(curPt.lat, curPt.lon);
+      var he = document.getElementById("hist-time");
+      if (he) he.textContent = _fmtFrameTime(fr.t) + (showingLatest ? " · najnovije" : "");
+    };
+    im.onerror = function () {};            // keep the current frame on a load error
+    im.src = fr.image;
+    var sl = document.getElementById("hist-slider");
+    if (sl && +sl.value !== i) sl.value = i;
+  }
+
+  function setPlay(on) {
+    var btn = document.getElementById("hist-play");
+    if (on && history.length > 1) {
+      btn.textContent = "⏸";
+      playTimer = setInterval(function () {
+        var sl = document.getElementById("hist-slider");
+        var i = +sl.value + 1;
+        if (i >= history.length) i = 0;     // loop back to the oldest
+        showFrame(i);
+      }, 700);
+    } else {
+      btn.textContent = "▶";
+      if (playTimer) { clearInterval(playTimer); playTimer = null; }
+    }
+  }
+
+  function buildHistory() {
+    if (!history || history.length < 2) return;   // nothing to scrub
+    var wrap = document.getElementById("history");
+    var sl = document.getElementById("hist-slider");
+    sl.min = 0; sl.max = history.length - 1; sl.value = history.length - 1;
+    wrap.style.display = "flex";
+    sl.addEventListener("input", function () { setPlay(false); showFrame(+sl.value); });
+    document.getElementById("hist-play").onclick = function () { setPlay(!playTimer); };
+    document.getElementById("hist-time").textContent =
+      _fmtFrameTime(history[history.length - 1].t) + " · najnovije";
   }
 
   function wireApp() {
@@ -219,6 +292,7 @@
     document.getElementById("city-input").addEventListener("keydown", function (e) { if (e.key === "Enter") setCity(); });
 
     assess(CITIES.budva[0], CITIES.budva[1], "Budva", true);   // default: Budva
+    buildHistory();                                            // past-2h imagery loop
 
     if (D.nwp_forecast_url) {
       fetch(D.nwp_forecast_url, { cache: "no-store" })

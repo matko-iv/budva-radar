@@ -8,8 +8,13 @@ advection nowcast (clouds/motion.py + clouds/nowcast.py) and the same per-point
 disc reads as the L2 path — so every clicked point reads the picture, not a
 phantom L2 retrieval (the "only Budva is right" bug).
 
-Tiles:  GET https://api.highsight.dev/v1/satellite/{z}/{x}/{y}
-        JPEG 512x512, Web-Mercator XYZ, ~10 min cadence (latest frame only).
+Tiles:  GET https://api.highsight.dev/v1/satellite/{z}/{x}/{y}?date=YYYY/MM/DD/HHmm
+        JPEG 512x512, Web-Mercator XYZ, 10-min cadence. ALL tiles are pinned to one
+        explicit UTC `date` slot, so the multi-tile mosaic is ONE coherent frame and
+        the reported sensing_time is that slot's TRUE time. HighSight runs ~20 min
+        behind real-time; a request with no `date` silently serves the ~30-min-ago
+        default and may even mix frames across tiles (the spec warns of this), which
+        is why we pin the slot and never report "now".
         Auth: `Authorization: Bearer <HIGHSIGHT_KEY>` (key from env, never
         hardcoded). Set HIGHSIGHT_KEY locally and as a GitHub Actions secret.
 
@@ -22,6 +27,7 @@ import hashlib
 import io
 import math
 import os
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -133,24 +139,98 @@ def _prune(keep):
                 pass
 
 
+def _ts_sha(sensing_time):
+    """(timestamp, short-hash) used to name + dedup a cached frame. Robust to a
+    trailing 'Z' on any Python (normalize before parsing)."""
+    dt = datetime.datetime.fromisoformat(sensing_time.replace("Z", "+00:00"))
+    return dt.strftime("%Y%m%d_%H%M%S"), hashlib.sha256(
+        sensing_time.encode("utf-8")).hexdigest()[:12]
+
+
+def _frame_paths(sensing_time):
+    """(npz_path, png_path) for a cached frame of this sensing_time."""
+    ts, sha = _ts_sha(sensing_time)
+    base = _frame_dir() / f"{ts}_{sha}"
+    return base.with_suffix(".npz"), base.with_suffix(".png")
+
+
 def save_frame(field, sensing_time, rgb_image=None):
     """Persist a field frame (npz) + optional display RGB (png). Deduped by
-    sensing_time so re-runs in the same ~10-min slot don't pile up frames."""
-    ts = datetime.datetime.fromisoformat(sensing_time).strftime("%Y%m%d_%H%M%S")
-    sha = hashlib.sha256(sensing_time.encode("utf-8")).hexdigest()[:12]
-    existing = {p.stem.split("_")[-1] for p in _frame_dir().glob("*.npz")}
-    if sha in existing:
+    sensing_time so re-runs in the same 10-min slot don't pile up frames."""
+    npz, png = _frame_paths(sensing_time)
+    if npz.exists():
         return {"fetched": False, "reason": "no_change", "sensing_time": sensing_time}
-    base = _frame_dir() / f"{ts}_{sha}"
-    field.save(base.with_suffix(".npz"))
+    field.save(npz)
     if rgb_image is not None:
         try:
-            rgb_image.save(base.with_suffix(".png"))
+            rgb_image.save(png)
         except Exception:
             pass
     _prune(int((config.CLOUDS or {}).get("keep_frames", 12)))
-    return {"fetched": True, "path": str(base.with_suffix(".npz")),
-            "sensing_time": sensing_time}
+    return {"fetched": True, "path": str(npz), "sensing_time": sensing_time}
+
+
+def _load_cached(sensing_time):
+    """Return (field, rgb_PIL_or_None) for an already-cached slot, else None — so
+    fetch_field can skip the tile download when we already hold this slot. The
+    HighSight free tier is tile-quota-limited, so re-downloading a slot we already
+    have would burn quota for nothing."""
+    npz, png = _frame_paths(sensing_time)
+    if not npz.exists():
+        return None
+    field = CloudField.load(npz)
+    rgb = None
+    if png.exists():
+        try:
+            from PIL import Image
+            rgb = Image.open(png)
+        except Exception:
+            rgb = None
+    return field, rgb
+
+
+def _parse_iso(s):
+    """ISO sensing_time (with or without trailing 'Z') -> naive-UTC datetime, or None."""
+    try:
+        return datetime.datetime.fromisoformat(
+            str(s).replace("Z", "+00:00")).replace(tzinfo=None)
+    except Exception:
+        return None
+
+
+def _within_interval(nominal, last, min_interval_min):
+    """True when a NEW slot should be SKIPPED (reuse the cache) because less than
+    `min_interval_min` has elapsed since the last downloaded slot — the tile-quota
+    throttle. 0 / no last frame -> never skip."""
+    if not min_interval_min or last is None:
+        return False
+    return (nominal - last) < datetime.timedelta(minutes=float(min_interval_min))
+
+
+def _newest_cached():
+    """(field, rgb_PIL_or_None, sensing_time_iso) of the newest cached frame, or
+    None. Used by the throttle to reuse the latest frame between downloads."""
+    frames = sorted(_frame_dir().glob("*.npz"))
+    if not frames:
+        return None
+    npz = frames[-1]
+    field = CloudField.load(npz)
+    st = field.meta.get("sensing_time")
+    if not st:                                   # fall back to the filename slot
+        try:
+            ts = "_".join(npz.stem.split("_")[:2])
+            st = datetime.datetime.strptime(ts, "%Y%m%d_%H%M%S").isoformat() + "Z"
+        except Exception:
+            st = None
+    rgb = None
+    png = npz.with_suffix(".png")
+    if png.exists():
+        try:
+            from PIL import Image
+            rgb = Image.open(png)
+        except Exception:
+            rgb = None
+    return field, rgb, st
 
 
 def latest_two_fields():
@@ -168,14 +248,34 @@ def latest_two_fields():
 # Live fetch (network)
 # --------------------------------------------------------------------------
 def _api_key(cfg):
+    """HighSight key, in order: env HIGHSIGHT_KEY -> gitignored local file
+    (highsight_key.txt / .highsight_key at repo root) -> cfg. Never hardcoded so
+    it isn't committed to the public repo."""
     env = cfg.get("highsight_key_env", "HIGHSIGHT_KEY")
-    return os.environ.get(env) or cfg.get("highsight_key") or ""
+    key = os.environ.get(env)
+    if key:
+        return key.strip()
+    for name in ("highsight_key.txt", ".highsight_key"):
+        p = BASE_DIR / name
+        if p.exists():
+            try:
+                k = p.read_text(encoding="utf-8").strip()
+                if k:
+                    return k
+            except Exception:
+                pass
+    return (cfg.get("highsight_key") or "").strip()
 
 
-def _fetch_tile(z, x, y, key, timeout=30):
-    """Fetch one JPEG tile -> (TILE_PX, TILE_PX, 3) uint8. None on failure."""
+def _fetch_tile(z, x, y, key, date=None, timeout=30):
+    """Fetch one JPEG tile -> (TILE_PX, TILE_PX, 3) uint8. The `date` query (UTC
+    YYYY/MM/DD/HHmm) pins the frame so the whole mosaic is coherent. Raises
+    urllib.error.HTTPError on an HTTP error (e.g. 400 for a too-recent slot), which
+    `_resolve_slot` uses to step back to an available slot."""
     from PIL import Image
     url = f"{_BASE_URL}/{z}/{x}/{y}"
+    if date:
+        url += f"?date={date}"
     req = urllib.request.Request(url, headers={
         "Authorization": f"Bearer {key}", "User-Agent": "budva-radar/1.0"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -184,13 +284,46 @@ def _fetch_tile(z, x, y, key, timeout=30):
     return np.asarray(img, dtype="uint8")
 
 
-def _sensing_time():
-    """HighSight serves the latest frame on a ~10-min cadence; floor 'now' (UTC)
-    to a 10-min slot so re-runs in the same slot dedup and successive slots make
-    distinct nowcast frames."""
-    t = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-    t = t.replace(minute=(t.minute // 10) * 10, second=0, microsecond=0)
-    return t.isoformat()
+def _freshest_slot(cfg=None):
+    """The freshest HighSight frame we can RELIABLY request: now (UTC) minus the
+    publish lag, floored to HighSight's 10-min satellite cadence. Imagery is up to
+    ~20 min behind real-time and more-recent requests may fail or serve older
+    tiles, so we pin a known slot and report ITS true time — never 'now'."""
+    cfg = cfg or config.CLOUDS
+    lag = int(cfg.get("highsight_lag_min", 30))
+    t = (datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+         - datetime.timedelta(minutes=lag))
+    return t.replace(minute=(t.minute // 10) * 10, second=0, microsecond=0)
+
+
+def _date_param(slot):
+    """HighSight `date` query value: UTC YYYY/MM/DD/HHmm (10-min cadence)."""
+    return slot.strftime("%Y/%m/%d/%H%M")
+
+
+def _slot_iso(slot):
+    """Canonical sensing_time for a slot: UTC ISO with a 'Z', so the page reads the
+    age in UTC (not local) and the L2 / HighSight time formats stay uniform."""
+    return slot.replace(second=0, microsecond=0).isoformat() + "Z"
+
+
+def _resolve_slot(z, x, y, key, slot, cfg=None):
+    """Find the freshest slot whose tile actually exists, stepping back from `slot`
+    in 10-min steps (HighSight occasionally hasn't published the newest slot yet).
+    Returns (slot_datetime, first_tile_array); the fetched tile is reused so this
+    costs no extra quota."""
+    steps = int((cfg or config.CLOUDS).get("highsight_max_lookback_slots", 3))
+    for _ in range(steps + 1):
+        try:
+            return slot, _fetch_tile(z, x, y, key, date=_date_param(slot))
+        except urllib.error.HTTPError as e:
+            if e.code in (400, 404, 416):            # too recent / not available
+                slot = slot - datetime.timedelta(minutes=10)
+                continue
+            raise
+    raise RuntimeError(
+        f"HighSight: no frame available in the lookback window (back to "
+        f"{_date_param(slot)} UTC)")
 
 
 def fetch_field(cfg=None, *, key=None, zoom=None, display_width=None):
@@ -198,22 +331,51 @@ def fetch_field(cfg=None, *, key=None, zoom=None, display_width=None):
     regular lat/lon grid, and return (field, display_rgb_PIL, sensing_time).
 
     `field` is a normalized CloudField (presence/opaque from brightness);
-    `display_rgb_PIL` is a north-up plate-carree picture for the map. Raises on a
-    missing key or a failed download (run_clouds catches and falls back)."""
+    `display_rgb_PIL` is a north-up plate-carree picture for the map. All tiles are
+    pinned to ONE resolved UTC slot, and that slot's true time is returned as
+    sensing_time. Raises on a missing key or a failed download (run_clouds catches
+    and falls back)."""
     cfg = cfg or config.CLOUDS
+    z = int(zoom or cfg.get("highsight_zoom", 7))
+
+    # Quota guard: if we already hold the freshest slot, reuse it (no download).
+    nominal = _freshest_slot(cfg)
+    cached = _load_cached(_slot_iso(nominal))
+    if cached is not None:
+        return cached[0], cached[1], _slot_iso(nominal)
+
+    # Quota throttle: only download a NEW slot every highsight_min_interval_min;
+    # between downloads reuse the newest cached frame (its honest age just grows).
+    # This is what keeps the monthly tile count under the HighSight free quota.
+    min_interval = float(cfg.get("highsight_min_interval_min", 0) or 0)
+    if min_interval > 0:
+        newest = _newest_cached()
+        if newest is not None and _within_interval(nominal, _parse_iso(newest[2]), min_interval):
+            return newest
+
     key = key or _api_key(cfg)
     if not key:
-        raise RuntimeError("HighSight API key missing — set HIGHSIGHT_KEY")
+        raise RuntimeError(
+            "HighSight API key missing — set HIGHSIGHT_KEY env var, or put the key "
+            "in highsight_key.txt at the repo root (gitignored).")
     from PIL import Image
 
-    z = int(zoom or cfg.get("highsight_zoom", 7))
     bbox = cfg["bbox"]
     x0, x1, y0, y1 = tile_range(bbox, z)
+    # Resolve to a slot that actually exists; the returned NW tile is reused below.
+    slot, first_tile = _resolve_slot(z, x0, y0, key, nominal, cfg)
+    sensing_time = _slot_iso(slot)
+    cached = _load_cached(sensing_time)          # resolution may land on a cached slot
+    if cached is not None:
+        return cached[0], cached[1], sensing_time
+
+    date = _date_param(slot)
     nx, ny = (x1 - x0 + 1), (y1 - y0 + 1)
     mosaic = np.zeros((ny * TILE_PX, nx * TILE_PX, 3), dtype="uint8")
     for ty in range(y0, y1 + 1):
         for tx in range(x0, x1 + 1):
-            tile = _fetch_tile(z, tx, ty, key)
+            tile = (first_tile if (tx == x0 and ty == y0)
+                    else _fetch_tile(z, tx, ty, key, date=date))
             r = (ty - y0) * TILE_PX
             c = (tx - x0) * TILE_PX
             mosaic[r:r + TILE_PX, c:c + TILE_PX] = tile
@@ -221,7 +383,6 @@ def fetch_field(cfg=None, *, key=None, zoom=None, display_width=None):
 
     # Frac grid on the analysis grid (drives nowcast + per-point reads).
     lats, lons = target_grid(cfg)
-    sensing_time = _sensing_time()
     rgb_analysis = reproject(mosaic, origin_px, z, lats, lons)
     field = build_field(rgb_analysis, lats, lons, sensing_time, cfg)
 

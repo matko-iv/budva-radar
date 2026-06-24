@@ -26,6 +26,7 @@ OUTPUT_JSON = BASE_DIR / "output" / "cloud_status.json"
 OUTPUT_JS = DOCS_DIR / "cloud_data.js"
 DOCS_STATUS_JSON = DOCS_DIR / "cloud_status.json"
 LATEST_PNG = DOCS_DIR / "latest_cloud.png"
+DOCS_HISTORY = DOCS_DIR / "cloud_history"
 PREVIEW_SCALE = 4
 
 
@@ -53,6 +54,46 @@ def _render_map(field, cfg, loc, gc_rgb=None):
     render.to_png(field, LATEST_PNG, scale=PREVIEW_SCALE)
     H, W = field.shape
     return [W * PREVIEW_SCALE, H * PREVIEW_SCALE]
+
+
+def publish_history(cfg, loc):
+    """Render the cached HighSight frames from the past N hours to
+    docs/cloud_history/<ts>.png (with the Budva marker, like latest_cloud.png) and
+    return a manifest [{t, image}] ascending in time — the page's 2 h history loop.
+    Already-rendered frames are reused; anything outside the window is pruned."""
+    from PIL import Image
+    hours = float(cfg.get("highsight_history_hours", 2.0))
+    DOCS_HISTORY.mkdir(parents=True, exist_ok=True)
+    cutoff = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
+    manifest, keep = [], set()
+    for png in sorted(highsight._frame_dir().glob("*.png")):
+        try:                                    # cache name: YYYYmmdd_HHMMSS_<sha>.png
+            dt = datetime.datetime.strptime("_".join(png.stem.split("_")[:2]),
+                                            "%Y%m%d_%H%M%S")
+        except Exception:
+            continue
+        if dt < cutoff:
+            continue
+        name = dt.strftime("%Y%m%dT%H%M%SZ") + ".png"
+        out = DOCS_HISTORY / name
+        if not out.exists():
+            try:
+                visible.render_map_png(cfg, loc, out, source_image=Image.open(png),
+                                       attribution="HighSight ©")
+            except Exception as e:
+                print(f"  history render failed ({png.name}): {e}", file=sys.stderr)
+                continue
+        keep.add(name)
+        manifest.append({"t": dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                         "image": f"cloud_history/{name}"})
+    for old in DOCS_HISTORY.glob("*.png"):       # prune frames outside the window
+        if old.name not in keep:
+            try:
+                old.unlink()
+            except Exception:
+                pass
+    manifest.sort(key=lambda m: m["t"])
+    return manifest
 
 
 def _highsight_parts(loc, cfg):
@@ -84,7 +125,8 @@ def _highsight_parts(loc, cfg):
         render.to_png(field, LATEST_PNG, scale=PREVIEW_SCALE)
         h, w = field.shape
         img_size = [w * PREVIEW_SCALE, h * PREVIEW_SCALE]
-    return field, mot, facts, "HighSight", img_size, hs_time
+    history = publish_history(cfg, loc)
+    return field, mot, facts, "HighSight", img_size, hs_time, history
 
 
 def build_status(field, prev_field, data_source):
@@ -93,14 +135,21 @@ def build_status(field, prev_field, data_source):
 
     # HighSight (visible picture) is the active interim source; the L2/GeoColour
     # path below stays in place behind its flags for the ongoing L2 fix.
-    parts = _highsight_parts(loc, cfg) if cfg.get("use_highsight", False) else None
-    if parts is None and field is None:
-        raise RuntimeError("No cloud source (HighSight failed and no L2 frame).")
+    use_hs = cfg.get("use_highsight", False)
+    parts = _highsight_parts(loc, cfg) if use_hs else None
+    if use_hs and parts is None:
+        # The user selected HighSight — do NOT silently serve an EUMETSAT verdict.
+        raise RuntimeError(
+            "HighSight is the selected SKALA CLOUD source but it is UNAVAILABLE "
+            "(missing HIGHSIGHT_KEY or fetch failed). Refusing to fall back to the "
+            "EUMETSAT L2 verdict. Set the key (env HIGHSIGHT_KEY or highsight_key.txt) "
+            "and re-run, or set use_highsight=False to use L2 on purpose.")
     if parts is not None:
-        field, mot, facts, verdict_source, img_size, sensing_time = parts
+        field, mot, facts, verdict_source, img_size, sensing_time, history = parts
         source_name, gc_time = "HighSight satellite", None
         return _assemble_status(field, mot, facts, verdict_source, img_size,
-                                sensing_time, gc_time, source_name, data_source, cfg, loc)
+                                sensing_time, gc_time, source_name, data_source, cfg, loc,
+                                history=history)
 
     mot = None
     if prev_field is not None:
@@ -157,7 +206,7 @@ def build_status(field, prev_field, data_source):
 
 
 def _assemble_status(field, mot, facts, verdict_source, img_size, sensing_time,
-                     gc_time, source_name, data_source, cfg, loc):
+                     gc_time, source_name, data_source, cfg, loc, history=None):
     """Pack the common status dict (shared by the HighSight and L2 paths)."""
     status = {
         "generated": datetime.datetime.now().isoformat(timespec="seconds"),
@@ -175,6 +224,7 @@ def _assemble_status(field, mot, facts, verdict_source, img_size, sensing_time,
         "field": {
             **downsample_for_browser(field),
             "bbox": cfg["bbox"], "image": LATEST_PNG.name, "image_size": img_size,
+            "history": history,        # past-2h frames for the page loop (None on L2)
             # full motion (incl. deg/min) for the browser-side nowcast replay
             "motion": mot,
         },
@@ -190,6 +240,7 @@ def _assemble_status(field, mot, facts, verdict_source, img_size, sensing_time,
             "nowcast_dir_spread_deg": cfg["nowcast_dir_spread_deg"],
             "nowcast_dir_growth_deg_per_min": cfg["nowcast_dir_growth_deg_per_min"],
             "sample_radius_now_km": config.SAMPLE_RADII_KM[0],
+            "point_read_radius_km": cfg.get("point_read_radius_km", config.SAMPLE_RADII_KM[0]),
             "sample_radii_km": config.SAMPLE_RADII_KM,
         },
         "nwp_forecast_url": config.NWP_FORECAST_URL,
@@ -265,7 +316,11 @@ def main(argv):
     print("  budva-radar — clouds: fetch + interpret")
     print("=" * 60)
     demo = "--demo" in argv
-    status = run_demo() if demo else run_live()
+    try:
+        status = run_demo() if demo else run_live()
+    except Exception as e:
+        print(f"\n  ERROR: {e}")
+        return 1
     if status is None:
         return 1
     _write(status)

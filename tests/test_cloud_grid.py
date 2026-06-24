@@ -66,10 +66,54 @@ def test_save_load_roundtrip():
         assert abs(g.value_at("ctt", 43.0, 18.3) - 250.0) < 1e-3
 
 
+def _single_cloud_field():
+    """Clear everywhere except ONE isolated cloudy cell — a small cloud, placed
+    OFF the stride-subsample lattice so the old `a[::step,::step]` would drop it."""
+    lats = np.arange(44.0, 41.99, -0.03)
+    lons = np.arange(18.0, 21.01, 0.03)
+    H, W = len(lats), len(lons)
+    frac = np.zeros((H, W))
+    frac[H // 2 + 1, W // 2 + 1] = 1.0
+    nan = np.full((H, W), np.nan)
+    return CloudField(lats, lons, {"mask": frac, "frac": frac, "opaque": frac,
+                                   "ctt": nan, "cth": nan, "cot": nan, "phase": nan},
+                      meta={"sensing_time": "2026-06-24T12:00:00"})
+
+
+def test_downsample_preserves_small_cloud():
+    # The per-point click read failed because the browser grid dropped small
+    # clouds: a single cloudy cell must survive downsampling (not vanish).
+    from clouds.grid import downsample_for_browser
+    f = _single_cloud_field()
+    ds = downsample_for_browser(f)
+    fr = np.array([[0.0 if x is None else x for x in row] for row in ds["frac"]])
+    assert fr.sum() > 0.0, "small cloud dropped from the browser grid"
+    # frac shipped at (near) full resolution so the read is faithful to the picture
+    assert len(ds["lons"]) >= f.shape[1] - 1, (len(ds["lons"]), f.shape[1])
+
+
+def test_downsample_meanpool_keeps_small_cloud_when_coarsened():
+    # Even when forced to coarsen, MEAN-pooling keeps a nonzero fraction in the
+    # block (strided subsampling would drop the off-lattice cell).
+    from clouds.grid import downsample_for_browser
+    f = _single_cloud_field()
+    ds = downsample_for_browser(f, max_dim=20)
+    fr = np.array([[0.0 if x is None else x for x in row] for row in ds["frac"]])
+    assert fr.sum() > 0.0, "mean-pool lost the small cloud under coarsening"
+
+
+def test_downsample_omits_all_nan_layers():
+    from clouds.grid import downsample_for_browser
+    ds = downsample_for_browser(_single_cloud_field())
+    assert ds["cot"] is None and ds["cth"] is None   # picture has no COT/height
+
+
 def main():
     fails = []
     for fn in (test_value_at, test_cloud_fraction, test_sample_cloudy_and_phase,
-               test_save_load_roundtrip):
+               test_save_load_roundtrip, test_downsample_preserves_small_cloud,
+               test_downsample_meanpool_keeps_small_cloud_when_coarsened,
+               test_downsample_omits_all_nan_layers):
         try:
             fn()
             print(f"PASS  {fn.__name__}")

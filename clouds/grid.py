@@ -61,18 +61,24 @@ class CloudField:
 
     def cloud_fraction(self, lat, lon, radius_km, layer="frac"):
         """Disc-mean of `layer` (default 'frac' = total cloud amount; pass
-        'opaque' for opaque-only) within radius_km. Returns None when no valid
-        cells fall in the disc."""
-        sel = self._disc_mask(lat, lon, radius_km)
-        if not sel.any():
-            return None
+        'opaque' for opaque-only) within radius_km.
+
+        Falls back to the NEAREST cell when the disc catches no valid cell (radius
+        smaller than a grid cell — e.g. a tight point read on a coarse grid), so a
+        point inside the grid always reads a value instead of None. Returns None
+        only when the point is outside the grid or the nearest cell is NaN."""
         arr = self.layers.get(layer)
         if arr is None:
             arr = self.layers["mask"]
-        vals = arr[sel]
+        sel = self._disc_mask(lat, lon, radius_km)
+        vals = arr[sel] if sel.any() else np.array([])
         vals = vals[~np.isnan(vals)]
         if vals.size == 0:
-            return None
+            if not self.contains(lat, lon):
+                return None
+            i, j = self._nearest_idx(lat, lon)
+            v = arr[i, j]
+            return None if np.isnan(v) else float(np.clip(v, 0.0, 1.0))
         return float(np.clip(vals.mean(), 0.0, 1.0))
 
     def sample_cloudy(self, layer, lat, lon, radius_km, reducer="mean"):
@@ -122,28 +128,49 @@ class CloudField:
         return cls(lats, lons, layers, meta)
 
 
-def downsample_for_browser(field, max_dim=80):
+def downsample_for_browser(field, max_dim=200):
     """A compact dict for cloud_data.js so the JS port can replay the nowcast
-    (frac) and label clicked points (cth/cot). Coarsened to keep the file small."""
-    H, W = field.shape
-    step = max(1, (max(H, W) + max_dim - 1) // max_dim)   # ceil -> actually shrinks
-    lats = field.lats[::step]
-    lons = field.lons[::step]
+    (frac) and read any clicked point.
 
-    def _coarse(name, nd, default=None):
+    frac/opaque are MEAN-pooled (NOT strided): strided subsampling (`a[::step]`)
+    silently drops clouds smaller than the stride, so clicking a small cloud read
+    "clear". Mean-pooling keeps a non-zero fraction wherever any cloud falls, and
+    the default max_dim ships frac at (near) full resolution so the per-point read
+    is faithful to the picture. All-NaN layers (cth/cot for the HighSight picture)
+    are omitted to keep the payload small."""
+    import warnings
+    H, W = field.shape
+    step = max(1, (max(H, W) + max_dim - 1) // max_dim)
+    if step == 1:
+        lats, lons = field.lats, field.lons
+    else:
+        Hc, Wc = H // step, W // step
+        lats = field.lats[:Hc * step].reshape(Hc, step).mean(1)
+        lons = field.lons[:Wc * step].reshape(Wc, step).mean(1)
+
+    def _pool(a):
+        if step == 1:
+            return a
+        Hc, Wc = H // step, W // step
+        block = a[:Hc * step, :Wc * step].reshape(Hc, step, Wc, step)
+        with warnings.catch_warnings():            # all-NaN block -> NaN, silently
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            return np.nanmean(block, axis=(1, 3))
+
+    def _layer(name, nd, default=None):
         a = field.layers.get(name)
-        if a is None:
+        if a is None and default is not None:
             a = field.layers.get(default)
-        if a is None:
+        if a is None or not np.isfinite(a).any():   # omit all-NaN layers (cth/cot)
             return None
-        sub = a[::step, ::step]
+        sub = _pool(a)
         return np.where(np.isnan(sub), None, np.round(sub, nd)).tolist()
 
     return {
         "lats": [round(float(x), 4) for x in lats],
         "lons": [round(float(x), 4) for x in lons],
-        "frac": _coarse("frac", 2, default="mask"),
-        "opaque": _coarse("opaque", 2),
-        "cth": _coarse("cth", 0),
-        "cot": _coarse("cot", 1),
+        "frac": _layer("frac", 2, default="mask"),
+        "opaque": _layer("opaque", 2),
+        "cth": _layer("cth", 0),
+        "cot": _layer("cot", 1),
     }

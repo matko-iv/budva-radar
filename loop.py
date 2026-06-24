@@ -43,7 +43,10 @@ def push_docs():
         subprocess.run(["git", "add", "output/status.json", "output/cloud_status.json"],
                        cwd=BASE_DIR, check=False, capture_output=True, timeout=15)
         # Use -A so frame rotations (additions AND deletions) are both tracked.
-        subprocess.run(["git", "add", "-A", "data/frames/", "data/cloud_frames/"],
+        # highsight_frames is included so the tile-quota throttle + nowcast motion
+        # survive a restart/redeploy (the throttle relies on the cache persisting).
+        subprocess.run(["git", "add", "-A", "data/frames/", "data/cloud_frames/",
+                        "data/highsight_frames/"],
                        cwd=BASE_DIR, check=False, capture_output=True, timeout=15)
         msg = f"skala update {datetime.now():%Y-%m-%d %H:%M:%S}"
         subprocess.run([
