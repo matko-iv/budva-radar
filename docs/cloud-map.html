@@ -240,19 +240,20 @@
     var s = D.source || {}, v = (D.summary || {}).cloud_verdict || {};
     var nrows = (field.lats || []).length, ncols = (field.lons || []).length;
     var hhmm = (s.sensing_time || "").slice(11, 16) || "--:--";
+    var hs = (s.verdict_source === "HighSight");
     return [
       ["SKALA(C) 2026 Matko Interactive Software", 40],
-      ["SKALA Cloud Interpreter v1.0 — EUMETSAT MTG edition", 150],
+      ["SKALA Cloud Interpreter v1.0 — " + (hs ? "HighSight edition" : "EUMETSAT MTG edition"), 150],
       ["", 30],
       ["Memory test : 65536K  OK", 130],
       ["", 30],
-      ["Detecting satellite ........ MTG-I1 FCI / 0° disk", 150],
-      ["Cloud products ............. CLM + CTTH + OCA (Data Store)", 150],
+      ["Detecting satellite ........ " + (hs ? "HighSight visible tiles" : "MTG-I1 FCI / 0° disk"), 150],
+      ["Cloud products ............. " + (hs ? "true-colour RGB (image read)" : "CLM + CTTH + OCA (Data Store)"), 150],
       ["Sensing time ............... " + hhmm + " UTC", 160],
       ["", 30],
       ["Loading basemap.topo           [ OK ]", 90],
       ["Loading cloud_field.npz        [ OK ]", 110],
-      ["Geo-navigation ............. geos -> lat/lon (parallax-aware)", 150],
+      ["Geo-navigation ............. " + (hs ? "web-mercator -> lat/lon" : "geos -> lat/lon (parallax-aware)"), 150],
       ["Cloud grid ................. " + ncols + "x" + nrows + " · src " + (s.data_source || "?"), 160],
       ["Verdict .................... " + (v.state || "?"), 190],
       ["", 40],
