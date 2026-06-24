@@ -50,16 +50,18 @@
 
   function renderFacts(node, facts) {
     facts = facts || {};
-    // PRESENCE (is there cloud — thin cirrus counts) vs SUN-BLOCKING are two
-    // separate numbers (the PDF's core point), shown on separate rows.
+    // Lead with the SUN answer; the raw CLM presence % is demoted to a clearly
+    // labelled "total incl. thin" line so a high number (e.g. 90% thin cirrus)
+    // never reads as the cloudiness alarm (PDF Part A3). Sun-blocking cover and
+    // presence stay separate numbers (the PDF's core two-axis point).
     var pct = facts.cloudFracNow == null ? null : Math.round(facts.cloudFracNow * 100) + "%";
     var block = facts.skyCoverEff != null ? facts.skyCoverEff
               : (facts.opaqueFracNow != null ? facts.opaqueFracNow : null);
     var blockPct = block == null ? null : Math.round(block * 100) + "%";
     var rows = [
-      _row("Oblačnost (prisustvo)", pct),
       _row("Sunce", _sunLabel(facts)),
       _row("Zaklanja sunce", blockPct),
+      _row("Ukupno oblaka (uklj. tanke)", pct),
       _row("Tip", facts.cloudTypeLabel),
       _row("Visina vrha", facts.cloudTopHeightM != null ? Math.round(facts.cloudTopHeightM) + " m (" + (facts.heightBand || "?") + ")" : null),
       _row("Debljina", facts.thickness ? facts.thickness + (facts.opticalThickness != null ? " (COT " + facts.opticalThickness + ")" : "") : null),

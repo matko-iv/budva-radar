@@ -9,6 +9,7 @@ straight to degrees — no affine calibration needed).
 import numpy as np
 from scipy.signal import correlate2d
 
+import config
 from radar import calibration
 
 
@@ -66,6 +67,14 @@ def compute_motion(prev_frame, curr_frame, lat_c, lon_c, dt_min,
         km_per_frame = float(calibration.haversine_km(
             lat_c, lon_c, lat_c + dlat_per_frame, lon_c + dlon_per_frame))
         speed_kmh = km_per_frame * (60.0 / dt_min)
+
+    # Physical sanity (PDF Part B): one global cross-correlation vector can lock
+    # onto a spurious far peak. If the implied speed is unphysical for cloud
+    # advection, flag the estimate unreliable (confidence 0) so every downstream
+    # gate ignores it instead of reporting e.g. "ka SW @ 408 km/h".
+    max_speed = float((config.CLOUDS or {}).get("motion_max_speed_kmh", 250.0))
+    if speed_kmh > max_speed:
+        confidence = 0.0
 
     return {
         "dlat_per_min": dlat_per_min,

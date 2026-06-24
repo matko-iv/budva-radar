@@ -125,19 +125,22 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
         parallax_km = round(calibration.haversine_km(lat, lon, s_lat, s_lon), 1)
     cot_med = field.sample_cloudy("cot", s_lat, s_lon, now_radius, reducer="median")
 
-    sun_state = transmittance = cmf_diag = None
+    sun_state = transmittance = cmf_val = None
     if not is_night:
-        sun_state = solar.sun_state(
-            cot_med, sza if sza is not None else 0.0, phase,
-            cot_thin=cfg["cot_thin_max"], cot_block=cfg["cot_block_min"],
-            night_sza=night_sza,
-            ice_factor=float(cfg.get("sun_ice_factor", solar.ICE_FORWARD_SCATTER)))
+        ice_factor = float(cfg.get("sun_ice_factor", solar.ICE_FORWARD_SCATTER))
+        # The sun/shade verdict runs on the GLOBAL-irradiance Cloud Modification
+        # Factor (PDF Part A2), not the direct beam: thin/forward-scattering cloud
+        # keeps the sky bright, so a cirrostratus over Budva reads "sunny" even
+        # though its direct-beam transmittance is only a few percent.
+        cmf_val = solar.cmf(cot_med or 0.0, sza if sza is not None else 0.0,
+                            phase=phase, ice_factor=ice_factor)
+        sun_state = solar.cmf_sun_state(
+            cmf_val, sunny_min=float(cfg.get("cmf_sunny_min", 0.80)),
+            blocked_max=float(cfg.get("cmf_blocked_max", 0.40)))
+        # Direct-beam transmittance retained as a labelled diagnostic only (the
+        # legacy "is the sun blocked" number, which under-reads thin cloud).
         transmittance = solar.direct_transmittance(
             cot_med or 0.0, sza if sza is not None else 0.0)
-        # Cloud Modification Factor (PDF Part A2) — DIAGNOSTIC ONLY: the sun/shade
-        # verdict stays on the Beer-Lambert sun_state above until the published
-        # CMF fit is verified (see solar.cmf docstring).
-        cmf_diag = solar.cmf(cot_med or 0.0, sza if sza is not None else 0.0)
 
     thin_veil = bool(frac is not None and frac > cfg["frac_clear_max"]
                      and sky_cover is not None and sky_cover <= cfg["frac_clear_max"])
@@ -178,7 +181,7 @@ def cloud_facts(field, motion, lat, lon, loc_name="Budva", cfg=None):
         "isNight": is_night,
         "sunState": sun_state,
         "sunTransmittance": None if transmittance is None else round(transmittance, 3),
-        "cmfDiag": None if cmf_diag is None else round(cmf_diag, 3),
+        "cmf": None if cmf_val is None else round(cmf_val, 3),
         "cotMedian": None if cot_med is None else round(cot_med, 1),
         "satelliteZenithDeg": sat_zen,
         "parallaxShiftKm": parallax_km,

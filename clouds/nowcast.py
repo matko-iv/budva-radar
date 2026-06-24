@@ -58,22 +58,27 @@ def point_nowcast(field, motion, lat, lon, cfg=None):
     now_radius = config.SAMPLE_RADII_KM[0]   # innermost ring (~10 km)
     frac_now = field.cloud_fraction(lat, lon, now_radius)
 
+    # A motion vector is usable only if confident, non-trivial, AND physically
+    # plausible. The same gate decides both whether to advect and whether to
+    # SHOW the vector, so an unreliable estimate (e.g. a spurious 408 km/h
+    # cross-correlation peak) is neither used nor displayed (PDF Part B).
+    max_speed = float(cfg.get("motion_max_speed_kmh", 250.0))
+    usable = bool(motion and motion.get("direction_deg") is not None
+                  and (motion.get("confidence") or 0) >= _MIN_CONF
+                  and _MIN_SPEED_KMH <= (motion.get("speed_kmh") or 0) <= max_speed)
+
     out = {
         "cloudFracNow": None if frac_now is None else round(frac_now, 3),
         "cloudAtLocation": bool(frac_now is not None and frac_now > cfg["frac_clear_max"]),
         "approaching": False,
         "clearing": False,
         "etaMin": None,
-        "motionCardinal": motion.get("direction_cardinal") if motion else None,
-        "motionSpeedKmh": motion.get("speed_kmh") if motion else None,
+        "motionCardinal": motion.get("direction_cardinal") if usable else None,
+        "motionSpeedKmh": motion.get("speed_kmh") if usable else None,
         "series": [],
     }
     if frac_now is None:
         return out
-
-    usable = (motion and motion.get("direction_deg") is not None
-              and (motion.get("confidence") or 0) >= _MIN_CONF
-              and (motion.get("speed_kmh") or 0) >= _MIN_SPEED_KMH)
 
     series = [{"t": 0, "frac": round(frac_now, 3)}]
     if not usable:

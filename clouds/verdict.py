@@ -90,6 +90,14 @@ def _now_level(frac):
     return "partly"
 
 
+def _sun_through(facts):
+    """True when, by day, the sun genuinely gets through at the point (high CMF
+    -> sunState 'sunny'). Then broken/scattered cloud reads as a sunny headline,
+    not 'partly cloudy' — the PDF (A3) wants the headline to be the sun-state
+    word, with cover % kept only as secondary context."""
+    return (not facts.get("isNight")) and facts.get("sunState") == "sunny"
+
+
 # Sun/shade descriptor — the second axis the PDF asks us to report alongside the
 # cloud-cover state. By day it comes from OCA COT + the solar zenith; at night
 # OCA COT is unusable so we report cloud as IR-detected and make NO sun claim.
@@ -164,6 +172,12 @@ def interpret(facts):
             state = "OVERCAST"
             ir = " (IR)" if night else ""
             narrative = f"Overcast over {loc}{pct_txt} — {typ}{tops}{ir}."
+        elif _sun_through(facts):
+            # Broken/scattered cloud, but the sun gets through at the point (high
+            # CMF) -> a sunny headline, not "partly cloudy". The cover % stays as
+            # context; the cloud type is still named (PDF Part A3).
+            state = "CLEAR"
+            narrative = f"Mostly sunny over {loc}{pct_txt} — {typ}, sun gets through."
         elif thin:
             state = "PARTLY"
             narrative = (f"Thin high cloud over {loc}{pct_txt} (IR)." if night
@@ -211,6 +225,12 @@ def serbian_line(facts, res):
         return {"text": f"djelimično oblačno nad Budvom{pct_txt}",
                 "bold": "djelimično oblačno nad Budvom", "color": "#607d8b", "weight": 600}
     # CLEAR
+    sky = _sky_cover(facts)
+    if (_sun_through(facts) and not facts.get("thinVeil")
+            and sky is not None and sky > config.CLOUDS["frac_clear_max"]):
+        # broken cloud present, but the sun is out at the point -> "mostly sunny"
+        return {"text": f"pretežno sunčano nad Budvom — sunce probija{pct_txt}",
+                "bold": "pretežno sunčano nad Budvom", "color": "#f9a825", "weight": 600}
     if facts.get("thinVeil"):
         tail = " (IR)" if night else ", sunce probija"
         return {"text": f"pretežno vedro nad Budvom — tanak visoki oblak{tail}{pct_txt}",
@@ -245,6 +265,6 @@ def cloud_verdict(status):
                    "cloudAtLocation", "approaching", "clearing", "etaMin",
                    "heightBand", "thickness", "phase", "cloudTypeLabel",
                    "cloudTopHeightM", "cloudTopTempC", "szaDeg", "isNight",
-                   "sunState", "sunTransmittance", "cmfDiag", "cotMedian",
+                   "sunState", "sunTransmittance", "cmf", "cotMedian",
                    "satelliteZenithDeg", "parallaxShiftKm")},
     }

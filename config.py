@@ -230,6 +230,18 @@ CLOUDS = {
     # the textbook worst case) so PRESENCE isn't inflated by speckle. 0 = off.
     "coherence_min_neighbors": 2,
 
+    # Sun-glint + coastal false-cloud suppression (PDF Part A1). The CLM is
+    # "clear-conservative" and over-detects cloud over the sun-glint sea and the
+    # coastline; Budva is a coastal pixel next to the Adriatic — the textbook
+    # worst case (this is the "90% cloud / blocks sun 67% while clearly sunny"
+    # false alarm). A CLM-"cloudy" pixel is dropped ONLY when it is BOTH in the
+    # sun-glint zone (glint angle below glint_max_deg) AND has no corroborating
+    # CTTH/OCA retrieval — a real cloud has a retrievable top/optical thickness,
+    # glint/coast false-cloud does not. Conservative: genuine cloud, incl. thin
+    # cirrus (which has a cloud top), is always kept. False = off.
+    "glint_suppress": True,
+    "glint_max_deg": 25.0,
+
     # Cloud-top height bands (m): low <2 km, mid 2-6 km, high >6 km (WMO-ish).
     "height_low_max_m": 2000.0,
     "height_mid_max_m": 6000.0,
@@ -254,6 +266,16 @@ CLOUDS = {
     "sun_night_sza": 80.0,       # SZA at/above which we report no sun verdict
     "sun_ice_factor": 1.5,       # ice cloud needs ~50% more COT to block the sun
 
+    # The sun/shade word ("sunny"/"dimmed"/"blocked") is decided on the GLOBAL
+    # irradiance Cloud Modification Factor (CMF = GHI_cloudy/GHI_clear), the PDF's
+    # correct "is it actually sunny" metric (clouds/solar.cmf), NOT the direct-beam
+    # transmittance — thin/forward-scattering cloud (e.g. cirrostratus over Budva)
+    # keeps the sky bright even though its direct beam is a few percent. Bands map
+    # to the SENSE2 sky-state classes the PDF cites: >= sunny -> "sunny",
+    # <= blocked -> "blocked", between -> "dimmed".
+    "cmf_sunny_min": 0.80,       # CMF at/above which the sun "gets through"
+    "cmf_blocked_max": 0.40,     # CMF at/below which the sun is "blocked"
+
     # Parallax: MTG sits at 0N,0E so cloud over Budva (satellite zenith ~52 deg)
     # appears shifted ~1.3x its height toward the NE. The sampling disc (>=10 km)
     # already absorbs this; set True to additionally shift the sun/shade COT
@@ -272,6 +294,13 @@ CLOUDS = {
     # Directional cone spread for field motion (deg), grows with lead time.
     "nowcast_dir_spread_deg": 12.0,
     "nowcast_dir_growth_deg_per_min": 0.08,
+    # Physical sanity cap on the single global cloud-motion vector (PDF Part B:
+    # one cross-correlation vector for the whole scene is fragile and can lock
+    # onto a spurious far peak — the "ka SW @ 408 km/h" artifact). A cloud field
+    # advecting faster than this is treated as an unreliable estimate: it is not
+    # shown and never drives the advection nowcast. Real jet-level cirrus tops out
+    # around ~200 km/h, so 250 keeps genuine fast motion while rejecting artifacts.
+    "motion_max_speed_kmh": 250.0,
 
     # Frame cache retention (mirror KEEP_FRAMES). 12 frames @ ~10 min ~ 2 h.
     "keep_frames": 12,

@@ -86,10 +86,13 @@ def test_sun_state_night_returns_none():
 
 
 # --- Cloud Modification Factor (PDF Part A2; Papachristopoulou et al. 2024) ----
-# Implemented as a DIAGNOSTIC only (the verdict still uses Beer-Lambert sun_state)
-# because the published-fit coefficients, as transcribed, are degenerate. These
-# tests pin the documented functional LIMITS, which are reliable, not specific
-# mid-COT values (those need the typeset Eq.2 / Fig.2a to verify).
+# The CMF (all-sky / clear-sky GLOBAL irradiance) is now what the sun/shade
+# verdict runs on (via cmf_sun_state), replacing the direct-beam metric that
+# under-read thin forward-scattering cloud as "blocked". The paper's transcribed
+# a,b polynomials are degenerate (CMF~0 for all cloud), so cmf() is re-fit to the
+# paper's own published anchors: clear COT<1 -> CMF>=0.9, overcast COT>13 ->
+# CMF<=0.4, thin COT~2.1 stays bright (CMF~0.8). These tests pin the reliable
+# LIMITS and that anchor behaviour.
 
 def test_cmf_clear_sky_is_one():
     # COT 0 (or None) -> CMF 1 (full clear-sky GHI). A reliable limit.
@@ -112,6 +115,51 @@ def test_cmf_monotone_non_increasing_in_cot():
         cur = solar.cmf(cot, sza)
         assert cur <= prev + 1e-9, f"CMF not monotone at COT {cot}: {cur} > {prev}"
         prev = cur
+
+
+def test_cmf_thin_cloud_stays_bright():
+    # The PDF worked example: thin altocumulus COT~2.1 is visibly sunny -> high
+    # CMF (NOT the direct-beam ~4.8% that wrongly reads "sun blocked").
+    assert solar.cmf(2.1, 46.0) >= 0.8, solar.cmf(2.1, 46.0)
+    assert solar.cmf(1.0, 46.0) >= 0.85
+    assert solar.direct_transmittance(2.1, 46.0) < 0.1  # the metric we moved off
+
+
+def test_cmf_overcast_is_low():
+    # SENSE2 sky-state anchor the paper cites: overcast COT>13 -> CMF<=0.4.
+    assert solar.cmf(13.0, 46.0) <= 0.42
+    assert solar.cmf(20.0, 46.0) <= 0.4
+    assert solar.cmf(50.0, 46.0) < 0.1
+
+
+def test_cmf_ice_is_brighter_than_water():
+    # Ice forward-scatters more, so the disc stays brighter at the same COT.
+    for cot in (3.0, 5.0, 8.0):
+        assert solar.cmf(cot, 40.0, phase="ice") >= solar.cmf(cot, 40.0, phase="water")
+
+
+def test_cmf_lower_sun_dims_a_little_more():
+    # Same cloud, lower sun -> slightly more attenuation (mild air-mass term).
+    assert solar.cmf(5.0, 75.0) <= solar.cmf(5.0, 20.0)
+
+
+def test_cmf_real_budva_cirrostratus_is_sunny():
+    # The actual reported bug: high cirrostratus over Budva, COT median 3.7, ice,
+    # SZA 37.4. Beer-Lambert called it "dimmed" (T=0.01); CMF says the sun gets
+    # through. This is the case the fix must flip.
+    v = solar.cmf(3.7, 37.4, phase="ice")
+    assert v >= 0.8, f"Budva cirrostratus CMF {v} should read sunny"
+    assert solar.cmf_sun_state(v) == "sunny"
+
+
+def test_cmf_sun_state_bands():
+    assert solar.cmf_sun_state(0.95) == "sunny"
+    assert solar.cmf_sun_state(0.80) == "sunny"
+    assert solar.cmf_sun_state(0.65) == "dimmed"
+    assert solar.cmf_sun_state(0.40) == "blocked"
+    assert solar.cmf_sun_state(0.10) == "blocked"
+    assert solar.cmf_sun_state(0.95, night=True) is None
+    assert solar.cmf_sun_state(None) is None
 
 
 # --- Sun-glint geometry (PDF Part A1) -----------------------------------------

@@ -61,6 +61,14 @@ CASES = {
               heightBand="high", thickness="thin", phase="ice",
               cloudTypeLabel="high thin cloud (cirrus)"),
         "CLEAR"),
+    # broken cloud present (31% sun-blocking cover) BUT the sun gets through at
+    # the point (CMF-based sunState "sunny") -> sunny headline, not PARTLY. The
+    # reported Budva cirrostratus bug: it was "PARTLY CLOUDY" while actually sunny.
+    "mostly_sunny": (
+        facts(cloudFracNow=0.9, skyCoverEff=0.31, cloudAtLocation=True,
+              sunState="sunny", isNight=False, heightBand="high", thickness="thick",
+              phase="ice", cloudTypeLabel="high thick cloud (cirrostratus)"),
+        "CLEAR"),
 }
 
 
@@ -89,6 +97,7 @@ def test_serbian_line():
         "overcast": "oblačno",
         "clearing": "razvedrava",
         "thin_veil": "tanak",
+        "mostly_sunny": "sunčano",
     }
     for label, (f, _state) in CASES.items():
         res = verdict.interpret(f)

@@ -137,44 +137,90 @@ def slant_cot(cot, sza_deg):
     return float(cot) / mu0
 
 
-def cmf(cot, sza_deg):
+def cmf(cot, sza_deg, *, phase=None, ice_factor=ICE_FORWARD_SCATTER):
     """Cloud Modification Factor CMF = GHI_cloudy / GHI_clear (PDF Part A2).
 
-    Papachristopoulou et al. (2024, AMT 17, 1851-1877, doi:10.5194/amt-17-1851-
-    2024), Eq. 2:  CMF = 1 - tanh(b * COT**a), with a, b 4th-order polynomials in
-    SZA (degrees). Ranges 0 (overcast) -> 1 (clear). This is the physically
-    correct "is it actually sunny" quantity (global irradiance), unlike the
-    direct-beam transmittance, because it keeps thin/forward-scattering cloud
-    bright.
+    The physically correct "is it actually sunny" quantity: the ratio of all-sky
+    to clear-sky GLOBAL horizontal irradiance, 0 (overcast) -> 1 (clear). Unlike
+    `direct_transmittance` (the direct beam only), it credits the diffuse,
+    forward-scattered light, so optically thin / forward-scattering cloud stays
+    bright — a thin altocumulus or cirrostratus is visibly sunny even though its
+    direct-beam T is only a few percent. This is the metric the sun/shade verdict
+    runs on (via `cmf_sun_state`); `direct_transmittance` is kept only as a
+    labelled diagnostic.
 
-    !!! VERIFICATION PENDING — DIAGNOSTIC ONLY, NOT USED FOR THE VERDICT !!!
-    The coefficients below are transcribed verbatim from the paper, but with the
-    literal `tanh(b * COT**a)` grouping they are degenerate (CMF ~ 0 for every
-    COT >= ~0.1 at all SZA — the opposite of the paper's stated behaviour). The
-    grouping/coefficients must be confirmed against the TYPESET Eq. 2 / Fig. 2a
-    before this can replace `sun_state()`. Until then `cloud_facts` reports it as
-    a labelled diagnostic and the sun/shade verdict stays on `sun_state()`.
+    Functional form: Papachristopoulou et al. (2024, AMT 17, 1851-1877,
+    doi:10.5194/amt-17-1851-2024), Eq. 2:  CMF = 1 - tanh(b * COT**a).
 
-    Clear (COT 0 or None) -> 1.0, which is the one reliable, unambiguous limit.
+    COEFFICIENTS — re-fit, not transcribed. The paper's a, b 4th-order-in-SZA
+    polynomials, as transcribed from the PDF, are degenerate: with the literal
+    `tanh(b*COT**a)` grouping they drive CMF -> 0 for every COT >= ~0.1 at all SZA
+    (verified numerically; the paper itself flags the extracted-text exponent
+    grouping as ambiguous). They are therefore replaced here with a fit to the
+    paper's own published, unambiguous anchors:
+      * the stated limits: CMF -> 1 as COT -> 0, CMF -> 0 as COT -> inf;
+      * the SENSE2 sky-state thresholds it cites — CMF >= 0.9 clear,
+        0.4 < CMF < 0.9 partly cloudy, CMF <= 0.4 overcast — i.e. clear ~ COT < 1,
+        overcast ~ COT > 13;
+      * the worked example: thin cloud COT ~ 2.1 stays bright, CMF ~ 0.8.
+    A single COT exponent (a = 0.75) with scale b0 = 0.10 reproduces all three; a
+    mild air-mass term raises b toward low sun (the same cloud dims a little more
+    when the sun is low). Accuracy is anchor-level, not the paper's quoted 1.5%;
+    the sky-state behaviour the verdict needs is what is reproduced.
+
+    Ice cloud forward-scatters more than the liquid cloud the fit assumes
+    (Reff = 10 um), keeping the disc bright to higher COT, so for ``phase == "ice"``
+    the optical thickness is divided by ``ice_factor`` first (mirrors the ice
+    relaxation in `sun_state`).
+
+    Clear (COT 0 or None) -> 1.0.
     """
     if cot is None or cot <= 0.0:
         return 1.0
+    tau = float(cot)
+    if phase == "ice" and ice_factor:
+        tau /= float(ice_factor)
     sza = 0.0 if sza_deg is None else float(sza_deg)
-    a = (2.24e-1 + 2.81e-4 * sza - 2.18e-5 * sza**2
-         + 3.71e-7 * sza**3 - 2.65e-9 * sza**4)
-    b = (12.2 + 5.27e-3 * sza - 2.24e-3 * sza**2
-         + 8.33e-6 * sza**3 + 3.94e-8 * sza**4)
-    val = 1.0 - math.tanh(b * float(cot) ** a)
+    mu0 = max(math.cos(math.radians(min(abs(sza), 89.0))), 0.10)  # clamp near horizon
+    a = 0.75                                       # COT exponent (re-fit; see above)
+    b = 0.10 * (1.0 + 0.10 * (1.0 / mu0 - 1.0))    # scale, mild air-mass dependence
+    val = 1.0 - math.tanh(b * tau ** a)
     return max(0.0, min(1.0, val))
+
+
+def cmf_sun_state(cmf_value, *, sunny_min=0.8, blocked_max=0.4, night=False):
+    """Map a Cloud Modification Factor to the sun/shade word the verdict shows.
+
+    Drives the headline sun axis off GLOBAL irradiance (CMF) — the PDF's correct
+    "is it sunny" metric — replacing the direct-beam `sun_state`. Bands follow the
+    PDF's CMF -> perception mapping:
+        CMF >= sunny_min  (0.8)        -> "sunny"   (sun gets through / bright)
+        blocked_max < CMF < sunny_min  -> "dimmed"  (hazy / partly dimmed sun)
+        CMF <= blocked_max (0.4)       -> "blocked" (overcast / sun blocked)
+    Returns None at night or when CMF is unavailable (no usable sun verdict).
+    """
+    if night or cmf_value is None:
+        return None
+    if cmf_value >= sunny_min:
+        return "sunny"
+    if cmf_value <= blocked_max:
+        return "blocked"
+    return "dimmed"
 
 
 def sun_state(cot, sza_deg, phase=None, *, cot_thin=3.0, cot_block=5.0,
               night_sza=NIGHT_SZA_DEG, ice_factor=ICE_FORWARD_SCATTER):
-    """Sun/shade state at a point from optical thickness + solar geometry.
+    """Sun/shade state from optical thickness + solar geometry (LEGACY metric).
 
-    Returns one of "sunny" / "dimmed" / "blocked", or None at night (no usable
-    sun verdict). Thresholds are slant-corrected for the sun angle and relaxed for
-    ice cloud (forward scattering keeps the disk visible to higher COT).
+    Returns one of "sunny" / "dimmed" / "blocked", or None at night. Thresholds
+    are slant-corrected for the sun angle and relaxed for ice cloud (forward
+    scattering keeps the disk visible to higher COT).
+
+    NOTE: this is the direct-beam (Beer-Lambert) classifier. It under-reads thin
+    forward-scattering cloud as "dimmed"/"blocked" when the scene is in fact sunny
+    (the bug the PDF flags), so the verdict now derives the sun word from the
+    global-irradiance CMF via `cmf` + `cmf_sun_state`. This function is retained
+    for the `sunTransmittance` diagnostic and its unit tests.
     """
     if sza_deg is not None and sza_deg >= night_sza:
         return None

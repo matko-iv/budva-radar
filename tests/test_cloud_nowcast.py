@@ -76,10 +76,37 @@ def test_low_confidence_is_stationary():
     assert nc["approaching"] is False and nc["clearing"] is False
 
 
+def test_unphysical_speed_not_shown_or_used():
+    # A high-confidence but physically impossible vector (the "ka SW @ 408 km/h"
+    # cross-correlation artifact, PDF Part B) must be neither displayed nor used.
+    lon2d = _lon2d()
+    field = _field(lon2d < 19.0)
+    bogus = {"direction_deg": 225.0, "direction_cardinal": "SW", "speed_kmh": 500.0,
+             "dlat_per_min": -0.2, "dlon_per_min": -0.2, "confidence": 0.9, "dt_min": 10}
+    nc = nowcast.point_nowcast(field, bogus, 43.0, 19.15)
+    assert nc["motionSpeedKmh"] is None, "absurd speed should not be displayed"
+    assert nc["motionCardinal"] is None
+    assert nc["approaching"] is False and nc["clearing"] is False
+
+
+def test_compute_motion_flags_unphysical_speed():
+    # Same clean shift as the eastward test but over dt=1 min -> ~2400 km/h, which
+    # is unphysical for cloud advection -> compute_motion flags it confidence 0.
+    lon2d = _lon2d()
+    prev = _field((lon2d > 18.4) & (lon2d < 18.8))
+    curr = _field((lon2d > 18.9) & (lon2d < 19.3))      # +0.5 deg in 1 minute
+    m = cmotion.compute_motion(prev, curr, 43.0, 19.0, dt_min=1.0)
+    assert m is not None
+    assert m["speed_kmh"] > 250.0, f"setup should be fast, got {m['speed_kmh']}"
+    assert m["confidence"] == 0.0, f"unphysical speed should be flagged, got {m['confidence']}"
+
+
 def main():
     fails = []
     for fn in (test_compute_motion_detects_eastward_shift, test_approaching,
-               test_clearing, test_low_confidence_is_stationary):
+               test_clearing, test_low_confidence_is_stationary,
+               test_unphysical_speed_not_shown_or_used,
+               test_compute_motion_flags_unphysical_speed):
         try:
             fn()
             print(f"PASS  {fn.__name__}")

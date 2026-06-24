@@ -58,6 +58,10 @@ CASES = {
         sunState="blocked"),
     "partly dimmed": facts(cloudFracNow=0.5, skyCoverEff=0.5, heightBand="mid",
                            sunState="dimmed"),
+    "mostly sunny (sun through)": facts(
+        cloudFracNow=0.9, skyCoverEff=0.31, heightBand="high", thickness="thick",
+        phase="ice", cloudTypeLabel="high thick cloud (cirrostratus)",
+        sunState="sunny"),
     "approaching": facts(approaching=True, etaMin=40, heightBand="high",
                          thickness="thin", cloudTypeLabel="high thin cloud (cirrus)"),
     "clearing": facts(cloudFracNow=0.9, skyCoverEff=0.9, clearing=True, etaMin=30,

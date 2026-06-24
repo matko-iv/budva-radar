@@ -21,7 +21,7 @@ import numpy as np
 
 import config
 from clouds import clm as clmcat
-from clouds import oca, render, solar
+from clouds import contamination, oca, render, solar
 from clouds.grid import CloudField
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -341,11 +341,14 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time, clm_enum=None):
         if arr is not nan:
             arr[~cloudy] = np.nan
 
-    return CloudField(lats, lons,
-                      {"mask": mask, "frac": frac, "opaque": opaque, "ctt": ctt,
-                       "cth": cth, "cot": cot, "phase": phase},
-                      meta={"sensing_time": sensing_time, "source": "EUMETSAT",
-                            "sza_deg": round(float(sza), 2), "night": bool(night)})
+    field = CloudField(lats, lons,
+                       {"mask": mask, "frac": frac, "opaque": opaque, "ctt": ctt,
+                        "cth": cth, "cot": cot, "phase": phase},
+                       meta={"sensing_time": sensing_time, "source": "EUMETSAT",
+                             "sza_deg": round(float(sza), 2), "night": bool(night)})
+    # Drop sun-glint / coastal false-cloud (PDF Part A1) before anything samples
+    # the field, so presence and opaque cover aren't inflated at the Budva coast.
+    return contamination.clean_field(field, cfg)
 
 
 # --------------------------------------------------------------------------
