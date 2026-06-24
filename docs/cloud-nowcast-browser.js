@@ -46,7 +46,16 @@
         sum += v; n++;
       }
     }
-    return n ? sum / n : null;
+    if (n) return sum / n;
+    // Nearest-cell fallback: radius smaller than a grid cell -> a point inside the
+    // grid still reads a value (keep in sync with clouds/grid.cloud_fraction).
+    if (cloudyOnly || !contains(field, lat, lon)) return null;
+    var bi = 0, bj = 0, bd = Infinity, d;
+    for (var ii = 0; ii < la.length; ii++) { d = Math.abs(la[ii] - lat); if (d < bd) { bd = d; bi = ii; } }
+    bd = Infinity;
+    for (var jj = 0; jj < lo.length; jj++) { d = Math.abs(lo[jj] - lon); if (d < bd) { bd = d; bj = jj; } }
+    var nv = A[bi][bj];
+    return nv == null ? null : nv;
   }
   function cloudFraction(field, lat, lon, radiusKm) {
     return discMean(field, "frac", lat, lon, radiusKm, false);
