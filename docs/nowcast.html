@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SKALA</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<style>
+  #map { height: 70vh; min-height: 360px; max-width: 760px; width: 100%; background: #eef1f4; }
+  .radar-ovl { image-rendering: pixelated; }
+  .budva-lbl { background: transparent; border: 0; box-shadow: none; padding: 0;
+               color: #b00; font: 600 12px/1 system-ui, sans-serif;
+               text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+  .budva-lbl::before { display: none; }
+</style>
+</head>
+<body>
+
+<p id="meta">učitavam…</p>
+<p id="summary"></p>
+
+<div id="map-controls" style="display:none">
+  <button id="mapplay" type="button">▶</button>
+  <input id="mapslider" type="range" min="0" max="0" value="0" step="1">
+  <span id="maplead">sada</span>
+</div>
+<div id="map"></div>
+<p id="maplabel"><small></small></p>
+
+<h2>Padavine nad Budvom (disk-max, sljedećih ~60 min)</h2>
+<pre id="chart"></pre>
+
+<table id="series" border="1" cellpadding="4">
+  <thead><tr><th>+min</th><th>tačka mm/h</th><th>disk-max mm/h</th><th>pouzdanost</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<p id="note"></p>
+<p><small>Metoda: dense Lucas–Kanade optički tok + adaptivni model — ANVIL za
+slojevite (stratiformne) padavine, LINDA (praćenje pojedinačnih ćelija) za
+konvektivne; izbor je automatski prema sceni. pysteps, OPERA radarski kompozit.
+Ekstrapolacija je pouzdana ~30–45 min.</small></p>
+
+<script src="nowcast_data.js"></script>
+<script>
+(function () {
+  var D = window.NOWCAST_DATA || {};
+  function el(id) { return document.getElementById(id); }
+  function f1(x) { return (x == null ? "?" : Number(x).toFixed(1)); }
+
+  if (!D.ok) {
+    el("meta").textContent = "Nowcast nedostupan: " + (D.error || "nema podataka (pokreni run_nowcast.py)");
+    return;
+  }
+
+  el("meta").textContent =
+    "Izvor: " + D.source + " · metoda: " + D.method + " (" + D.scenario + ", " +
+    D.n_frames + " kadra, " + D.km_per_px + " km/px) · generisano " + (D.generated || "?");
+  if (D.demo) el("meta").textContent += "  ·  ⚠ DEMO podaci (za uživo: python run_nowcast.py --live)";
+
+  var mot = D.motion_cardinal
+    ? ("kretanje polja ka " + D.motion_cardinal + " @ " + D.motion_kmh + " km/h")
+    : "polje uglavnom mirno";
+
+  var summary;
+  if (D.eta_onset_min != null) {
+    summary = "Kiša nad Budvom: ETA ~" + D.eta_onset_min + " min · vrh ~" + f1(D.peak_mmh) +
+              " mm/h u +" + D.peak_lead_min + " min · trend: " + D.trend + ". " + mot + ".";
+  } else {
+    var horizon = (D.series && D.series.length) ? D.series[D.series.length - 1].lead_min : 60;
+    summary = "Nema kiše nad Budvom u sljedećih ~" + horizon + " min (trenutni disk-max " +
+              f1(D.now_disc_mmh) + " mm/h). " + mot + ".";
+  }
+  el("summary").innerHTML = "<b>" + summary + "</b>";
+
+  var series = D.series || [];
+  var cap = D.horizon_cap_min;
+  var maxv = 0.5;
+  series.forEach(function (s) { if (s.disc_max_mmh > maxv) maxv = s.disc_max_mmh; });
+
+  el("chart").textContent = series.map(function (s) {
+    var n = Math.round(s.disc_max_mmh / maxv * 32);
+    var bar = ""; while (bar.length < n) bar += "█";          // █
+    var lo = (cap != null && s.lead_min > cap) ? "  ~niska pouzdanost" : "";
+    var lead = ("  " + s.lead_min).slice(-3);
+    return "+" + lead + " min | " + bar + " " + f1(s.disc_max_mmh) + lo;
+  }).join("\n");
+
+  var tb = el("series").getElementsByTagName("tbody")[0];
+  series.forEach(function (s) {
+    var beyond = (cap != null && s.lead_min > cap);
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td>+" + s.lead_min + "</td><td>" + f1(s.point_mmh) + "</td><td>" +
+                   f1(s.disc_max_mmh) + "</td><td>" + (beyond ? "orijentaciono" : "dobra") + "</td>";
+    tb.appendChild(tr);
+  });
+
+  el("note").textContent =
+    "Disk-max = najjača padavina u krugu ~8 km oko Budve. Redovi izvan ~" +
+    (cap != null ? cap : 45) + " min su samo orijentacioni (granica vještine ekstrapolacije).";
+
+  // --- map: terenska (hillshade) podloga + radarski frame-ovi kao overlay ---
+  var M = D.map;
+  if (M && M.frames && M.frames.length && window.L) {
+    var nw = M.corner_nw, se = M.corner_se;                 // [lat, lon]
+    var bounds = [[se[0], nw[1]], [nw[0], se[1]]];          // [[jug,zapad],[sjever,istok]]
+    var map = L.map("map", { attributionControl: true });
+    // Esri World Shaded Relief: čisti reljef, bez naziva gradova, bez ključa.
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
+      { attribution: "Reljef: Esri", maxZoom: 13 }
+    ).addTo(map);
+    map.fitBounds(bounds);
+    var overlay = L.imageOverlay(M.frames[0].image, bounds,
+      { opacity: 0.78, className: "radar-ovl", interactive: false }).addTo(map);
+    if (M.budva_latlon) {
+      L.circleMarker([M.budva_latlon[0], M.budva_latlon[1]],
+        { radius: 5, color: "#fff", weight: 2, fillColor: "#d00", fillOpacity: 1 })
+        .addTo(map)
+        .bindTooltip("Budva", { permanent: true, direction: "right", className: "budva-lbl" });
+    }
+    var sl = el("mapslider");
+    sl.min = 0; sl.max = M.frames.length - 1; sl.value = 0;
+    el("map-controls").style.display = "";
+    function show(i) {
+      var fr = M.frames[i];
+      overlay.setUrl(fr.image);
+      el("maplead").textContent = fr.is_now ? "sada" : ("+" + fr.lead_min + " min");
+    }
+    var timer = null;
+    function setPlay(on) {
+      var b = el("mapplay");
+      if (on) {
+        b.textContent = "⏸";
+        timer = setInterval(function () {
+          var i = (+sl.value + 1) % M.frames.length; sl.value = i; show(i);
+        }, 600);
+      } else { b.textContent = "▶"; if (timer) { clearInterval(timer); timer = null; } }
+    }
+    sl.addEventListener("input", function () { setPlay(false); show(+sl.value); });
+    el("mapplay").onclick = function () { setPlay(!timer); };
+    el("maplabel").innerHTML = "<small>Centar = Budva · ~" + M.extent_km +
+      " km · podloga: Esri World Shaded Relief (reljef bez naziva) · boje = mm/h " +
+      "(plavo → zeleno → žuto → crveno)</small>";
+    show(0);
+  }
+})();
+</script>
+</body>
+</html>
