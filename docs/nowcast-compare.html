@@ -1,226 +1,149 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="sr">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SKALA RAIN — poređenje nowcast modela (LINDA vs DGMR)</title>
+<title>SKALA NOWCAST — DGMR</title>
+<link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="vendor/leaflet.css">
 <style>
-  body { font-family: system-ui, sans-serif; margin: 12px; }
-  .maps { display: flex; flex-wrap: wrap; gap: 10px; }
-  .panel { flex: 1 1 280px; min-width: 260px; }
-  .panel h3 { margin: 4px 0; font-size: 15px; }
-  .map { height: 280px; border: 1px solid #bbb; }
-  .badge { font-size: 11px; padding: 1px 6px; border-radius: 8px; color: #fff; }
-  .gated { height: 280px; border: 1px dashed #bbb; padding: 10px; box-sizing: border-box;
-           background: #fafafa; font-size: 13px; }
-  table { border-collapse: collapse; } td, th { padding: 2px 7px; }
-  .legend i { display:inline-block; width:11px; height:11px; margin-right:3px; }
+  #map { height: 70vh; min-height: 360px; width: 100%;
+         border: 1px solid #ddd; border-radius: 4px; background: #eef1f4; }
+  .radar-ovl { image-rendering: pixelated; }
+  .budva-lbl { background: transparent; border: 0; box-shadow: none; padding: 0;
+               color: #b00; font: 600 12px/1 inter, system-ui, sans-serif;
+               text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+  .budva-lbl::before { display: none; }
+  #controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+              margin: 0 0 10px; font-size: 13px; }
+  #controls button { font: inherit; padding: 3px 10px; border: 1px solid #ccc;
+                     border-radius: 4px; background: #fff; cursor: pointer; }
+  #controls button:hover { background: #f0f0f0; }
+  .legend i { display:inline-block; width:11px; height:11px; margin: 0 2px 0 6px;
+              vertical-align: middle; }
 </style>
 </head>
 <body>
-<h1>SKALA RAIN — poređenje modela</h1>
-<p><a href="nowcast.html">jednomodelni nowcast</a> ·
-   <a href="radar-map.html">SKALA RAIN</a> · <a href="cloud-map.html">SKALA CLOUD</a></p>
 
-<p id="meta">učitavam…</p>
-<p id="caveat"><small></small></p>
+<header>
+  <h1>matkov-SKALA-sistem</h1>
+  <p style="font-size:13px; margin:0 0 6px;">
+    <a href="index.html">home</a> · <a href="radar-map.html">SKALA RAIN</a> ·
+    <a href="cloud-map.html">SKALA CLOUD</a> · <span style="color:#888;">SKALA NOWCAST</span>
+  </p>
+  <p id="generated"></p>
+</header>
 
-<div id="controls" style="display:none">
-  <button id="play" type="button">▶</button>
-  <input id="slider" type="range" min="0" max="0" value="0" step="1">
-  <b><span id="lead">sada</span></b>
-  <span class="legend" id="legend"></span>
-</div>
+<main>
+  <section>
+    <h2>SKALA NOWCAST — DGMR (DeepMind)</h2>
+    <div id="controls" style="display:none">
+      <button id="play" type="button">▶</button>
+      <input id="slider" type="range" min="0" max="0" value="0" step="1">
+      <b><span id="lead">sada</span></b>
+      <span class="legend" id="legend"></span>
+    </div>
+    <div id="map"></div>
+  </section>
 
-<div class="maps" id="maps"></div>
+  <section>
+    <h2>Padavine nad Budvom (mm/h) po vremenu</h2>
+    <table id="seriestab"></table>
+  </section>
+</main>
 
-<h2>Disk-max nad Budvom (mm/h) po vremenu — svi modeli</h2>
-<pre id="chart"></pre>
-<table id="seriestab" border="1"></table>
-
-<h2 id="verif-h">Verifikacija (stvarna tačnost)</h2>
-<div id="verif"></div>
-
-<p><small id="footer"></small></p>
+<footer>
+  <p id="meta"></p>
+  <p>SKALA NOWCAST · <a href="nowcast-compare.legacy.html">poređenje svih modela
+     (LINDA / ekstrapolacija / DGMR)</a></p>
+</footer>
 
 <script src="vendor/leaflet.js"></script>
 <script src="compare_data.js"></script>
-<script src="verify_data.js" onerror="window.VERIFY_DATA=null"></script>
 <script>
 (function () {
   var D = window.COMPARE_DATA || {};
   function el(id){ return document.getElementById(id); }
-  function f1(x){ return x==null ? "?" : Number(x).toFixed(1); }
+  function f1(x){ return x == null ? "?" : Number(x).toFixed(1); }
   var STOPS = [[0.2,"#96c8ff"],[1,"#4682eb"],[2.5,"#28be6e"],[5,"#ebe137"],
                [10,"#f5962a"],[20,"#e64128"],[50,"#af28b4"]];
 
-  if (!D.ok) { el("meta").textContent = "Nedostupno: " + (D.error || "pokreni compare_nowcast.py"); return; }
-
-  var M = D.map_meta, models = D.models || [];
-  var withFrames = models.filter(function(m){ return m.frames && m.frames.length; });
-  var nlead = (withFrames[0] && withFrames[0].frames.length) || 1;
-
-  el("meta").innerHTML = "Izvor: ORD ODIM (1 km) · scenario: <b>" + D.scenario +
-    "</b> · korak " + D.timestep_min + " min · " + D.n_frames + " kadra · generisano " +
-    (D.generated||"?") + (D.demo ? "  ·  ⚠ <b>DEMO</b> (sintetička ćelija)" : "");
-  el("caveat").innerHTML = "<small>⚠ Jedan dalekometni radar (Uljenje): na ~130 km snop je " +
-    "~2.5 km iznad tla i <b>prelijeće plitku konvekciju</b> — to nijedan model ne može da " +
-    "povrati. Vodi se susjedstvenom vještinom (FSS) i pouzdana je do ~" + D.horizon_cap_min +
-    " min (Skala PDF).</small>";
-
-  // bounds from the shared tile geo-metadata
-  var nw = M.corner_nw, se = M.corner_se;
-  var bounds = [[se[0], nw[1]], [nw[0], se[1]]];   // [[S,W],[N,E]]
-  var maps = [], overlays = [], syncing = false;
-
-  function relief(){
-    return L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
-      { maxZoom: 13, attribution: "Relief: Esri" });   // no city/road labels
+  if (!D.ok) {
+    el("generated").textContent = "Nedostupno: " + (D.error || "pokreni compare_nowcast.py");
+    return;
   }
-  function roleColor(r){ return r==="headline" ? "#1a7" : r==="compare" ? "#a16" : "#777"; }
 
-  // preload all frame images
-  withFrames.forEach(function(m){
-    m._imgs = m.frames.map(function(fr){ var im=new Image(); im.src=fr.image; return im; });
-  });
+  var M = D.map_meta || {};
+  var models = D.models || [];
+  var dgmr = null;
+  for (var i = 0; i < models.length; i++) { if (models[i].key === "dgmr") dgmr = models[i]; }
 
-  var mapsDiv = el("maps");
-  // PASS 1: build EVERY panel + map div in the DOM first, so the flex row is fully
-  // laid out before any Leaflet map measures its width. Initialising a map while its
-  // panel is still the only child makes it grab the whole row width and overlap the
-  // panels added after it — that is the "only one map shows" bug.
-  var slots = models.map(function(m){
-    var panel = document.createElement("div"); panel.className = "panel";
-    var role = m.role==="headline" ? "headline" : m.role==="compare" ? "DGMR" : "baseline";
-    panel.innerHTML = "<h3>" + m.label + " <span class='badge' style='background:" +
-      roleColor(m.role) + "'>" + role + "</span></h3>";
-    mapsDiv.appendChild(panel);
+  el("generated").textContent = "generisano " + (D.generated || "?");
+  el("meta").textContent = "Izvor: ORD ODIM (1 km) · scenario: " + D.scenario +
+    " · korak " + D.timestep_min + " min · " + D.n_frames + " kadra" +
+    (D.demo ? "  ·  DEMO (sintetička ćelija)" : "");
 
-    if (!m.frames || !m.frames.length) {        // gated DGMR (not installed)
-      var g = document.createElement("div"); g.className = "gated";
-      g.innerHTML = "<b>DGMR nije aktivan.</b><br>" + (m.reason || "") +
-        "<br><br>Da se uključi (uz internet):<br><code>pip install tensorflow wradlib xarray pyproj</code><br>" +
-        "<code>pip install git+https://github.com/pySTEPS/pysteps-dgmr-nowcasts.git</code>" +
-        "<br>pa <code>python compare_nowcast.py --h5 …</code>";
-      panel.appendChild(g);
-      return { m: m, div: null };
-    }
-    var div = document.createElement("div"); div.className = "map"; panel.appendChild(div);
-    if (m.stand_in) {
-      var w = document.createElement("div");
-      w.innerHTML = "<small>⚠ <b>placeholder</b> (nije pravi DGMR — instaliraj plugin)</small>";
-      panel.appendChild(w);
-    }
-    return { m: m, div: div };
-  });
+  if (!dgmr || !dgmr.frames || !dgmr.frames.length) {
+    el("map").innerHTML = "<div style='padding:14px; font-size:13px;'>DGMR nije aktivan u " +
+      "compare_data.js" + (dgmr && dgmr.reason ? (" — " + dgmr.reason) : "") +
+      ".<br>Pokreni: <code>python compare_nowcast.py --h5 data/ord_archive</code></div>";
+    return;
+  }
 
-  // PASS 2: all panels now exist at their final flex width — initialise each map.
-  slots.forEach(function(s){
-    if (!s.div) { maps.push(null); overlays.push(null); return; }
-    var map = L.map(s.div, { zoomControl: true, attributionControl: true });
-    if (M.basemap) L.imageOverlay(M.basemap, bounds).addTo(map);   // baked relief, no labels
-    else relief().addTo(map);                                      // live Esri fallback
-    var ov = L.imageOverlay(s.m.frames[0].image, bounds, { opacity: 0.8 }).addTo(map);
-    L.circleMarker(M.budva_latlon, { radius: 5, color:"#fff", weight:2,
-      fillColor:"#d00", fillOpacity:1 }).addTo(map).bindTooltip("Budva");
-    map.fitBounds(bounds);
-    map.on("move zoom", function(){
-      if (syncing) return; syncing = true;                        // keep all panels in sync
-      var c = map.getCenter(), z = map.getZoom();
-      maps.forEach(function(mp){ if (mp && mp!==map) mp.setView(c, z, {animate:false}); });
-      syncing = false;
-    });
-    maps.push(map); overlays.push(ov);
-  });
+  // ---- map: DGMR forecast over the no-label relief, Budva centred ----
+  var nw = M.corner_nw, se = M.corner_se;          // [lat, lon]
+  var bounds = [[se[0], nw[1]], [nw[0], se[1]]];    // [[S,W],[N,E]]
+  var map = L.map("map", { attributionControl: true }).fitBounds(bounds);
+  if (M.basemap) L.imageOverlay(M.basemap, bounds).addTo(map);       // baked relief, no labels
+  else L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 13, attribution: "Relief: Esri" }).addTo(map);
+  var overlay = L.imageOverlay(dgmr.frames[0].image, bounds,
+    { opacity: 0.8, className: "radar-ovl" }).addTo(map);
+  if (M.budva_latlon) {
+    L.circleMarker(M.budva_latlon, { radius: 5, color: "#fff", weight: 2,
+      fillColor: "#d00", fillOpacity: 1 }).addTo(map)
+      .bindTooltip("Budva", { permanent: true, direction: "right", className: "budva-lbl" });
+  }
+  setTimeout(function () { map.invalidateSize(); map.fitBounds(bounds); }, 60);
 
-  // Belt-and-suspenders: once layout settles (flex-wrap / scrollbar can still shift a
-  // few px), recompute every map's size and re-fit; repeat on window resize.
-  function fixSizes(){ maps.forEach(function(mp){ if (mp) { mp.invalidateSize(); mp.fitBounds(bounds); } }); }
-  requestAnimationFrame(fixSizes);
-  window.addEventListener("resize", function(){ maps.forEach(function(mp){ if (mp) mp.invalidateSize(); }); });
-
-  // shared time control
-  var sl = el("slider"); sl.max = nlead - 1;
-  el("controls").style.display = "";
-  el("legend").innerHTML = " &nbsp;mm/h: " + STOPS.map(function(s){
-    return "<i style='background:"+s[1]+"'></i>"+s[0]; }).join(" ") +
-    (D.base_epoch_ms ? " &nbsp;·&nbsp; <small>sat = lokalno vrijeme</small>" : "");
-  function clock(leadMin){                      // wall-clock time of a frame (local)
+  // ---- time control + wall-clock (local) labels ----
+  function clock(leadMin) {
     if (!D.base_epoch_ms) return "";
     var t = new Date(D.base_epoch_ms + leadMin * 60000);
     return ("0" + t.getHours()).slice(-2) + ":" + ("0" + t.getMinutes()).slice(-2);
   }
-  function draw(i){
-    models.forEach(function(m, idx){
-      if (m.frames && m.frames.length && overlays[idx]) overlays[idx].setUrl(m.frames[i].image);
-    });
-    var fr = withFrames[0].frames[i];
+  var frames = dgmr.frames, nlead = frames.length;
+  var sl = el("slider"); sl.max = nlead - 1;
+  el("controls").style.display = "";
+  el("legend").innerHTML = " mm/h: " + STOPS.map(function (s) {
+    return "<i style='background:" + s[1] + "'></i>" + s[0]; }).join(" ") +
+    (D.base_epoch_ms ? " &nbsp;·&nbsp; <small>sat = lokalno vrijeme</small>" : "");
+  function draw(i) {
+    var fr = frames[i];
+    overlay.setUrl(fr.image);
     var hhmm = clock(fr.lead_min);
     el("lead").textContent = (fr.is_now ? "sada" : ("+" + fr.lead_min + " min")) +
       (hhmm ? " · " + hhmm : "");
   }
-  sl.addEventListener("input", function(){ setPlay(false); draw(+sl.value); });
   var timer = null;
-  function setPlay(on){
+  function setPlay(on) {
     var b = el("play");
-    if (on){ b.textContent="⏸"; timer=setInterval(function(){
-      var i=(+sl.value+1)%nlead; sl.value=i; draw(i); }, 700); }
-    else { b.textContent="▶"; if(timer){clearInterval(timer);timer=null;} }
+    if (on) { b.textContent = "⏸"; timer = setInterval(function () {
+      var i = (+sl.value + 1) % nlead; sl.value = i; draw(i); }, 700); }
+    else { b.textContent = "▶"; if (timer) { clearInterval(timer); timer = null; } }
   }
-  el("play").onclick = function(){ setPlay(!timer); };
+  sl.addEventListener("input", function () { setPlay(false); draw(+sl.value); });
+  el("play").onclick = function () { setPlay(!timer); };
   draw(0);
 
-  // combined disc-max chart + table
-  var leads = withFrames[0].series.map(function(s){ return s.lead_min; });
-  var maxv = 0.5;
-  withFrames.forEach(function(m){ m.series.forEach(function(s){ if(s.disc_max_mmh>maxv) maxv=s.disc_max_mmh; }); });
-  var chart = withFrames.map(function(m){
-    var rows = m.series.map(function(s){
-      var n = Math.round(s.disc_max_mmh/maxv*28), bar="";
-      while(bar.length<n) bar+="█";
-      return "+" + ("  "+s.lead_min).slice(-3) + " | " + bar + " " + f1(s.disc_max_mmh);
-    }).join("\n");
-    return m.label + (m.stand_in?" (placeholder)":"") + ":\n" + rows;
-  }).join("\n\n");
-  el("chart").textContent = chart;
-
-  var hdr = "<tr><th>+min</th>" + withFrames.map(function(m){
-    return "<th>"+m.label.split(" ")[0]+"</th>"; }).join("") + "</tr>";
-  var rows = leads.map(function(lm, i){
-    return "<tr><td>+"+lm+"</td>" + withFrames.map(function(m){
-      return "<td>"+f1(m.series[i].disc_max_mmh)+"</td>"; }).join("") + "</tr>";
+  // ---- number table: +min | disk-max (≤8 km) | exact point ----
+  var rows = (dgmr.series || []).map(function (s) {
+    return "<tr><td>+" + s.lead_min + "</td><td>" + f1(s.disc_max_mmh) +
+           "</td><td>" + f1(s.point_mmh) + "</td></tr>";
   }).join("");
-  el("seriestab").innerHTML = hdr + rows;
-
-  // verification (real accuracy) — populated by verify_nowcast.py if present
-  var V = window.VERIFY_DATA;
-  if (V && V.ok) {
-    var scales = V.scales, thr = V.fss_threshold_mmh;
-    var h = "<p><small>FSS @ " + thr + " mm/h (susjedstvo, veće = bolje; ~0.5 = granica korisne " +
-      "vještine) i CSI po vremenu, na " + V.n_cases + " slučaja iz arhive.</small></p>";
-    h += "<table border='1'><tr><th>model</th><th>lead</th>" +
-      scales.map(function(s){return "<th>FSS "+s+"km</th>";}).join("") + "<th>CSI</th></tr>";
-    V.models.forEach(function(mv){
-      mv.by_lead.forEach(function(r){
-        h += "<tr><td>"+mv.label+"</td><td>+"+r.lead_min+"</td>" +
-          r.fss.map(function(x){return "<td>"+f1(x)+"</td>";}).join("") +
-          "<td>"+f1(r.csi)+"</td></tr>";
-      });
-    });
-    h += "</table>";
-    el("verif").innerHTML = h;
-  } else {
-    el("verif").innerHTML = "<small>Za <b>stvarne</b> brojeve tačnosti (FSS/CSI/POD/FAR po vremenu) " +
-      "pokreni <code>python verify_nowcast.py --h5 &lt;arhiva *.h5&gt;</code> — hindcast svakog modela " +
-      "naspram osmotrenog, pa osveži stranicu. Ova strana iznad je kvalitativno poređenje.</small>";
-  }
-
-  el("footer").textContent =
-    "Modeli na istom 256×256 / 1 km isječku (Budva u centru). LINDA-D = headline " +
-    "(konvektivne ćelije), ekstrapolacija = osnova, DGMR = pretrenirani DeepMind model " +
-    "(poređenje). Podloga: Esri shaded relief (bez naziva). pysteps + ORD ODIM.";
+  el("seriestab").innerHTML =
+    "<tr><th>+min</th><th>disk-max mm/h (≤8 km)</th><th>tačka mm/h</th></tr>" + rows;
 })();
 </script>
 </body>
