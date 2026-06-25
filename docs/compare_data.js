@@ -3,9 +3,9 @@ window.COMPARE_DATA = {
   "ok": true,
   "mode": "ord-h5",
   "demo": false,
-  "generated": "2026-06-25T16:13:50Z",
+  "generated": "2026-06-25T16:29:36Z",
   "location": "Budva",
-  "base_epoch_ms": 1782310800000,
+  "base_epoch_ms": 1782311400000,
   "timestep_min": 5.0,
   "n_frames": 4,
   "horizon_cap_min": 45,
@@ -48,75 +48,75 @@ window.COMPARE_DATA = {
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 0.02,
+      "now_disc_mmh": 0.01,
       "series": [
         {
           "lead_min": 5.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.02
+          "disc_max_mmh": 47.49
         },
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.01
+          "disc_max_mmh": 52.75
         },
         {
           "lead_min": 15.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.01
+          "disc_max_mmh": 50.48
         },
         {
           "lead_min": 20.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.41
+          "disc_max_mmh": 52.6
         },
         {
           "lead_min": 25.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 3.56
+          "disc_max_mmh": 59.2
         },
         {
           "lead_min": 30.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 4.18
+          "point_mmh": 0.01,
+          "disc_max_mmh": 59.2
         },
         {
           "lead_min": 35.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 4.75
+          "point_mmh": 0.4,
+          "disc_max_mmh": 60.0
         },
         {
           "lead_min": 40.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 7.73
+          "point_mmh": 0.15,
+          "disc_max_mmh": 56.34
         },
         {
           "lead_min": 45.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 11.65
+          "disc_max_mmh": 53.79
         },
         {
           "lead_min": 50.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 18.96
+          "disc_max_mmh": 60.0
         },
         {
           "lead_min": 55.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 10.56
+          "disc_max_mmh": 57.79
         },
         {
           "lead_min": 60.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 3.69
+          "disc_max_mmh": 59.8
         }
       ],
-      "eta_onset_min": 20.0,
-      "peak_mmh": 18.96,
-      "peak_lead_min": 50.0,
+      "eta_onset_min": 5.0,
+      "peak_mmh": 60.0,
+      "peak_lead_min": 35.0,
       "trend": "intensifying",
-      "motion_kmh": 11.5,
-      "motion_dir_deg": 179.0,
+      "motion_kmh": 15.0,
+      "motion_dir_deg": 193.0,
       "motion_cardinal": "S",
       "key": "extrapolation",
       "label": "Ekstrapolacija (Lagrange persistencija)",
@@ -200,75 +200,75 @@ window.COMPARE_DATA = {
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 0.02,
+      "now_disc_mmh": 0.01,
       "series": [
         {
           "lead_min": 5.0,
-          "point_mmh": 0.86,
-          "disc_max_mmh": 2.9
+          "point_mmh": 0.46,
+          "disc_max_mmh": 25.39
         },
         {
           "lead_min": 10.0,
-          "point_mmh": 1.49,
-          "disc_max_mmh": 5.43
+          "point_mmh": 1.15,
+          "disc_max_mmh": 29.45
         },
         {
           "lead_min": 15.0,
-          "point_mmh": 1.9,
-          "disc_max_mmh": 8.78
+          "point_mmh": 2.7,
+          "disc_max_mmh": 29.96
         },
         {
           "lead_min": 20.0,
-          "point_mmh": 2.2,
-          "disc_max_mmh": 12.06
+          "point_mmh": 5.39,
+          "disc_max_mmh": 32.94
         },
         {
           "lead_min": 25.0,
-          "point_mmh": 2.47,
-          "disc_max_mmh": 14.29
+          "point_mmh": 7.91,
+          "disc_max_mmh": 32.67
         },
         {
           "lead_min": 30.0,
-          "point_mmh": 2.73,
-          "disc_max_mmh": 16.65
+          "point_mmh": 9.3,
+          "disc_max_mmh": 32.13
         },
         {
           "lead_min": 35.0,
-          "point_mmh": 2.95,
-          "disc_max_mmh": 19.11
+          "point_mmh": 9.33,
+          "disc_max_mmh": 32.69
         },
         {
           "lead_min": 40.0,
-          "point_mmh": 3.11,
-          "disc_max_mmh": 20.51
+          "point_mmh": 8.59,
+          "disc_max_mmh": 31.71
         },
         {
           "lead_min": 45.0,
-          "point_mmh": 3.2,
-          "disc_max_mmh": 20.9
+          "point_mmh": 7.68,
+          "disc_max_mmh": 29.43
         },
         {
           "lead_min": 50.0,
-          "point_mmh": 3.22,
-          "disc_max_mmh": 20.54
+          "point_mmh": 6.73,
+          "disc_max_mmh": 27.77
         },
         {
           "lead_min": 55.0,
-          "point_mmh": 3.18,
-          "disc_max_mmh": 19.73
+          "point_mmh": 5.94,
+          "disc_max_mmh": 26.46
         },
         {
           "lead_min": 60.0,
-          "point_mmh": 3.1,
-          "disc_max_mmh": 18.73
+          "point_mmh": 5.31,
+          "disc_max_mmh": 24.75
         }
       ],
       "eta_onset_min": 5.0,
-      "peak_mmh": 20.9,
-      "peak_lead_min": 45.0,
+      "peak_mmh": 32.94,
+      "peak_lead_min": 20.0,
       "trend": "intensifying",
-      "motion_kmh": 11.5,
-      "motion_dir_deg": 179.0,
+      "motion_kmh": 15.0,
+      "motion_dir_deg": 193.0,
       "motion_cardinal": "S",
       "key": "linda",
       "label": "LINDA-D (pysteps)",
@@ -352,75 +352,75 @@ window.COMPARE_DATA = {
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 0.02,
+      "now_disc_mmh": 0.01,
       "series": [
         {
           "lead_min": 5.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.65
+          "point_mmh": 0.22,
+          "disc_max_mmh": 24.72
         },
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 7.77
+          "disc_max_mmh": 56.05
         },
         {
           "lead_min": 15.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 11.5
+          "point_mmh": 1.69,
+          "disc_max_mmh": 70.18
         },
         {
           "lead_min": 20.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 19.42
+          "point_mmh": 10.76,
+          "disc_max_mmh": 64.11
         },
         {
           "lead_min": 25.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 24.78
+          "point_mmh": 18.1,
+          "disc_max_mmh": 49.45
         },
         {
           "lead_min": 30.0,
-          "point_mmh": 2.67,
-          "disc_max_mmh": 30.48
+          "point_mmh": 17.17,
+          "disc_max_mmh": 41.3
         },
         {
           "lead_min": 35.0,
-          "point_mmh": 4.92,
-          "disc_max_mmh": 31.44
+          "point_mmh": 21.64,
+          "disc_max_mmh": 35.65
         },
         {
           "lead_min": 40.0,
-          "point_mmh": 11.18,
-          "disc_max_mmh": 38.33
+          "point_mmh": 17.33,
+          "disc_max_mmh": 44.63
         },
         {
           "lead_min": 45.0,
-          "point_mmh": 10.19,
-          "disc_max_mmh": 40.24
+          "point_mmh": 12.39,
+          "disc_max_mmh": 29.04
         },
         {
           "lead_min": 50.0,
-          "point_mmh": 5.78,
-          "disc_max_mmh": 30.7
+          "point_mmh": 7.04,
+          "disc_max_mmh": 30.05
         },
         {
           "lead_min": 55.0,
-          "point_mmh": 23.69,
-          "disc_max_mmh": 41.76
+          "point_mmh": 8.89,
+          "disc_max_mmh": 35.75
         },
         {
           "lead_min": 60.0,
-          "point_mmh": 18.6,
-          "disc_max_mmh": 68.8
+          "point_mmh": 5.09,
+          "disc_max_mmh": 35.5
         }
       ],
       "eta_onset_min": 5.0,
-      "peak_mmh": 68.8,
-      "peak_lead_min": 60.0,
+      "peak_mmh": 70.18,
+      "peak_lead_min": 15.0,
       "trend": "intensifying",
-      "motion_kmh": 11.5,
-      "motion_dir_deg": 179.0,
+      "motion_kmh": 15.0,
+      "motion_dir_deg": 193.0,
       "motion_cardinal": "S",
       "key": "dgmr",
       "label": "DGMR (DeepMind)",
