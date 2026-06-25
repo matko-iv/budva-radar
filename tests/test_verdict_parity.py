@@ -2,9 +2,14 @@
 verdict every page renders) must match the JS interpreter (skala-text.js +
 skala-sections.js fallback path) for the same status data.
 
+The verdict is now BINARY (RAINING vs NO_RAIN — current state only; the forecast
+moved to SKALA NOWCAST), so every case must collapse to one of those two states,
+identically in Python and JS.
+
 Part A: the real, current docs/data.js.
-Part B: synthetic sources exercising every state branch (RAINING, SEVERE
-        approaching, APPROACHING, BYPASSING, NO_RAIN near/far, vicinity bound).
+Part B: synthetic sources across the old scenarios (raining, severe overhead,
+        approaching, bypassing, far echo, clear) — all must now map to
+        RAINING/NO_RAIN, and Python must agree with the JS interpreter.
 
 Run from repo root:  python tests/test_verdict_parity.py
 Exit 0 = parity holds; exit 1 = mismatch.
@@ -52,6 +57,10 @@ def compare(label, status, fails):
         a, b = (py or {}).get(key), (js or {}).get(key)
         if a != b:
             fails.append(f"[{label}] {key}: py={a!r} vs js={b!r}")
+    # the verdict is binary now — no case may produce anything but these two
+    st = (py or {}).get("state")
+    if st is not None and st not in ("RAINING", "NO_RAIN"):
+        fails.append(f"[{label}] non-binary state: {st!r}")
 
 
 def synth_source(rain_at_loc=False, approaching=False, any_rain=True,

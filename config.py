@@ -67,7 +67,7 @@ ORD_ENABLED = True
 # ============================================================================
 # Fetch settings
 # ============================================================================
-FETCH_INTERVAL_MIN = 7            # Fetch every N minutes (OPERA updates every 5 min)
+FETCH_INTERVAL_MIN = 5        # Fetch every N minutes (OPERA updates every 5 min)
 KEEP_FRAMES = 16                  # Keep last N frames (16 = ~80 min of history)
 USER_AGENT = "budva-radar/0.1 (local precipitation analysis; non-commercial)"
 

@@ -1,0 +1,498 @@
+{
+  "ok": true,
+  "mode": "ord-h5",
+  "demo": false,
+  "generated": "2026-06-25T19:01:03Z",
+  "location": "Budva",
+  "base_epoch_ms": 1782310800000,
+  "timestep_min": 5.0,
+  "n_frames": 4,
+  "horizon_cap_min": 45,
+  "disc_km": 8.0,
+  "scenario": "convective",
+  "map_meta": {
+    "image_size": [
+      256,
+      256
+    ],
+    "budva_xy": [
+      128,
+      128
+    ],
+    "budva_latlon": [
+      42.2864,
+      18.84
+    ],
+    "km_per_px": 1.0,
+    "extent_km": 256,
+    "corner_nw": [
+      43.444,
+      17.2857
+    ],
+    "corner_se": [
+      41.1288,
+      20.3943
+    ],
+    "basemap": "compare_frames/basemap.png"
+  },
+  "models": [
+    {
+      "method": "extrapolation",
+      "source": "ord",
+      "scenario": "convective",
+      "timestep_min": 5.0,
+      "n_frames": 4,
+      "domain_px": [
+        256,
+        256
+      ],
+      "km_per_px": 1.0,
+      "now_disc_mmh": 0.02,
+      "series": [
+        {
+          "lead_min": 5.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.02
+        },
+        {
+          "lead_min": 10.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.01
+        },
+        {
+          "lead_min": 15.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.01
+        },
+        {
+          "lead_min": 20.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.41
+        },
+        {
+          "lead_min": 25.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 3.56
+        },
+        {
+          "lead_min": 30.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 4.18
+        },
+        {
+          "lead_min": 35.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 4.75
+        },
+        {
+          "lead_min": 40.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 7.73
+        },
+        {
+          "lead_min": 45.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 11.65
+        },
+        {
+          "lead_min": 50.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 18.96
+        },
+        {
+          "lead_min": 55.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 10.56
+        },
+        {
+          "lead_min": 60.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 3.69
+        }
+      ],
+      "eta_onset_min": 20.0,
+      "peak_mmh": 18.96,
+      "peak_lead_min": 50.0,
+      "trend": "intensifying",
+      "motion_kmh": 11.5,
+      "motion_dir_deg": 179.0,
+      "motion_cardinal": "S",
+      "key": "extrapolation",
+      "label": "Ekstrapolacija (Lagrange persistencija)",
+      "role": "baseline",
+      "frames": [
+        {
+          "lead_min": 0.0,
+          "image": "compare_frames/extrapolation/f00.png",
+          "is_now": true
+        },
+        {
+          "lead_min": 5.0,
+          "image": "compare_frames/extrapolation/f01.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 10.0,
+          "image": "compare_frames/extrapolation/f02.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 15.0,
+          "image": "compare_frames/extrapolation/f03.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 20.0,
+          "image": "compare_frames/extrapolation/f04.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 25.0,
+          "image": "compare_frames/extrapolation/f05.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 30.0,
+          "image": "compare_frames/extrapolation/f06.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 35.0,
+          "image": "compare_frames/extrapolation/f07.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 40.0,
+          "image": "compare_frames/extrapolation/f08.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 45.0,
+          "image": "compare_frames/extrapolation/f09.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 50.0,
+          "image": "compare_frames/extrapolation/f10.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 55.0,
+          "image": "compare_frames/extrapolation/f11.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 60.0,
+          "image": "compare_frames/extrapolation/f12.png",
+          "is_now": false
+        }
+      ]
+    },
+    {
+      "method": "linda",
+      "source": "ord",
+      "scenario": "convective",
+      "timestep_min": 5.0,
+      "n_frames": 4,
+      "domain_px": [
+        256,
+        256
+      ],
+      "km_per_px": 1.0,
+      "now_disc_mmh": 0.02,
+      "series": [
+        {
+          "lead_min": 5.0,
+          "point_mmh": 0.86,
+          "disc_max_mmh": 2.9
+        },
+        {
+          "lead_min": 10.0,
+          "point_mmh": 1.49,
+          "disc_max_mmh": 5.43
+        },
+        {
+          "lead_min": 15.0,
+          "point_mmh": 1.9,
+          "disc_max_mmh": 8.78
+        },
+        {
+          "lead_min": 20.0,
+          "point_mmh": 2.2,
+          "disc_max_mmh": 12.06
+        },
+        {
+          "lead_min": 25.0,
+          "point_mmh": 2.47,
+          "disc_max_mmh": 14.29
+        },
+        {
+          "lead_min": 30.0,
+          "point_mmh": 2.73,
+          "disc_max_mmh": 16.65
+        },
+        {
+          "lead_min": 35.0,
+          "point_mmh": 2.95,
+          "disc_max_mmh": 19.11
+        },
+        {
+          "lead_min": 40.0,
+          "point_mmh": 3.11,
+          "disc_max_mmh": 20.51
+        },
+        {
+          "lead_min": 45.0,
+          "point_mmh": 3.2,
+          "disc_max_mmh": 20.9
+        },
+        {
+          "lead_min": 50.0,
+          "point_mmh": 3.22,
+          "disc_max_mmh": 20.54
+        },
+        {
+          "lead_min": 55.0,
+          "point_mmh": 3.18,
+          "disc_max_mmh": 19.73
+        },
+        {
+          "lead_min": 60.0,
+          "point_mmh": 3.1,
+          "disc_max_mmh": 18.73
+        }
+      ],
+      "eta_onset_min": 5.0,
+      "peak_mmh": 20.9,
+      "peak_lead_min": 45.0,
+      "trend": "intensifying",
+      "motion_kmh": 11.5,
+      "motion_dir_deg": 179.0,
+      "motion_cardinal": "S",
+      "key": "linda",
+      "label": "LINDA-D (pysteps)",
+      "role": "headline",
+      "frames": [
+        {
+          "lead_min": 0.0,
+          "image": "compare_frames/linda/f00.png",
+          "is_now": true
+        },
+        {
+          "lead_min": 5.0,
+          "image": "compare_frames/linda/f01.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 10.0,
+          "image": "compare_frames/linda/f02.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 15.0,
+          "image": "compare_frames/linda/f03.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 20.0,
+          "image": "compare_frames/linda/f04.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 25.0,
+          "image": "compare_frames/linda/f05.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 30.0,
+          "image": "compare_frames/linda/f06.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 35.0,
+          "image": "compare_frames/linda/f07.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 40.0,
+          "image": "compare_frames/linda/f08.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 45.0,
+          "image": "compare_frames/linda/f09.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 50.0,
+          "image": "compare_frames/linda/f10.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 55.0,
+          "image": "compare_frames/linda/f11.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 60.0,
+          "image": "compare_frames/linda/f12.png",
+          "is_now": false
+        }
+      ]
+    },
+    {
+      "method": "dgmr",
+      "source": "ord",
+      "scenario": "convective",
+      "timestep_min": 5.0,
+      "n_frames": 4,
+      "domain_px": [
+        256,
+        256
+      ],
+      "km_per_px": 1.0,
+      "now_disc_mmh": 0.02,
+      "series": [
+        {
+          "lead_min": 5.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 1.34
+        },
+        {
+          "lead_min": 10.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 6.27
+        },
+        {
+          "lead_min": 15.0,
+          "point_mmh": 0.45,
+          "disc_max_mmh": 46.76
+        },
+        {
+          "lead_min": 20.0,
+          "point_mmh": 16.97,
+          "disc_max_mmh": 29.14
+        },
+        {
+          "lead_min": 25.0,
+          "point_mmh": 14.38,
+          "disc_max_mmh": 46.49
+        },
+        {
+          "lead_min": 30.0,
+          "point_mmh": 17.58,
+          "disc_max_mmh": 41.03
+        },
+        {
+          "lead_min": 35.0,
+          "point_mmh": 28.08,
+          "disc_max_mmh": 80.27
+        },
+        {
+          "lead_min": 40.0,
+          "point_mmh": 6.06,
+          "disc_max_mmh": 60.57
+        },
+        {
+          "lead_min": 45.0,
+          "point_mmh": 8.38,
+          "disc_max_mmh": 49.26
+        },
+        {
+          "lead_min": 50.0,
+          "point_mmh": 22.93,
+          "disc_max_mmh": 39.04
+        },
+        {
+          "lead_min": 55.0,
+          "point_mmh": 8.02,
+          "disc_max_mmh": 23.08
+        },
+        {
+          "lead_min": 60.0,
+          "point_mmh": 3.82,
+          "disc_max_mmh": 45.62
+        }
+      ],
+      "eta_onset_min": 5.0,
+      "peak_mmh": 80.27,
+      "peak_lead_min": 35.0,
+      "trend": "intensifying",
+      "motion_kmh": 11.5,
+      "motion_dir_deg": 179.0,
+      "motion_cardinal": "S",
+      "key": "dgmr",
+      "label": "DGMR (DeepMind)",
+      "role": "compare",
+      "available": true,
+      "frames": [
+        {
+          "lead_min": 0.0,
+          "image": "compare_frames/dgmr/f00.png",
+          "is_now": true
+        },
+        {
+          "lead_min": 5.0,
+          "image": "compare_frames/dgmr/f01.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 10.0,
+          "image": "compare_frames/dgmr/f02.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 15.0,
+          "image": "compare_frames/dgmr/f03.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 20.0,
+          "image": "compare_frames/dgmr/f04.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 25.0,
+          "image": "compare_frames/dgmr/f05.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 30.0,
+          "image": "compare_frames/dgmr/f06.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 35.0,
+          "image": "compare_frames/dgmr/f07.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 40.0,
+          "image": "compare_frames/dgmr/f08.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 45.0,
+          "image": "compare_frames/dgmr/f09.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 50.0,
+          "image": "compare_frames/dgmr/f10.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 55.0,
+          "image": "compare_frames/dgmr/f11.png",
+          "is_now": false
+        },
+        {
+          "lead_min": 60.0,
+          "image": "compare_frames/dgmr/f12.png",
+          "is_now": false
+        }
+      ]
+    }
+  ],
+  "dgmr_enabled": true
+}

@@ -150,7 +150,10 @@ def facts_from_source(src, loc_name):
 
 
 def interpret(facts):
-    """Mirror of skala-text.js skalaInterpret — identical states + wording."""
+    """BINARY SKALA RAIN verdict: is it RAINING at the location RIGHT NOW, or not.
+    The forecast (approaching / ETA / severe-incoming) is SKALA NOWCAST's job now —
+    this reports only the current state. Must stay identical to skala-text.js
+    skalaInterpret (state + headline + narrative); the parity test enforces it."""
     facts = facts or {}
     loc = facts.get("locationName") or "this location"
     dbz = facts.get("dbz")
@@ -159,45 +162,14 @@ def interpret(facts):
     dbz_txt = f" ({_round(dbz)} dBZ)" if dbz is not None else ""
     where = f"~{_fmt_km(km)} km" + (f" {facts['cardinal']}" if facts.get("cardinal") else "")
 
-    threat = facts.get("threat")
-    # Severe-APPROACHING is gated on the dominant cell being a CPA HIT (PDF Part
-    # E): a severe cell that BYPASSes or is RECEDING is a regional event, not a
-    # point alert — this is what prevents the distant-cell false-trigger that the
-    # JS interpreter had removed the SEVERE state for. Overhead severe (raining
-    # here, dbz>=SEVERE) is a HIT by definition and needs no extra gate.
-    severe_approaching = bool(facts.get("approaching")) and bool(
-        threat and threat.get("dbz") is not None and threat["dbz"] >= SEVERE_DBZ
-        and threat.get("cpaClass") == "HIT")
-    severe_here = bool(facts.get("rainAtLocation")) and dbz is not None and dbz >= SEVERE_DBZ
-
-    if severe_here:
-        state = "SEVERE"
-        narrative = f"Severe storm overhead — {intensity}{dbz_txt}."
-    elif facts.get("rainAtLocation"):
+    if facts.get("rainAtLocation"):
         state = "RAINING"
         narrative = f"Raining now — {intensity}{dbz_txt}."
-    elif severe_approaching:
-        state = "SEVERE"
-        t_eta = _eta_text(threat.get("eta"))
-        t_where = f"~{_fmt_km(threat.get('km'))} km" + (
-            f" {threat['cardinal']}" if threat.get("cardinal") else "")
-        t_dbz = f" ({_round(threat['dbz'])} dBZ)" if threat.get("dbz") is not None else ""
-        t_label = threat.get("label") or _intensity(threat.get("dbz"))
-        narrative = f"Severe storm approaching — {t_label}{t_dbz}, {t_where}{t_eta}."
-    elif facts.get("approaching"):
-        state = "APPROACHING"
-        eta = _eta_text(facts.get("eta"))
-        narrative = f"Rain approaching — {intensity}, {where}{eta}."
-    elif facts.get("anyRain") and km is not None and km <= SKALA_VICINITY_KM:
-        state = "BYPASSING"
-        moving = f" (moving {facts['motionCardinal']})" if facts.get("motionCardinal") else ""
-        narrative = f"Rain nearby but not heading here — {intensity}, {where}{moving}."
-    elif facts.get("anyRain") and km is not None:
-        state = "NO_RAIN"
-        narrative = f"No rain heading toward {loc} (nearest echo {where})."
     else:
         state = "NO_RAIN"
-        if facts.get("anyWet"):
+        if facts.get("anyRain") and km is not None:
+            narrative = f"No rain at {loc} (nearest echo {where})."
+        elif facts.get("anyWet"):
             narrative = "Scattered radar echoes below the rain threshold — not falling."
         elif facts.get("anyEcho"):
             narrative = "Only weak echo on the radar — likely noise, not rain."
@@ -212,49 +184,23 @@ def interpret(facts):
 
 
 def serbian_line(facts, res):
-    """The one-sentence Serbian status line (wording ported verbatim from the
-    forecast page's renderRadarStatusLine). Returns {text, html_bold, color,
-    weight} — the page adds its own link prefix + data-age suffix."""
+    """One-sentence Serbian status line for the BINARY verdict (current state only):
+    pada / ne pada u Budvi. Returns {text, bold, color, weight} — the page adds its
+    own prefix + data-age suffix. (Only state/headline/narrative are parity-checked,
+    so this wording is free to differ from the JS.)"""
     dbz = facts.get("dbz")
     km = facts.get("km")
-    threat = facts.get("threat")
-    state = res["state"]
-    severe_here = state == "SEVERE" and facts.get("rainAtLocation")
-    severe_approaching = state == "SEVERE" and not facts.get("rainAtLocation")
-
-    if severe_here:
-        text = (f"jako nevrijeme nad Budvom — {_intenzitet_sr(dbz)}"
-                + (f" ({_round(dbz)} dBZ)" if dbz is not None else ""))
-        return {"text": text, "bold": "jako nevrijeme nad Budvom",
-                "color": "#6a1b9a", "weight": 700}
-    if state == "RAINING":
+    if res["state"] == "RAINING":
+        if dbz is not None and dbz >= SEVERE_DBZ:
+            return {"text": f"pada jaka kiša / grad u Budvi ({_round(dbz)} dBZ)",
+                    "bold": "pada jaka kiša / grad u Budvi", "color": "#6a1b9a", "weight": 700}
         return {"text": f"pada kiša u Budvi — {_intenzitet_sr(dbz)}",
-                "bold": "pada kiša u Budvi", "color": "#bf360c", "weight": 700}
-    if severe_approaching and threat:
-        t_eta = _eta_text(threat.get("eta"), prob=" (procjena)")
-        t_dbz = f" ({_round(threat['dbz'])} dBZ)" if threat.get("dbz") is not None else ""
-        text = (f"jako nevrijeme se približava — {_intenzitet_sr(threat.get('dbz'))}{t_dbz}, "
-                f"~{_fmt_km(threat.get('km'))} km {_smjer_sr(threat.get('cardinal'))}{t_eta}")
-        return {"text": text, "bold": "jako nevrijeme se približava",
-                "color": "#6a1b9a", "weight": 700}
-    if state == "APPROACHING":
-        eta = _eta_text(facts.get("eta"), prob=" (procjena)")
-        text = (f"kiša se približava — {_intenzitet_sr(dbz)}, "
-                f"~{_fmt_km(km)} km {_smjer_sr(facts.get('cardinal'))}{eta}")
-        return {"text": text, "bold": "kiša se približava",
-                "color": "#bf360c", "weight": 600}
-    if state == "BYPASSING":
-        move = (f" (ide ka {_smjer_sr(facts.get('motionCardinal'))})"
-                if facts.get("motionCardinal") else "")
-        text = (f"kiša je blizu, ali zaobilazi Budvu — {_intenzitet_sr(dbz)}, "
-                f"~{_fmt_km(km)} km {_smjer_sr(facts.get('cardinal'))}{move}")
-        return {"text": text, "bold": "kiša je blizu, ali zaobilazi Budvu",
-                "color": "#1565c0", "weight": 600}
+                "bold": "pada kiša u Budvi", "color": "#1565c0", "weight": 700}
     if facts.get("anyRain") and km is not None:
-        text = (f"nema kiše ka Budvi (najbliža jeka ~{_fmt_km(km)} km "
-                f"{_smjer_sr(facts.get('cardinal'))})")
-        return {"text": text, "bold": None, "color": "#2e7d32", "weight": 400}
-    return {"text": "nema padavina u okolini Budve", "bold": None,
+        return {"text": (f"trenutno ne pada u Budvi (najbliža jeka ~{_fmt_km(km)} km "
+                         f"{_smjer_sr(facts.get('cardinal'))})"),
+                "bold": None, "color": "#2e7d32", "weight": 400}
+    return {"text": "trenutno ne pada u Budvi", "bold": None,
             "color": "#2e7d32", "weight": 400}
 
 

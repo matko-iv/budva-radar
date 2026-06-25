@@ -1,0 +1,178 @@
+{
+  "method": "extrapolation",
+  "source": "dhmz",
+  "scenario": "convective",
+  "timestep_min": 5.0,
+  "n_frames": 3,
+  "domain_px": [
+    678,
+    642
+  ],
+  "km_per_px": 0.737,
+  "now_disc_mmh": 0.0,
+  "series": [
+    {
+      "lead_min": 5.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 10.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 15.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 20.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 25.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 30.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 35.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 40.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 45.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 50.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 55.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 60.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    }
+  ],
+  "eta_onset_min": null,
+  "peak_mmh": 0.0,
+  "peak_lead_min": 5.0,
+  "trend": "steady",
+  "motion_kmh": 14.8,
+  "motion_dir_deg": 183.0,
+  "motion_cardinal": "S",
+  "map": {
+    "image_size": [
+      1926,
+      2034
+    ],
+    "budva_xy": [
+      1221.0,
+      1221.0
+    ],
+    "budva_latlon": [
+      42.2865,
+      18.8401
+    ],
+    "km_per_px": 0.7369188191274589,
+    "extent_km": 500,
+    "corner_nw": [
+      44.96,
+      15.22
+    ],
+    "corner_se": [
+      40.51,
+      20.93
+    ],
+    "frames": [
+      {
+        "lead_min": 0.0,
+        "image": "nowcast_frames/f00.png",
+        "is_now": true
+      },
+      {
+        "lead_min": 5.0,
+        "image": "nowcast_frames/f01.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 10.0,
+        "image": "nowcast_frames/f02.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 15.0,
+        "image": "nowcast_frames/f03.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 20.0,
+        "image": "nowcast_frames/f04.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 25.0,
+        "image": "nowcast_frames/f05.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 30.0,
+        "image": "nowcast_frames/f06.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 35.0,
+        "image": "nowcast_frames/f07.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 40.0,
+        "image": "nowcast_frames/f08.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 45.0,
+        "image": "nowcast_frames/f09.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 50.0,
+        "image": "nowcast_frames/f10.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 55.0,
+        "image": "nowcast_frames/f11.png",
+        "is_now": false
+      },
+      {
+        "lead_min": 60.0,
+        "image": "nowcast_frames/f12.png",
+        "is_now": false
+      }
+    ]
+  },
+  "ok": true,
+  "generated": "2026-06-25T08:58:59Z",
+  "location": "Budva",
+  "horizon_cap_min": 45,
+  "source_label": "dhmz"
+}

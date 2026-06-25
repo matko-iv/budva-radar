@@ -1,31 +1,44 @@
-"""Run the SKALA pipelines every N minutes until killed with Ctrl+C.
+"""Run the SKALA pipelines, each waiting for its OWN upstream source to advance.
 
-Each cycle runs BOTH modules — run.py (SKALA RAIN, radar) and run_clouds.py
-(SKALA CLOUD, satellite) — then commits + pushes docs/ once so GitHub Pages
-picks up both radar_status.json and cloud_status.json.
+Instead of a fixed N-minute cycle, loop.py polls each module's source on a short
+tick and runs that module's pipeline ONLY when a newer frame has appeared:
+  * SKALA RAIN  (run.py)        — newest OPERA composite epoch (~5-min cadence)
+  * SKALA CLOUD (run_clouds.py) — freshest HighSight slot (10-min cadence, lagged),
+                                  gated to the tile-quota interval so we don't
+                                  re-fetch faster than the free quota allows.
+Each module is independent (its own cadence); on a successful run docs/ is
+committed + pushed immediately so GitHub Pages updates as soon as that module has
+new data.
 
 Flags:
   --no-push    skip the git commit/push (serve docs/ locally instead)
-  --no-rain    skip the radar pipeline this run
-  --no-cloud   skip the satellite pipeline (e.g. no EUMETSAT credentials)
+  --no-rain    don't watch / run the radar pipeline
+  --no-cloud   don't watch / run the satellite pipeline
+  --once       run any module whose source is already new once, then exit
+  --poll SEC   source-check interval in seconds (default 60)
 
-The cloud pipeline needs EUMETSAT_KEY / EUMETSAT_SECRET in the environment; if
-they're missing it just logs and the loop carries on with radar only.
+The cloud pipeline needs HIGHSIGHT_KEY (or EUMETSAT creds for the L2 path); if a
+source can't be reached that module simply waits and the other keeps running.
 """
 
 import time
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import config
 
-INTERVAL_SEC = config.FETCH_INTERVAL_MIN * 60
 BASE_DIR = Path(__file__).resolve().parent
 PUSH_TO_GIT = "--no-push" not in sys.argv
 RUN_RAIN = "--no-rain" not in sys.argv
 RUN_CLOUD = "--no-cloud" not in sys.argv
+
+DEFAULT_POLL_SEC = 60                  # how often to check the upstream sources
+RAIN_MIN_GAP_SEC = 0                   # OPERA's 5-min epoch already gates re-runs
+# Don't re-run CLOUD faster than the HighSight tile-quota throttle (else we burn
+# the free tile quota); newer 10-min slots inside this gap are skipped.
+CLOUD_MIN_GAP_SEC = int(config.CLOUDS.get("highsight_min_interval_min", 20)) * 60
 
 
 def push_docs():
@@ -92,26 +105,91 @@ def _run(script):
         print(f"{script} crashed: {e}")
 
 
+def _rain_source_token():
+    """RAIN's freshness signal: the newest OPERA composite epoch (ms) upstream.
+    A lightweight JSON GET — returns None if the listing can't be reached (the
+    module then just waits and retries next tick)."""
+    import requests
+    src = config.SOURCES["opera"]
+    r = requests.get(src["list_url"], timeout=20,
+                     headers={"User-Agent": config.USER_AGENT})
+    r.raise_for_status()
+    epochs = [it.get("epoch") for it in r.json().get("images", []) if it.get("epoch")]
+    return max(epochs) if epochs else None
+
+
+def _cloud_source_token():
+    """CLOUD's freshness signal: the freshest HighSight slot (UTC, floored to the
+    10-min cadence, behind the publish lag) as an ISO string. Mirrors
+    clouds.highsight._freshest_slot without importing the heavy module."""
+    cfg = config.CLOUDS
+    lag = int(cfg.get("highsight_lag_min", 30)) if cfg.get("use_highsight", False) else 0
+    t = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=lag)
+    return t.replace(minute=(t.minute // 10) * 10, second=0, microsecond=0).isoformat()
+
+
+class Watcher:
+    """Watches one module's upstream source and runs its pipeline only when the
+    source token advances (and at least min_gap_sec has passed since the last run)."""
+
+    def __init__(self, name, script, token_fn, min_gap_sec):
+        self.name = name
+        self.script = script
+        self.token_fn = token_fn
+        self.min_gap_sec = min_gap_sec
+        self.last_token = None
+        self.last_run = 0.0
+
+    def check_and_run(self):
+        """Run the pipeline if the source advanced. Returns True iff it ran (so the
+        caller knows to push docs/)."""
+        try:
+            token = self.token_fn()
+        except Exception as e:
+            print(f"  [{self.name}] source check failed: {e}")
+            return False
+        if token is None or token == self.last_token:
+            return False
+        if (time.time() - self.last_run) < self.min_gap_sec:
+            return False                       # newer source, but inside the min gap
+        print(f"  [{self.name}] new source ({token}) -> running {self.script}")
+        _run(self.script)
+        self.last_token = token
+        self.last_run = time.time()
+        return True
+
+
+def _poll_seconds():
+    if "--poll" in sys.argv:
+        try:
+            return max(10, int(sys.argv[sys.argv.index("--poll") + 1]))
+        except (IndexError, ValueError):
+            print("  bad --poll value; using default")
+    return DEFAULT_POLL_SEC
+
+
 def main():
+    once = "--once" in sys.argv
+    poll = _poll_seconds()
+    watchers = []
+    if RUN_RAIN:
+        watchers.append(Watcher("RAIN", "run.py", _rain_source_token, RAIN_MIN_GAP_SEC))
+    if RUN_CLOUD:
+        watchers.append(Watcher("CLOUD", "run_clouds.py", _cloud_source_token, CLOUD_MIN_GAP_SEC))
+
     mode = "with git push" if PUSH_TO_GIT else "no push (--no-push)"
-    modules = " + ".join(([("RAIN") ] if RUN_RAIN else []) + (["CLOUD"] if RUN_CLOUD else []))
-    print(f"SKALA loop [{modules or 'nothing'}] - interval "
-          f"{config.FETCH_INTERVAL_MIN} min, {mode}. Ctrl+C to stop.")
+    names = " + ".join(w.name for w in watchers) or "nothing"
+    print(f"SKALA loop [{names}] — each module waits for its OWN source to advance "
+          f"(poll {poll}s), {mode}. Ctrl+C to stop.")
     while True:
         t0 = datetime.now()
-        print(f"\n=== {t0.isoformat(timespec='seconds')} ===")
-        if RUN_RAIN:
-            print("--- SKALA RAIN (run.py) ---")
-            _run("run.py")
-        if RUN_CLOUD:
-            print("--- SKALA CLOUD (run_clouds.py) ---")
-            _run("run_clouds.py")
-        if PUSH_TO_GIT:
-            push_docs()
-        elapsed = (datetime.now() - t0).total_seconds()
-        sleep_for = max(10, INTERVAL_SEC - elapsed)
-        print(f"sleeping {sleep_for:.0f}s ...")
-        time.sleep(sleep_for)
+        print(f"\n=== {t0.isoformat(timespec='seconds')} (checking sources) ===")
+        for w in watchers:
+            if w.check_and_run() and PUSH_TO_GIT:
+                push_docs()
+        if once:
+            break
+        time.sleep(poll)
 
 
 if __name__ == "__main__":

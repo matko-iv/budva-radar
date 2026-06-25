@@ -33,6 +33,9 @@ import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ORD_FRAMES_DIR = BASE_DIR / "data" / "frames" / "ord"
+# Range downloads land here, NOT in ORD_FRAMES_DIR: the live loop prunes that to the
+# newest KEEP_FRAMES volumes, which would silently delete an archived case.
+ORD_ARCHIVE_DIR = BASE_DIR / "data" / "ord_archive"
 
 S3_BASE = "https://s3.waw3-1.cloudferro.com/openradar-24h"
 NODE_PREFIX = "{date}/HR/hrulj/PVOL/"
@@ -103,6 +106,62 @@ def fetch_latest():
             except Exception:
                 pass
     return local
+
+
+def available_window():
+    """What the rolling bucket currently holds. Returns an ordered list of
+    (date_str, count, first_utc, last_utc) for yesterday + today (UTC) — i.e. the
+    boundaries of what fetch_range can still pull."""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    out = []
+    for off in (-1, 0):
+        d = (now + datetime.timedelta(days=off)).strftime("%Y/%m/%d")
+        try:
+            keys = [k for k in _list_keys(NODE_PREFIX.format(date=d)) if k.endswith(".h5")]
+        except Exception:
+            keys = []
+        if keys:
+            out.append((d, len(keys), nominal_time_utc(keys[0]), nominal_time_utc(keys[-1])))
+        else:
+            out.append((d, 0, None, None))
+    return out
+
+
+def fetch_range(start_utc, end_utc, dest=None):
+    """Download every hrulj PVOL whose nominal time is within [start_utc, end_utc]
+    (tz-aware UTC) to `dest` (default ORD_ARCHIVE_DIR — which the loop never prunes).
+    Skips already-cached files and silently skips objects that aren't valid HDF5.
+    Returns the sorted list of local Paths.
+
+    The upstream bucket keeps only a rolling ~24 h, so ranges older than that come
+    back empty (use available_window() to see the boundaries)."""
+    if end_utc < start_utc:
+        start_utc, end_utc = end_utc, start_utc
+    dest = Path(dest) if dest else ORD_ARCHIVE_DIR
+    dest.mkdir(parents=True, exist_ok=True)
+    out, day = [], start_utc.date()
+    while day <= end_utc.date():
+        try:
+            keys = _list_keys(NODE_PREFIX.format(date=day.strftime("%Y/%m/%d")))
+        except Exception:
+            keys = []
+        for k in keys:
+            if not k.endswith(".h5"):
+                continue
+            t = nominal_time_utc(k)
+            if t is None or t < start_utc or t > end_utc:
+                continue
+            local = dest / k.rsplit("/", 1)[-1]
+            if not local.exists():
+                r = requests.get(f"{S3_BASE}/{urllib.parse.quote(k)}", timeout=60,
+                                 headers={"User-Agent": config.USER_AGENT})
+                r.raise_for_status()
+                if len(r.content) < 10000 or r.content[:4] != b"\x89HDF":
+                    continue
+                local.write_bytes(r.content)
+            out.append(local)
+        day += datetime.timedelta(days=1)
+    return sorted(out)
 
 
 def _unpack(ds_group):

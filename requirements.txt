@@ -11,3 +11,28 @@ eumdac>=2.2
 xarray>=2024.1
 netCDF4>=1.6
 pyproj>=3.6
+
+# Radar nowcast (radar/pysteps_nowcast.py) — pysteps ANVIL/LINDA + Lucas-Kanade.
+# Imported lazily, so the rest of the package runs without these; only the
+# nowcast itself needs them. opencv is required by the LK optical flow;
+# scikit-image is required by LINDA's blob (cell) feature detection — without it
+# the model still runs (ANVIL only), it just can't auto-select LINDA.
+#   pip install pysteps opencv-python-headless scikit-image
+# (If the jsmin build fails on an older setuptools, `pip install jsmin` first,
+#  or upgrade pip/setuptools.)
+pysteps>=1.7
+opencv-python-headless>=4.8
+scikit-image>=0.21
+
+# OPTIONAL second nowcast engine for the comparison page (radar/dgmr_adapter.py +
+# compare_nowcast.py): DeepMind DGMR via the pysteps-dgmr-nowcasts plugin. NOT on
+# PyPI and NOT required — if absent, the comparison just omits the DGMR column.
+# Enable (needs internet; the plugin downloads its pretrained weights on first use):
+#   pip install "setuptools<81" tensorflow wradlib xarray pyproj
+#   pip install git+https://github.com/pySTEPS/pysteps-dgmr-nowcasts.git
+# IMPORTANT: pin setuptools<81. The plugin's tensorflow_hub 0.16.1 still does
+#   `from pkg_resources import parse_version`, and setuptools>=81 dropped the bundled
+#   pkg_resources — so a newer setuptools makes `import tensorflow_hub` (hence DGMR)
+#   fail with "No module named 'pkg_resources'". `compare_nowcast.py --check-dgmr`
+#   then prints `dgmr_module_plugin.dgmr -> MISSING`. Re-pin and reinstall to fix.
+# ORD H5 ingestion (radar/ord.py) needs only h5py (already listed above).

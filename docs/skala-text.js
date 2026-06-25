@@ -2,10 +2,10 @@
 // pages produce literally identical text for the same location.
 //
 // Pixel-first model (per spec):
-//   RAINING      - the exact pixel under the marker is wet (it is raining here)
-//   APPROACHING  - rain is heading toward us and will reach the location
-//   BYPASSING    - rain is nearby but not heading here (will miss us)
-//   NO_RAIN      - nothing falling (clear / only noise / scattered sub-threshold)
+//   RAINING - the location is wet right NOW (it is raining here)
+//   NO_RAIN - not raining here now (clear / noise / rain only elsewhere)
+// BINARY current-state verdict: the forecast (approaching / ETA) moved to SKALA
+// NOWCAST. STATE_META still lists the old states for back-compat styling only.
 // Intensity (light / moderate / heavy / hail) comes from the closest cell's dBZ.
 
 (function (global) {
@@ -67,48 +67,23 @@
     var where = '~' + fmtKm(facts.km) + ' km' + (facts.cardinal ? ' ' + facts.cardinal : '');
     var state, narrative;
 
-    // SEVERE — re-gated on the CPA result (PDF Part E). Overhead severe (raining
-    // here, dbz>=SEVERE) is a HIT by definition; severe-APPROACHING fires only
-    // when the dominant cell is a CPA HIT, so a distant bypassing/receding severe
-    // cell no longer false-triggers a point alert (the reason it was removed).
-    var threat = facts.threat;
-    var severeHere = !!facts.rainAtLocation && facts.dbz != null && !isNaN(facts.dbz)
-      && facts.dbz >= SEVERE_DBZ;
-    var severeApproaching = !!facts.approaching && !!(threat && threat.dbz != null
-      && !isNaN(threat.dbz) && threat.dbz >= SEVERE_DBZ && threat.cpaClass === 'HIT');
-
-    if (severeHere) {
-      state = 'SEVERE';
-      narrative = 'Severe storm overhead — ' + intensity + dbzTxt + '.';
-    } else if (facts.rainAtLocation) {
+    // BINARY: is it RAINING here right NOW, or not. The forecast (approaching /
+    // ETA / severe-incoming) is SKALA NOWCAST's job now — this is current-state
+    // only. Must stay identical to radar/verdict.py interpret(); parity test enforces it.
+    if (facts.rainAtLocation) {
       state = 'RAINING';
       narrative = 'Raining now — ' + intensity + dbzTxt + '.';
-    } else if (severeApproaching) {
-      state = 'SEVERE';
-      var tEta = etaText(threat.eta);
-      var tWhere = '~' + fmtKm(threat.km) + ' km' + (threat.cardinal ? ' ' + threat.cardinal : '');
-      var tDbz = (threat.dbz != null && !isNaN(threat.dbz)) ? ' (' + Math.round(threat.dbz) + ' dBZ)' : '';
-      var tLabel = threat.label || skalaIntensity(threat.dbz);
-      narrative = 'Severe storm approaching — ' + tLabel + tDbz + ', ' + tWhere + tEta + '.';
-    } else if (facts.approaching) {
-      state = 'APPROACHING';
-      var eta = etaText(facts.eta);
-      narrative = 'Rain approaching — ' + intensity + ', ' + where + eta + '.';
-    } else if (facts.anyRain && facts.km != null && !isNaN(facts.km) && facts.km <= SKALA_VICINITY_KM) {
-      // "nearby" only within ~20 km — never call distant rain nearby.
-      state = 'BYPASSING';
-      var moving = facts.motionCardinal ? ' (moving ' + facts.motionCardinal + ')' : '';
-      narrative = 'Rain nearby but not heading here — ' + intensity + ', ' + where + moving + '.';
-    } else if (facts.anyRain && facts.km != null && !isNaN(facts.km)) {
-      // Rain exists but beyond ~20 km — not a concern for the point. Say so
-      // accurately, noting the distance (don't claim "no rain on the radar").
-      state = 'NO_RAIN';
-      narrative = 'No rain heading toward ' + loc + ' (nearest echo ' + where + ').';
     } else {
       state = 'NO_RAIN';
-      if (facts.anyWet) narrative = 'Scattered radar echoes below the rain threshold — not falling.';
-      else if (facts.anyEcho) narrative = 'Only weak echo on the radar — likely noise, not rain.';
-      else narrative = 'No rain on the radar within 150 km.';
+      if (facts.anyRain && facts.km != null && !isNaN(facts.km)) {
+        narrative = 'No rain at ' + loc + ' (nearest echo ' + where + ').';
+      } else if (facts.anyWet) {
+        narrative = 'Scattered radar echoes below the rain threshold — not falling.';
+      } else if (facts.anyEcho) {
+        narrative = 'Only weak echo on the radar — likely noise, not rain.';
+      } else {
+        narrative = 'No rain on the radar within 150 km.';
+      }
     }
 
     var meta = STATE_META[state];
