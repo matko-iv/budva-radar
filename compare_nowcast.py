@@ -32,11 +32,15 @@ BASE = Path(__file__).resolve().parent
 DOCS = BASE / "docs"
 OUT_JS = DOCS / "compare_data.js"
 OUT_JSON = BASE / "output" / "compare.json"
+# Compact Budva rain-FORECAST status for downstream consumers (the matko
+# forecast page): DGMR verdict + per-lead rate + integrated hourly mm.
+OUT_STATUS = DOCS / "nowcast_status.json"
 FRAMES_ROOT = "compare_frames"          # docs/compare_frames/<model>/fNN.png
 
 N_FRAMES = 4
-N_LEAD = 12                             # 12 x 5 min = 60 min
+N_LEAD = 16                             # 16 x 5 min = 80 min (DGMR native max = 90)
 HORIZON_CAP_MIN = 45
+RAIN_MMH = 0.2                          # disc rate above which we call it rain
 TILE = 256                              # DGMR's fixed size; all models share it
 DISC_KM = 8.0
 
