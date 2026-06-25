@@ -43,13 +43,7 @@
 
 <main>
 
-  <section id="boot-section">
-    <h2>boot</h2>
-    <pre id="boot" class="term">
-</pre>
-  </section>
-
-  <section id="app" hidden>
+  <section id="app">
     <h2>Lokacija</h2>
     <div id="controls">
       <input id="city-input" placeholder="ime grada (Budva, Petrovac) ili klikni mapu" autocomplete="off">
@@ -117,54 +111,9 @@
 <script src="nowcast-browser.js"></script>
 <script>
 // ---------------------------------------------------------------------------
-// BOOT SEQUENCE
+// App start (boot sequence removed — the app is shown immediately).
 // ---------------------------------------------------------------------------
-// Data-aware POST: the lines report what THIS scan actually contains (data
-// source, frame ages, cell catalog, nowcast, verdict) — the boot screen is the
-// first diagnostic, not just decoration. It is NOT skippable.
-function buildBootLines() {
-  const d = window.RADAR_DATA || {};
-  const dh = (d.sources && d.sources.dhmz) || {};
-  const op = (d.sources && d.sources.opera) || {};
-  const cells = Array.isArray(dh.cells) ? dh.cells : [];
-  const moving = cells.filter(c => c.speed_kmh != null && c.speed_kmh >= 1).length;
-  const nd = (dh.approaching && dh.approaching.nowcast_details) || {};
-  const p60 = nd.p_by_lead ? nd.p_by_lead['60'] : null;
-  const v = (d.summary && d.summary.budva_verdict) || null;
-  const hhmm = ts => ts ? String(ts).slice(11, 16) : '--:--';
-  const srcLine = dh.data_source === 'ord_pvol'
-    ? 'ODIM PVOL / MeteoGate ORD (raw dBZ, RHOHV-filtered)'
-    : 'DHMZ PNG (colour-classified fallback)';
-  return [
-    ["SKALA(C) 2026 Matko Interactive Software", 40],
-    ["SKALA Interpreter v2.0 — MeteoGate ORD edition", 140],
-    ["", 30],
-    ["Memory test : 65536K \x1bOK\x1b", 130],
-    ["", 30],
-    ["Detecting Primary Master   ... DHMZ-MRC-ULJENJE-720x751 @ " + hhmm(dh.frame_timestamp), 150],
-    ["Detecting Primary Slave    ... OPERA-ODYSSEY-950x1100 @ " + hhmm(op.frame_timestamp), 150],
-    ["Data source ............... " + srcLine, 170],
-    ["", 30],
-    ["Loading colormap.cmap          [ \x1bOK\x1b ]", 80],
-    ["Loading calibration.cal        [ \x1bOK\x1b ]", 80],
-    ["Loading latest_dhmz.png        [ \x1bOK\x1b ]", 100],
-    ["Cell catalog ............... " + cells.length + " cells (" + moving + " tracked)", 160],
-    ["Nowcast engine ............. P(rain/60 min) = " + (p60 != null ? Math.round(p60 * 100) + "%" : "n/a"), 160],
-    ["Verdict .................... " + (v ? v.state : "?"), 190],
-    ["", 40],
-    ["Booting from RADAR-MAP ...", 300],
-    ["", 0]
-  ];
-}
-const BOOT_LINES = buildBootLines();
-
-const bootEl = document.getElementById('boot');
-const bootSection = document.getElementById('boot-section');
-let bootDone = false;
-function finishBoot() {
-  if (bootDone) return;
-  bootDone = true;
-  bootSection.hidden = true;
+function startApp() {
   document.getElementById('app').hidden = false;
   initApp();
   // Render the Budva overview sections (identical to index.html) from the
@@ -214,24 +163,9 @@ function renderStormMode() {
   }
   el.innerHTML = html;
 }
-(function runBoot() {
-  bootEl.insertAdjacentHTML('beforeend',
-    '<span class="hint"></span>');
-  let t = 0;
-  for (const [line, delay] of BOOT_LINES) {
-    t += delay;
-    setTimeout(() => {
-      if (bootDone) return;
-      const safe = line
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/\x1bOK\x1b/g, '<span class="ok">  OK  </span>');
-      bootEl.insertAdjacentHTML('beforeend', safe + '\n');
-    }, t);
-  }
-  setTimeout(finishBoot, t + 200);
-  // Boot is NOT skippable (no click/key shortcut) — runs to completion.
-})();
+// Reveal the app once the script has finished loading (deferred via setTimeout so
+// every top-level definition is ready — exactly how the old boot triggered it).
+setTimeout(startApp, 0);
 
 
 const IMG_W = 720, IMG_H = 751;

@@ -39,13 +39,7 @@
 </header>
 
 <main>
-  <section id="boot-section">
-    <h2>boot</h2>
-    <pre id="boot" class="term">
-</pre>
-  </section>
-
-  <section id="app" hidden>
+  <section id="app">
     <div id="wip-note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;
          padding:8px 12px;margin:0 0 10px;font-size:13px;color:#6d4c00;line-height:1.45;">
       <b>Privremeno rješenje.</b> Radim na popravci L2 satelitske analize (OCA optička
@@ -107,8 +101,7 @@
     "tivat": [42.436, 18.696], "bar": [42.094, 19.100],
     "podgorica": [42.4304, 19.2594], "cetinje": [42.39, 18.92], "ulcinj": [41.929, 19.224]
   };
-  var boot = document.getElementById("boot");
-  function log(s) { boot.textContent += s + "\n"; }
+  function log(s) { try { console.log("[SKALA CLOUD] " + s); } catch (e) {} }
 
   var D = window.CLOUD_DATA;
   if (!D || !D.field) {
@@ -270,7 +263,6 @@
   }
 
   function wireApp() {
-    document.getElementById("boot-section").hidden = true;
     document.getElementById("app").hidden = false;
     document.getElementById("src").textContent = (D.source && D.source.data_source) || "?";
     updateStime();
@@ -302,42 +294,6 @@
     }
   }
 
-  // ---- non-skippable boot sequence (cloud-specific, data-aware) ----
-  function bootLines() {
-    var s = D.source || {}, v = (D.summary || {}).cloud_verdict || {};
-    var nrows = (field.lats || []).length, ncols = (field.lons || []).length;
-    var hhmm = (s.sensing_time || "").slice(11, 16) || "--:--";
-    var hs = (s.verdict_source === "HighSight");
-    return [
-      ["SKALA(C) 2026 Matko Interactive Software", 40],
-      ["SKALA Cloud Interpreter v1.0 — " + (hs ? "HighSight edition" : "EUMETSAT MTG edition"), 150],
-      ["", 30],
-      ["Memory test : 65536K  OK", 130],
-      ["", 30],
-      ["Detecting satellite ........ " + (hs ? "HighSight visible tiles" : "MTG-I1 FCI / 0° disk"), 150],
-      ["Cloud products ............. " + (hs ? "true-colour RGB (image read)" : "CLM + CTTH + OCA (Data Store)"), 150],
-      ["Sensing time ............... " + hhmm + " UTC", 160],
-      ["", 30],
-      ["Loading basemap.topo           [ OK ]", 90],
-      ["Loading cloud_field.npz        [ OK ]", 110],
-      ["Geo-navigation ............. " + (hs ? "web-mercator -> lat/lon" : "geos -> lat/lon (parallax-aware)"), 150],
-      ["Cloud grid ................. " + ncols + "x" + nrows + " · src " + (s.data_source || "?"), 160],
-      ["Verdict .................... " + (v.state || "?"), 190],
-      ["", 40],
-      ["Booting from SKALA-CLOUD ...", 320],
-      ["", 0]
-    ];
-  }
-  function runBoot(done) {
-    boot.textContent = "";
-    var lines = bootLines(), t = 0;
-    lines.forEach(function (pair) {
-      t += pair[1];
-      setTimeout(function () { boot.textContent += pair[0] + "\n"; }, t);
-    });
-    setTimeout(done, t + 280);
-  }
-
   var img = new Image();
   img.onload = function () {
     W = img.naturalWidth; H = img.naturalHeight;
@@ -345,9 +301,9 @@
     canvas.width = W; canvas.height = H;
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     ctx.drawImage(img, 0, 0, W, H);
-    runBoot(wireApp);                            // boot first, THEN reveal app
+    wireApp();                                   // boot removed — reveal the app immediately
   };
-  img.onerror = function () { log("[x] ne mogu učitati " + field.image); runBoot(wireApp); };
+  img.onerror = function () { log("[x] ne mogu učitati " + field.image); wireApp(); };
   img.src = field.image;
 })();
 </script>
