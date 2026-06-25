@@ -3,8 +3,9 @@ window.COMPARE_DATA = {
   "ok": true,
   "mode": "ord-h5",
   "demo": false,
-  "generated": "2026-06-25T14:46:47Z",
+  "generated": "2026-06-25T14:57:18Z",
   "location": "Budva",
+  "base_epoch_ms": 1782308700000,
   "timestep_min": 5.0,
   "n_frames": 4,
   "horizon_cap_min": 45,
@@ -396,17 +397,17 @@ window.COMPARE_DATA = {
         {
           "lead_min": 45.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.22
         },
         {
           "lead_min": 50.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "point_mmh": 0.09,
+          "disc_max_mmh": 1.48
         },
         {
           "lead_min": 55.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.86
         },
         {
           "lead_min": 60.0,
@@ -414,9 +415,9 @@ window.COMPARE_DATA = {
           "disc_max_mmh": 0.0
         }
       ],
-      "eta_onset_min": null,
-      "peak_mmh": 0.0,
-      "peak_lead_min": 5.0,
+      "eta_onset_min": 45.0,
+      "peak_mmh": 1.48,
+      "peak_lead_min": 50.0,
       "trend": "steady",
       "motion_kmh": 9.5,
       "motion_dir_deg": 189.0,
