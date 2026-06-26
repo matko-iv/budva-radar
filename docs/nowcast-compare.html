@@ -92,8 +92,15 @@
 
   // ---- map: DGMR forecast over the no-label relief, Budva centred ----
   var nw = M.corner_nw, se = M.corner_se;          // [lat, lon]
-  var bounds = [[se[0], nw[1]], [nw[0], se[1]]];    // [[S,W],[N,E]]
-  var map = L.map("map", { attributionControl: true }).fitBounds(bounds);
+  var bounds = [[se[0], nw[1]], [nw[0], se[1]]];    // [[S,W],[N,E]]  (full DGMR tile extent)
+  // Open ZOOMED IN on Budva (~±50 km) instead of the whole ~256 km tile; the user
+  // can still zoom out. The overlays keep the full-tile bounds.
+  var view = bounds;
+  if (M.budva_latlon) {
+    var bLa = M.budva_latlon[0], bLo = M.budva_latlon[1];
+    view = [[bLa - 0.45, bLo - 0.60], [bLa + 0.45, bLo + 0.60]];
+  }
+  var map = L.map("map", { attributionControl: true }).fitBounds(view);
   if (M.basemap) L.imageOverlay(M.basemap, bounds).addTo(map);       // baked relief, no labels
   else L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
@@ -105,7 +112,7 @@
       fillColor: "#d00", fillOpacity: 1 }).addTo(map)
       .bindTooltip("Budva", { permanent: true, direction: "right", className: "budva-lbl" });
   }
-  setTimeout(function () { map.invalidateSize(); map.fitBounds(bounds); }, 60);
+  setTimeout(function () { map.invalidateSize(); map.fitBounds(view); }, 60);
 
   // ---- time control + wall-clock (local) labels ----
   function clock(leadMin) {
