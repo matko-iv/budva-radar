@@ -25,7 +25,7 @@
 
 
     <p>Sistem je podijeljen na dva osmatračka modula (<a href="radar-map.html">SKALA RAIN</a> i
-    <a href="cloud-map.html">SKALA CLOUD</a>) i jedan prognostički modul (<a href="nowcast-compare.html">SKALA NOWCAST</a>) baziran na Google DeepMind tehnologiji sa rezolucijom od 1km i varljivom temporalnom rezolucijom. Osmatrački moduli prvenstveno postoje za potvrdu tačnosti prognostičkog modula. Model nowcastinga ima automatski podesiv režim regresije, a uglavnom se koriste CONVECTIVE i STRATIFORM opcije. Prognostički modul je direktno povezan na <a href="https://matko-iv.github.io/vrijeme/forecast.html">Matkov NWP model</a> koji, zajedno sa NWP modelom, prognozira precizne i tačne vremenske izvještaje do +80min.</p>
+    <a href="cloud-map.html">SKALA CLOUD</a>) i jedan prognostički modul (<a href="nowcast-compare.html">SKALA NOWCAST</a>) baziran na Google DeepMind tehnologiji sa rezolucijom od 1km i temporalnom rezolucijom od 5min. Osmatrački moduli prvenstveno postoje za potvrdu tačnosti prognostičkog modula. Model nowcastinga ima automatski podesiv režim regresije, a uglavnom se koriste CONVECTIVE i STRATIFORM opcije. Prognostički modul je direktno povezan na <a href="https://matko-iv.github.io/vrijeme/forecast.html">Matkov NWP model</a> koji, zajedno sa NWP modelom, prognozira precizne i tačne vremenske izvještaje do +80min (nakon toga posao preuzima NWP).</p>
 
     <p>Kod je u potpunosti javno dostupan i tehnički primjenjiv na bilo
     koju lokaciju lokacija je samo par $(\varphi, \lambda)$ plus kalibracija
@@ -41,7 +41,7 @@
     jednu tačnu i preciznu prognozu, i to ne samo za Budvu nego i šire. Ovaj
     sistem je osmatračka i interpretaciona polovina te slike.</p>
 	
-	<p>U toku je priprema dokumenta koji sadrži analizu problema i način rješavanja kroz ovaj modul.</p>
+	<p>Kako je ovaj sistem idalje u ranoj fazi razvitka i izmjene su skoro svakodnevne, nisam bio u prilici da napišem dokument koji detaljno objašnjava njegovo funkcionisanje. To ću uraditi u skorijem vremenu.</p>
   </section>
 
   <section id="moduli">
