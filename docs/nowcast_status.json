@@ -1,8 +1,8 @@
 {
   "ok": true,
-  "generated": "2026-06-26T17:33:16Z",
-  "base_time": "2026-06-26T17:20:00Z",
-  "base_epoch_ms": 1782494400000,
+  "generated": "2026-06-26T18:28:35Z",
+  "base_time": "2026-06-26T18:15:00Z",
+  "base_epoch_ms": 1782497700000,
   "location": "Budva",
   "source": "SKALA NOWCAST — DGMR (DeepMind) na ORD 1 km",
   "horizon_min": 80.0,
@@ -25,7 +25,7 @@
     {
       "lead_min": 5.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.22
     },
     {
       "lead_min": 10.0,
@@ -105,14 +105,14 @@
   ],
   "hourly_mm": [
     {
-      "hour": "2026-06-26T17:00:00Z",
-      "mm": 0.0,
-      "covered_min": 40
-    },
-    {
       "hour": "2026-06-26T18:00:00Z",
       "mm": 0.0,
-      "covered_min": 40
+      "covered_min": 45
+    },
+    {
+      "hour": "2026-06-26T19:00:00Z",
+      "mm": 0.0,
+      "covered_min": 35
     }
   ]
 }
