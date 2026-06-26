@@ -3,7 +3,7 @@ window.COMPARE_DATA = {
   "ok": true,
   "mode": "ord-h5",
   "demo": false,
-  "generated": "2026-06-26T13:38:48Z",
+  "generated": "2026-06-26T13:40:39Z",
   "location": "Budva",
   "base_epoch_ms": 1782480600000,
   "timestep_min": 5.0,
@@ -439,58 +439,58 @@ window.COMPARE_DATA = {
       "series": [
         {
           "lead_min": 5.0,
-          "point_mmh": 0.05,
-          "disc_max_mmh": 15.06
+          "point_mmh": 0.0,
+          "disc_max_mmh": 31.23
         },
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 22.75
+          "disc_max_mmh": 19.61
         },
         {
           "lead_min": 15.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 8.01
+          "disc_max_mmh": 5.84
         },
         {
           "lead_min": 20.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 7.11
+          "disc_max_mmh": 18.46
         },
         {
           "lead_min": 25.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 2.38
+          "point_mmh": 0.14,
+          "disc_max_mmh": 47.42
         },
         {
           "lead_min": 30.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.53
+          "point_mmh": 0.48,
+          "disc_max_mmh": 38.25
         },
         {
           "lead_min": 35.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.41
+          "point_mmh": 0.28,
+          "disc_max_mmh": 4.97
         },
         {
           "lead_min": 40.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.12
+          "point_mmh": 0.15,
+          "disc_max_mmh": 1.53
         },
         {
           "lead_min": 45.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.29
         },
         {
           "lead_min": 50.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.17
         },
         {
           "lead_min": 55.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.12
         },
         {
           "lead_min": 60.0,
@@ -519,8 +519,8 @@ window.COMPARE_DATA = {
         }
       ],
       "eta_onset_min": 5.0,
-      "peak_mmh": 22.75,
-      "peak_lead_min": 10.0,
+      "peak_mmh": 47.42,
+      "peak_lead_min": 25.0,
       "trend": "decaying",
       "motion_kmh": 19.0,
       "motion_dir_deg": 223.0,
