@@ -3,9 +3,9 @@ window.COMPARE_DATA = {
   "ok": true,
   "mode": "ord-h5",
   "demo": false,
-  "generated": "2026-06-26T19:24:18Z",
+  "generated": "2026-06-26T19:39:13Z",
   "location": "Budva",
-  "base_epoch_ms": 1782501000000,
+  "base_epoch_ms": 1782501900000,
   "timestep_min": 5.0,
   "n_frames": 4,
   "horizon_cap_min": 45,
@@ -48,97 +48,97 @@ window.COMPARE_DATA = {
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 3.56,
+      "now_disc_mmh": 0.33,
       "now_point_mmh": 0.0,
       "series": [
         {
           "lead_min": 5.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 2.89
+          "disc_max_mmh": 0.07
         },
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 3.28
+          "disc_max_mmh": 0.04
         },
         {
           "lead_min": 15.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 3.02
+          "disc_max_mmh": 0.06
         },
         {
           "lead_min": 20.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 5.07
+          "disc_max_mmh": 0.03
         },
         {
           "lead_min": 25.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 4.95
+          "disc_max_mmh": 0.02
         },
         {
           "lead_min": 30.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 3.64
+          "disc_max_mmh": 0.02
         },
         {
           "lead_min": 35.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 4.48
+          "disc_max_mmh": 0.02
         },
         {
           "lead_min": 40.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 5.46
+          "disc_max_mmh": 0.03
         },
         {
           "lead_min": 45.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 3.02
+          "disc_max_mmh": 0.02
         },
         {
           "lead_min": 50.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 1.97
+          "disc_max_mmh": 0.01
         },
         {
           "lead_min": 55.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 2.02
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 60.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 2.04
+          "disc_max_mmh": 0.01
         },
         {
           "lead_min": 65.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 1.99
+          "disc_max_mmh": 0.01
         },
         {
           "lead_min": 70.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 1.99
+          "disc_max_mmh": 0.01
         },
         {
           "lead_min": 75.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 1.97
+          "disc_max_mmh": 0.01
         },
         {
           "lead_min": 80.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 2.2
+          "disc_max_mmh": 0.0
         }
       ],
-      "eta_onset_min": 5.0,
-      "peak_mmh": 5.46,
-      "peak_lead_min": 40.0,
+      "eta_onset_min": null,
+      "peak_mmh": 0.07,
+      "peak_lead_min": 5.0,
       "trend": "decaying",
-      "motion_kmh": 13.0,
-      "motion_dir_deg": 254.0,
-      "motion_cardinal": "W",
+      "motion_kmh": 23.6,
+      "motion_dir_deg": 244.0,
+      "motion_cardinal": "SW",
       "key": "extrapolation",
       "label": "Ekstrapolacija (Lagrange persistencija)",
       "role": "baseline",
@@ -241,33 +241,33 @@ window.COMPARE_DATA = {
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 3.56,
+      "now_disc_mmh": 0.33,
       "now_point_mmh": 0.0,
       "series": [
         {
           "lead_min": 5.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 2.0
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.5
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 15.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 1.7
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 20.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 1.04
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 25.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.01
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 30.0,
@@ -325,13 +325,13 @@ window.COMPARE_DATA = {
           "disc_max_mmh": 0.0
         }
       ],
-      "eta_onset_min": 5.0,
-      "peak_mmh": 2.0,
+      "eta_onset_min": null,
+      "peak_mmh": 0.0,
       "peak_lead_min": 5.0,
       "trend": "decaying",
-      "motion_kmh": 13.0,
-      "motion_dir_deg": 254.0,
-      "motion_cardinal": "W",
+      "motion_kmh": 23.6,
+      "motion_dir_deg": 244.0,
+      "motion_cardinal": "SW",
       "key": "linda",
       "label": "LINDA-D (pysteps)",
       "role": "headline",
@@ -434,38 +434,38 @@ window.COMPARE_DATA = {
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 3.56,
+      "now_disc_mmh": 0.33,
       "now_point_mmh": 0.0,
       "series": [
         {
           "lead_min": 5.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 3.82
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.69
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 15.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.26
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 20.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 1.42
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 25.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.23
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 30.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.71
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 35.0,
@@ -475,7 +475,7 @@ window.COMPARE_DATA = {
         {
           "lead_min": 40.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 1.24
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 45.0,
@@ -518,13 +518,13 @@ window.COMPARE_DATA = {
           "disc_max_mmh": 0.0
         }
       ],
-      "eta_onset_min": 5.0,
-      "peak_mmh": 3.82,
+      "eta_onset_min": null,
+      "peak_mmh": 0.0,
       "peak_lead_min": 5.0,
       "trend": "decaying",
-      "motion_kmh": 13.0,
-      "motion_dir_deg": 254.0,
-      "motion_cardinal": "W",
+      "motion_kmh": 23.6,
+      "motion_dir_deg": 244.0,
+      "motion_cardinal": "SW",
       "key": "dgmr",
       "label": "DGMR (DeepMind)",
       "role": "compare",
