@@ -3,7 +3,7 @@ window.COMPARE_DATA = {
   "ok": true,
   "mode": "ord-h5",
   "demo": false,
-  "generated": "2026-06-26T10:00:55Z",
+  "generated": "2026-06-26T10:05:14Z",
   "location": "Budva",
   "base_epoch_ms": 1782308400000,
   "timestep_min": 5.0,
@@ -507,17 +507,17 @@ window.COMPARE_DATA = {
         {
           "lead_min": 75.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.46
+          "disc_max_mmh": 0.32
         },
         {
           "lead_min": 80.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.3
+          "disc_max_mmh": 2.62
         }
       ],
       "eta_onset_min": 75.0,
-      "peak_mmh": 0.46,
-      "peak_lead_min": 75.0,
+      "peak_mmh": 2.62,
+      "peak_lead_min": 80.0,
       "trend": "intensifying",
       "motion_kmh": 9.6,
       "motion_dir_deg": 189.0,
