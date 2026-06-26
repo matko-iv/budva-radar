@@ -3,9 +3,9 @@ window.COMPARE_DATA = {
   "ok": true,
   "mode": "ord-h5",
   "demo": false,
-  "generated": "2026-06-26T18:48:38Z",
+  "generated": "2026-06-26T18:58:52Z",
   "location": "Budva",
-  "base_epoch_ms": 1782498900000,
+  "base_epoch_ms": 1782499500000,
   "timestep_min": 5.0,
   "n_frames": 4,
   "horizon_cap_min": 45,
@@ -48,83 +48,83 @@ window.COMPARE_DATA = {
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 0.04,
+      "now_disc_mmh": 0.03,
       "now_point_mmh": 0.0,
       "series": [
         {
           "lead_min": 5.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.03
+          "disc_max_mmh": 0.12
         },
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.02
+          "disc_max_mmh": 2.48
         },
         {
           "lead_min": 15.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.02
+          "disc_max_mmh": 4.05
         },
         {
           "lead_min": 20.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.02
+          "disc_max_mmh": 6.68
         },
         {
           "lead_min": 25.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.4
+          "disc_max_mmh": 8.02
         },
         {
           "lead_min": 30.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 2.31
+          "disc_max_mmh": 3.06
         },
         {
           "lead_min": 35.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 3.64
+          "disc_max_mmh": 3.12
         },
         {
           "lead_min": 40.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.66
+          "disc_max_mmh": 2.35
         },
         {
           "lead_min": 45.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.32
+          "disc_max_mmh": 3.12
         },
         {
           "lead_min": 50.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.01
+          "disc_max_mmh": 0.41
         },
         {
           "lead_min": 55.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.01
+          "disc_max_mmh": 0.18
         },
         {
           "lead_min": 60.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.02
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 65.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.03
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 70.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.02
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 75.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.01
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 80.0,
@@ -132,13 +132,13 @@ window.COMPARE_DATA = {
           "disc_max_mmh": 0.0
         }
       ],
-      "eta_onset_min": 25.0,
-      "peak_mmh": 3.64,
-      "peak_lead_min": 35.0,
+      "eta_onset_min": 10.0,
+      "peak_mmh": 8.02,
+      "peak_lead_min": 25.0,
       "trend": "decaying",
-      "motion_kmh": 24.0,
-      "motion_dir_deg": 247.0,
-      "motion_cardinal": "SW",
+      "motion_kmh": 25.6,
+      "motion_dir_deg": 250.0,
+      "motion_cardinal": "W",
       "key": "extrapolation",
       "label": "Ekstrapolacija (Lagrange persistencija)",
       "role": "baseline",
@@ -241,7 +241,7 @@ window.COMPARE_DATA = {
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 0.04,
+      "now_disc_mmh": 0.03,
       "now_point_mmh": 0.0,
       "series": [
         {
@@ -252,86 +252,86 @@ window.COMPARE_DATA = {
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.03
         },
         {
           "lead_min": 15.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.01
         },
         {
           "lead_min": 20.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 20.05
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 25.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 6.34
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 30.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 60.0
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 35.0,
-          "point_mmh": 0.01,
-          "disc_max_mmh": 60.0
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 40.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 13.29
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 45.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 6.88
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 50.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 8.81
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 55.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.96
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 60.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 6.88
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 65.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 7.47
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 70.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.42
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 75.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 10.38
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 80.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 8.81
+          "disc_max_mmh": 0.0
         }
       ],
-      "eta_onset_min": 20.0,
-      "peak_mmh": 60.0,
-      "peak_lead_min": 30.0,
-      "trend": "intensifying",
-      "motion_kmh": 24.0,
-      "motion_dir_deg": 247.0,
-      "motion_cardinal": "SW",
+      "eta_onset_min": null,
+      "peak_mmh": 0.03,
+      "peak_lead_min": 10.0,
+      "trend": "decaying",
+      "motion_kmh": 25.6,
+      "motion_dir_deg": 250.0,
+      "motion_cardinal": "W",
       "key": "linda",
       "label": "LINDA-D (pysteps)",
       "role": "headline",
@@ -434,23 +434,23 @@ window.COMPARE_DATA = {
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 0.04,
+      "now_disc_mmh": 0.03,
       "now_point_mmh": 0.0,
       "series": [
         {
           "lead_min": 5.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.22
+          "disc_max_mmh": 0.43
         },
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.13
         },
         {
           "lead_min": 15.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.07
         },
         {
           "lead_min": 20.0,
@@ -480,17 +480,17 @@ window.COMPARE_DATA = {
         {
           "lead_min": 45.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.57
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 50.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 1.02
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 55.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.28
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 60.0,
@@ -500,31 +500,31 @@ window.COMPARE_DATA = {
         {
           "lead_min": 65.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.41
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 70.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.4
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 75.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.19
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 80.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.06
+          "disc_max_mmh": 0.0
         }
       ],
       "eta_onset_min": 5.0,
-      "peak_mmh": 1.02,
-      "peak_lead_min": 50.0,
-      "trend": "steady",
-      "motion_kmh": 24.0,
-      "motion_dir_deg": 247.0,
-      "motion_cardinal": "SW",
+      "peak_mmh": 0.43,
+      "peak_lead_min": 5.0,
+      "trend": "decaying",
+      "motion_kmh": 25.6,
+      "motion_dir_deg": 250.0,
+      "motion_cardinal": "W",
       "key": "dgmr",
       "label": "DGMR (DeepMind)",
       "role": "compare",

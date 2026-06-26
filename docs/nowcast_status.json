@@ -1,15 +1,15 @@
 {
   "ok": true,
-  "generated": "2026-06-26T18:48:38Z",
-  "base_time": "2026-06-26T18:35:00Z",
-  "base_epoch_ms": 1782498900000,
+  "generated": "2026-06-26T18:58:52Z",
+  "base_time": "2026-06-26T18:45:00Z",
+  "base_epoch_ms": 1782499500000,
   "location": "Budva",
   "source": "SKALA NOWCAST — DGMR (DeepMind) na ORD 1 km",
   "horizon_min": 80.0,
   "timestep_min": 5.0,
   "now": {
     "point_mmh": 0.0,
-    "disc_max_mmh": 0.04,
+    "disc_max_mmh": 0.03,
     "raining": false
   },
   "verdict": {
@@ -25,17 +25,17 @@
     {
       "lead_min": 5.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.22
+      "disc_max_mmh": 0.43
     },
     {
       "lead_min": 10.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.13
     },
     {
       "lead_min": 15.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.07
     },
     {
       "lead_min": 20.0,
@@ -65,17 +65,17 @@
     {
       "lead_min": 45.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.57
+      "disc_max_mmh": 0.0
     },
     {
       "lead_min": 50.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 1.02
+      "disc_max_mmh": 0.0
     },
     {
       "lead_min": 55.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.28
+      "disc_max_mmh": 0.0
     },
     {
       "lead_min": 60.0,
@@ -85,34 +85,39 @@
     {
       "lead_min": 65.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.41
+      "disc_max_mmh": 0.0
     },
     {
       "lead_min": 70.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.4
+      "disc_max_mmh": 0.0
     },
     {
       "lead_min": 75.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.19
+      "disc_max_mmh": 0.0
     },
     {
       "lead_min": 80.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.06
+      "disc_max_mmh": 0.0
     }
   ],
   "hourly_mm": [
     {
       "hour": "2026-06-26T18:00:00Z",
       "mm": 0.0,
-      "covered_min": 25
+      "covered_min": 15
     },
     {
       "hour": "2026-06-26T19:00:00Z",
       "mm": 0.0,
-      "covered_min": 55
+      "covered_min": 60
+    },
+    {
+      "hour": "2026-06-26T20:00:00Z",
+      "mm": 0.0,
+      "covered_min": 5
     }
   ]
 }
