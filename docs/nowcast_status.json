@@ -1,0 +1,117 @@
+{
+  "ok": true,
+  "generated": "2026-06-26T08:14:15Z",
+  "base_time": "2026-06-26T08:13:09Z",
+  "base_epoch_ms": 1782461589568,
+  "location": "Budva",
+  "source": "SKALA NOWCAST — DGMR (DeepMind) na ORD 1 km",
+  "horizon_min": 80.0,
+  "timestep_min": 5.0,
+  "now": {
+    "disc_max_mmh": 16.52,
+    "raining": true
+  },
+  "verdict": {
+    "state": "RAIN_NOW",
+    "eta_min": 5.0,
+    "peak_mmh": 19.3,
+    "peak_lead_min": 5.0,
+    "total_mm": 6.59,
+    "intensity_sr": "jaka kiša",
+    "line_sr": "kiša nad Budvom — jaka kiša, do ~19.3 mm/h u narednih 80 min (SKALA NOWCAST)"
+  },
+  "series": [
+    {
+      "lead_min": 5.0,
+      "point_mmh": 16.23,
+      "disc_max_mmh": 19.33
+    },
+    {
+      "lead_min": 10.0,
+      "point_mmh": 17.67,
+      "disc_max_mmh": 18.97
+    },
+    {
+      "lead_min": 15.0,
+      "point_mmh": 12.3,
+      "disc_max_mmh": 17.56
+    },
+    {
+      "lead_min": 20.0,
+      "point_mmh": 14.94,
+      "disc_max_mmh": 15.58
+    },
+    {
+      "lead_min": 25.0,
+      "point_mmh": 8.0,
+      "disc_max_mmh": 13.27
+    },
+    {
+      "lead_min": 30.0,
+      "point_mmh": 5.81,
+      "disc_max_mmh": 15.14
+    },
+    {
+      "lead_min": 35.0,
+      "point_mmh": 1.6,
+      "disc_max_mmh": 12.43
+    },
+    {
+      "lead_min": 40.0,
+      "point_mmh": 1.24,
+      "disc_max_mmh": 2.26
+    },
+    {
+      "lead_min": 45.0,
+      "point_mmh": 0.78,
+      "disc_max_mmh": 1.5
+    },
+    {
+      "lead_min": 50.0,
+      "point_mmh": 0.2,
+      "disc_max_mmh": 1.05
+    },
+    {
+      "lead_min": 55.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.33
+    },
+    {
+      "lead_min": 60.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.15
+    },
+    {
+      "lead_min": 65.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.22
+    },
+    {
+      "lead_min": 70.0,
+      "point_mmh": 0.02,
+      "disc_max_mmh": 0.66
+    },
+    {
+      "lead_min": 75.0,
+      "point_mmh": 0.25,
+      "disc_max_mmh": 1.04
+    },
+    {
+      "lead_min": 80.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 2.16
+    }
+  ],
+  "hourly_mm": [
+    {
+      "hour": "2026-06-26T08:00:00Z",
+      "mm": 6.55,
+      "covered_min": 45
+    },
+    {
+      "hour": "2026-06-26T09:00:00Z",
+      "mm": 0.04,
+      "covered_min": 35
+    }
+  ]
+}
