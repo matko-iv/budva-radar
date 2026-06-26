@@ -16,7 +16,7 @@
 <body>
 <header>
   <h1>matkov-SKALA-sistem</h1>
-  <p>Revizija 25062026</p>
+  <p>Revizija 26062026</p>
 </header>
 
 <main>
@@ -24,13 +24,9 @@
     <h2>Poruka osnivača</h2>
 
 
-    <p>Sistem je svjesno podijeljen na dva osmatračka modula —
-    <a href="radar-map.html">SKALA RAIN</a> (radar) i
-    <a href="cloud-map.html">SKALA CLOUD</a> (satelit) — jer radar i satelit mjere
-    različite veličine (padavine naspram vrhova oblaka) i imaju različite jačine i
-    slabosti. Oba daju verdikt koji se računa jednom, u Pythonu, i samo se
-    prikazuje; logika nije skrivena u frontendu nego je determinisana i
-    provjerljiva, pa naslov i detalji ne mogu da protivrječe jedno drugom.</p>
+    <p>Sistem je podijeljen na dva osmatračka modula (
+    <a href="radar-map.html">SKALA RAIN</a> i
+    <a href="cloud-map.html">SKALA CLOUD</a>) i jedan prognostički modul (<a href="nowcast-compare.html">SKALA NOWCAST</a>) baziran na Google DeepMind tehnologiji sa rezolucijom od 1km i varljivom temporalnom rezolucijom. Osmatrački moduli prvenstveno postoje za potvrdu tačnosti prognostičkog modula. Model nowcastinga ima automatski podesiv režim regresije, a uglavnom se koriste CONVECTIVE i STRATIFORM opcije. Prognostički modul je direktno povezan na <a href="https://matko-iv.github.io/vrijeme/forecast.html"></p>
 
     <p>Kod je u potpunosti javno dostupan i tehnički primjenjiv na bilo
     koju lokaciju lokacija je samo par $(\varphi, \lambda)$ plus kalibracija
