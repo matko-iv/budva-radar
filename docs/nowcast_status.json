@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "generated": "2026-06-26T10:05:14Z",
+  "generated": "2026-06-26T10:12:14Z",
   "base_time": "2026-06-24T13:40:00Z",
   "base_epoch_ms": 1782308400000,
   "location": "Budva",
@@ -13,18 +13,18 @@
   },
   "verdict": {
     "state": "RAIN_SOON",
-    "eta_min": 75.0,
-    "peak_mmh": 2.6,
+    "eta_min": 25.0,
+    "peak_mmh": 1.1,
     "peak_lead_min": 80.0,
-    "total_mm": 0.0,
-    "intensity_sr": "umjerena kiša",
-    "line_sr": "kiša kreće ~75 min — umjerena kiša, do ~2.6 mm/h (SKALA NOWCAST)"
+    "total_mm": 0.04,
+    "intensity_sr": "slaba kiša",
+    "line_sr": "kiša kreće ~25 min — slaba kiša, do ~1.1 mm/h (SKALA NOWCAST)"
   },
   "series": [
     {
       "lead_min": 5.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.13
     },
     {
       "lead_min": 10.0,
@@ -44,32 +44,32 @@
     {
       "lead_min": 25.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.25
     },
     {
       "lead_min": 30.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.03
     },
     {
       "lead_min": 35.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.8
     },
     {
       "lead_min": 40.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.58
     },
     {
       "lead_min": 45.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "point_mmh": 0.5,
+      "disc_max_mmh": 0.5
     },
     {
       "lead_min": 50.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.6
     },
     {
       "lead_min": 55.0,
@@ -89,17 +89,17 @@
     {
       "lead_min": 70.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.21
     },
     {
       "lead_min": 75.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.32
+      "disc_max_mmh": 0.4
     },
     {
       "lead_min": 80.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 2.62
+      "disc_max_mmh": 1.09
     }
   ],
   "hourly_mm": [
@@ -110,7 +110,7 @@
     },
     {
       "hour": "2026-06-24T14:00:00Z",
-      "mm": 0.0,
+      "mm": 0.04,
       "covered_min": 60
     }
   ]
