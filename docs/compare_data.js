@@ -3,14 +3,14 @@ window.COMPARE_DATA = {
   "ok": true,
   "mode": "ord-h5",
   "demo": false,
-  "generated": "2026-06-26T17:22:33Z",
+  "generated": "2026-06-26T17:33:16Z",
   "location": "Budva",
-  "base_epoch_ms": 1782493800000,
+  "base_epoch_ms": 1782494400000,
   "timestep_min": 5.0,
   "n_frames": 4,
   "horizon_cap_min": 45,
   "disc_km": 8.0,
-  "scenario": "convective",
+  "scenario": "stratiform",
   "map_meta": {
     "image_size": [
       256,
@@ -40,7 +40,7 @@ window.COMPARE_DATA = {
     {
       "method": "extrapolation",
       "source": "ord",
-      "scenario": "convective",
+      "scenario": "stratiform",
       "timestep_min": 5.0,
       "n_frames": 4,
       "domain_px": [
@@ -59,7 +59,7 @@ window.COMPARE_DATA = {
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.01
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 15.0,
@@ -99,46 +99,46 @@ window.COMPARE_DATA = {
         {
           "lead_min": 50.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.21
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 55.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.29
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 60.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.25
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 65.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.21
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 70.0,
-          "point_mmh": 0.01,
-          "disc_max_mmh": 1.65
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 75.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.84
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 80.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 1.61
+          "disc_max_mmh": 0.0
         }
       ],
-      "eta_onset_min": 50.0,
-      "peak_mmh": 1.65,
-      "peak_lead_min": 70.0,
-      "trend": "intensifying",
-      "motion_kmh": 33.6,
-      "motion_dir_deg": 236.0,
-      "motion_cardinal": "SW",
+      "eta_onset_min": null,
+      "peak_mmh": 0.0,
+      "peak_lead_min": 5.0,
+      "trend": "steady",
+      "motion_kmh": 21.7,
+      "motion_dir_deg": 261.0,
+      "motion_cardinal": "W",
       "key": "extrapolation",
       "label": "Ekstrapolacija (Lagrange persistencija)",
       "role": "baseline",
@@ -233,7 +233,7 @@ window.COMPARE_DATA = {
     {
       "method": "linda",
       "source": "ord",
-      "scenario": "convective",
+      "scenario": "stratiform",
       "timestep_min": 5.0,
       "n_frames": 4,
       "domain_px": [
@@ -329,9 +329,9 @@ window.COMPARE_DATA = {
       "peak_mmh": 0.0,
       "peak_lead_min": 5.0,
       "trend": "steady",
-      "motion_kmh": 33.6,
-      "motion_dir_deg": 236.0,
-      "motion_cardinal": "SW",
+      "motion_kmh": 21.7,
+      "motion_dir_deg": 261.0,
+      "motion_cardinal": "W",
       "key": "linda",
       "label": "LINDA-D (pysteps)",
       "role": "headline",
@@ -426,7 +426,7 @@ window.COMPARE_DATA = {
     {
       "method": "dgmr",
       "source": "ord",
-      "scenario": "convective",
+      "scenario": "stratiform",
       "timestep_min": 5.0,
       "n_frames": 4,
       "domain_px": [
@@ -522,9 +522,9 @@ window.COMPARE_DATA = {
       "peak_mmh": 0.0,
       "peak_lead_min": 5.0,
       "trend": "steady",
-      "motion_kmh": 33.6,
-      "motion_dir_deg": 236.0,
-      "motion_cardinal": "SW",
+      "motion_kmh": 21.7,
+      "motion_dir_deg": 261.0,
+      "motion_cardinal": "W",
       "key": "dgmr",
       "label": "DGMR (DeepMind)",
       "role": "compare",
