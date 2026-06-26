@@ -101,10 +101,12 @@
     view = [[bLa - 0.45, bLo - 0.60], [bLa + 0.45, bLo + 0.60]];
   }
   var map = L.map("map", { attributionControl: true }).fitBounds(view);
-  if (M.basemap) L.imageOverlay(M.basemap, bounds).addTo(map);       // baked relief, no labels
-  else L.tileLayer(
+  // Live Esri World Shaded Relief tiles (no labels): sharp at every zoom, so the
+  // relief stays crisp zoomed in on Budva. (The baked PNG blurred when zoomed and
+  // the high-res export could come back blank/grey — so live tiles are used here.)
+  L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
-    { maxZoom: 13, attribution: "Relief: Esri" }).addTo(map);
+    { maxNativeZoom: 13, maxZoom: 18, attribution: "Relief: Esri" }).addTo(map);
   var overlay = L.imageOverlay(dgmr.frames[0].image, bounds,
     { opacity: 0.8, className: "radar-ovl" }).addTo(map);
   if (M.budva_latlon) {
