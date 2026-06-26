@@ -161,13 +161,13 @@ def _merc(lat, lon):
     return x, y
 
 
-def _bake_basemap(nw, se, out_png, max_px=2048):
+def _bake_basemap(nw, se, out_png, max_px=1024):
     """Fetch a NO-LABEL shaded-relief basemap for the tile bbox (Esri World Shaded
-    Relief, exported in Web Mercator so it aligns with Leaflet) -> a local PNG, so
-    the topographic background is self-contained (no view-time tile dependency) and
-    works offline. max_px is the long-edge resolution (2048 keeps it sharp when the
-    page opens zoomed in on Budva). Returns the docs-relative path, or None on any
-    failure."""
+    Relief, exported in Web Mercator so it aligns with Leaflet) -> a local PNG used
+    by the LEGACY compare page (the main nowcast-compare page uses live tiles). The
+    Esri export silently returns a blank dark-grey image at large sizes, so keep
+    max_px conservative AND reject a near-uniform response. Returns the docs-relative
+    path, or None on any failure (the page then falls back to live relief tiles)."""
     try:
         import requests
         x0, y1 = _merc(nw[0], nw[1])         # NW: north lat, west lon
@@ -185,6 +185,17 @@ def _bake_basemap(nw, se, out_png, max_px=2048):
         r.raise_for_status()
         if r.content[:8] != b"\x89PNG\r\n\x1a\n":
             return None
+        # The Esri export silently returns a uniform dark-grey image at some sizes;
+        # never serve that blank canvas (the page falls back to live relief tiles).
+        try:
+            import io
+            import numpy as np
+            from PIL import Image
+            arr = np.asarray(Image.open(io.BytesIO(r.content)).convert("RGB"))
+            if float(arr.std()) < 10.0:
+                return None
+        except Exception:
+            pass
         (DOCS / FRAMES_ROOT).mkdir(parents=True, exist_ok=True)
         (DOCS / out_png).write_bytes(r.content)
         return out_png
@@ -336,11 +347,15 @@ def nowcast_status(prod):
                "disc_max_mmh": s["disc_max_mmh"]} for s in dgmr["series"]]
     dt = prod.get("timestep_min", 5.0)
     base_ms = prod.get("base_epoch_ms")
-    now_mmh = round(float(dgmr.get("now_disc_mmh", 0.0)), 2)
-    raining_now = now_mmh >= RAIN_MMH
-    onset = next((s["lead_min"] for s in series if s["disc_max_mmh"] >= RAIN_MMH), None)
-    peak = max(series, key=lambda s: s["disc_max_mmh"]) if series else None
-    peak_mmh = round(peak["disc_max_mmh"], 1) if peak else 0.0
+    # The verdict is for the BUDVA POINT ONLY (exact at Budva). The disc-max is still
+    # shipped in `now`/`series` so the PAGE can show cloud/thunderstorm for cells in
+    # the region around Budva, but the VERDICT amount is strictly the point.
+    now_point = round(float(dgmr.get("now_point_mmh", 0.0)), 2)
+    now_disc = round(float(dgmr.get("now_disc_mmh", 0.0)), 2)
+    raining_now = now_point >= RAIN_MMH
+    onset = next((s["lead_min"] for s in series if s["point_mmh"] >= RAIN_MMH), None)
+    peak = max(series, key=lambda s: s["point_mmh"]) if series else None
+    peak_mmh = round(peak["point_mmh"], 1) if peak else 0.0
     total_mm = round(sum(s["point_mmh"] * dt / 60.0 for s in series), 2)
     horizon = series[-1]["lead_min"] if series else 0
     intensity = _intensity_sr(peak_mmh)
@@ -348,14 +363,15 @@ def nowcast_status(prod):
     if raining_now:
         state = "RAIN_NOW"
         line = (f"kiša nad Budvom — {intensity}, do ~{peak_mmh} mm/h "
-                f"u narednih {horizon:.0f} min (SKALA NOWCAST)")
+                f"u narednih {horizon:.0f} min (tačka Budva; SKALA NOWCAST)")
     elif onset is not None:
         state = "RAIN_SOON"
-        line = (f"kiša kreće ~{onset:.0f} min — {intensity}, "
-                f"do ~{peak_mmh} mm/h (SKALA NOWCAST)")
+        line = (f"kiša kreće ~{onset:.0f} min nad Budvom — {intensity}, do ~{peak_mmh} mm/h "
+                f"(tačka Budva; SKALA NOWCAST)")
     else:
         state = "NO_RAIN"
-        line = f"nema kiše nad Budvom u narednih {horizon:.0f} min (SKALA NOWCAST)"
+        line = (f"nema kiše nad Budvom (tačka) u narednih {horizon:.0f} min "
+                f"(SKALA NOWCAST)")
 
     return {
         "ok": True,
@@ -366,7 +382,7 @@ def nowcast_status(prod):
         "source": "SKALA NOWCAST — DGMR (DeepMind) na ORD 1 km",
         "horizon_min": horizon,
         "timestep_min": dt,
-        "now": {"disc_max_mmh": now_mmh, "raining": raining_now},
+        "now": {"point_mmh": now_point, "disc_max_mmh": now_disc, "raining": raining_now},
         "verdict": {
             "state": state, "eta_min": onset, "peak_mmh": peak_mmh,
             "peak_lead_min": peak["lead_min"] if peak else None,

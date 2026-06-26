@@ -298,6 +298,7 @@ def nowcast_product(R_stack, info, source, *, n_leadtimes=24,
     onset = next((s["lead_min"] for s in series if s["disc_max_mmh"] >= RAIN_ONSET_MMH), None)
     peak = max(series, key=lambda s: s["disc_max_mmh"]) if series else None
     now_disc = float(R_stack[-1][disc].max()) if disc.any() else 0.0
+    now_point = float(R_stack[-1][iy, ix]) if in_grid else 0.0   # observed AT Budva
     end_disc = series[-1]["disc_max_mmh"] if series else 0.0
     trend = ("intensifying" if end_disc > now_disc * 1.15 + 0.05
              else "decaying" if end_disc < now_disc * 0.85
@@ -321,6 +322,7 @@ def nowcast_product(R_stack, info, source, *, n_leadtimes=24,
         "timestep_min": timestep_min, "n_frames": int(R_stack.shape[0]),
         "domain_px": [h, w], "km_per_px": round(kmpp, 3),
         "now_disc_mmh": round(now_disc, 2),
+        "now_point_mmh": round(now_point, 2),
         "series": series,
         "eta_onset_min": onset,
         "peak_mmh": round(peak["disc_max_mmh"], 2) if peak else 0.0,
