@@ -17,6 +17,10 @@ Input:
     python compare_nowcast.py --ord-latest               # fetch the latest ORD volumes
     python compare_nowcast.py --demo                     # synthetic cell (page preview)
 
+On a successful run the outputs (docs/compare_data.js, docs/nowcast_status.json,
+docs/compare_frames/) are committed + pushed to git so GitHub Pages updates — add
+--no-push to skip that (e.g. when serving docs/ locally).
+
 The honest accuracy comparison is the verification harness (verify_nowcast.py,
 FSS/CSI vs lead time on your archive); this page is the qualitative side-by-side.
 """
@@ -157,11 +161,13 @@ def _merc(lat, lon):
     return x, y
 
 
-def _bake_basemap(nw, se, out_png, max_px=900):
+def _bake_basemap(nw, se, out_png, max_px=2048):
     """Fetch a NO-LABEL shaded-relief basemap for the tile bbox (Esri World Shaded
     Relief, exported in Web Mercator so it aligns with Leaflet) -> a local PNG, so
     the topographic background is self-contained (no view-time tile dependency) and
-    works offline. Returns the docs-relative path, or None on any failure."""
+    works offline. max_px is the long-edge resolution (2048 keeps it sharp when the
+    page opens zoomed in on Budva). Returns the docs-relative path, or None on any
+    failure."""
     try:
         import requests
         x0, y1 = _merc(nw[0], nw[1])         # NW: north lat, west lon
@@ -480,6 +486,12 @@ def main(argv):
         print("GEO: map centre is Budva. If the BROWSER still shows the old spot, hard-refresh "
               "(Ctrl+F5) — it cached compare_data.js.")
     print("DGMR enabled:", prod["dgmr_enabled"], "| Saved:", OUT_JS)
+    if "--no-push" not in argv:
+        try:
+            from loop import push_docs        # reuse the loop's commit+pull-rebase+push
+            push_docs()
+        except Exception as e:
+            print(f"  git push skipped: {e}")
     return 0
 
 

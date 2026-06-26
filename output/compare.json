@@ -2,9 +2,9 @@
   "ok": true,
   "mode": "ord-h5",
   "demo": false,
-  "generated": "2026-06-26T13:13:09Z",
+  "generated": "2026-06-26T13:25:47Z",
   "location": "Budva",
-  "base_epoch_ms": 1782478800000,
+  "base_epoch_ms": 1782479700000,
   "timestep_min": 5.0,
   "n_frames": 4,
   "horizon_cap_min": 45,
@@ -47,52 +47,52 @@
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 49.54,
+      "now_disc_mmh": 60.0,
       "series": [
         {
           "lead_min": 5.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 52.99
+          "disc_max_mmh": 59.39
         },
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 55.66
+          "disc_max_mmh": 56.35
         },
         {
           "lead_min": 15.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 50.28
+          "disc_max_mmh": 47.49
         },
         {
           "lead_min": 20.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 52.42
+          "disc_max_mmh": 29.47
         },
         {
           "lead_min": 25.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 48.35
+          "disc_max_mmh": 18.99
         },
         {
           "lead_min": 30.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 21.45
+          "disc_max_mmh": 21.97
         },
         {
           "lead_min": 35.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.2
+          "disc_max_mmh": 19.32
         },
         {
           "lead_min": 40.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 12.76
         },
         {
           "lead_min": 45.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 1.67
         },
         {
           "lead_min": 50.0,
@@ -131,11 +131,11 @@
         }
       ],
       "eta_onset_min": 5.0,
-      "peak_mmh": 55.66,
-      "peak_lead_min": 10.0,
+      "peak_mmh": 59.39,
+      "peak_lead_min": 5.0,
       "trend": "decaying",
-      "motion_kmh": 21.2,
-      "motion_dir_deg": 235.0,
+      "motion_kmh": 21.5,
+      "motion_dir_deg": 228.0,
       "motion_cardinal": "SW",
       "key": "extrapolation",
       "label": "Ekstrapolacija (Lagrange persistencija)",
@@ -239,95 +239,95 @@
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 49.54,
+      "now_disc_mmh": 60.0,
       "series": [
         {
           "lead_min": 5.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 96.62
+          "disc_max_mmh": 45.91
         },
         {
           "lead_min": 10.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 143.11
+          "point_mmh": 0.02,
+          "disc_max_mmh": 37.58
         },
         {
           "lead_min": 15.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 194.44
+          "point_mmh": 0.27,
+          "disc_max_mmh": 31.11
         },
         {
           "lead_min": 20.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 230.06
+          "point_mmh": 0.43,
+          "disc_max_mmh": 20.99
         },
         {
           "lead_min": 25.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 294.98
+          "point_mmh": 0.22,
+          "disc_max_mmh": 18.25
         },
         {
           "lead_min": 30.0,
-          "point_mmh": 0.01,
-          "disc_max_mmh": 230.73
+          "point_mmh": 0.06,
+          "disc_max_mmh": 11.94
         },
         {
           "lead_min": 35.0,
-          "point_mmh": 0.02,
-          "disc_max_mmh": 158.38
+          "point_mmh": 0.0,
+          "disc_max_mmh": 6.82
         },
         {
           "lead_min": 40.0,
-          "point_mmh": 0.03,
-          "disc_max_mmh": 72.62
+          "point_mmh": 0.0,
+          "disc_max_mmh": 4.0
         },
         {
           "lead_min": 45.0,
-          "point_mmh": 0.05,
-          "disc_max_mmh": 17.6
+          "point_mmh": 0.0,
+          "disc_max_mmh": 2.37
         },
         {
           "lead_min": 50.0,
-          "point_mmh": 0.06,
-          "disc_max_mmh": 3.39
+          "point_mmh": 0.0,
+          "disc_max_mmh": 1.11
         },
         {
           "lead_min": 55.0,
-          "point_mmh": 0.04,
-          "disc_max_mmh": 0.49
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.38
         },
         {
           "lead_min": 60.0,
-          "point_mmh": 0.04,
-          "disc_max_mmh": 0.31
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.08
         },
         {
           "lead_min": 65.0,
-          "point_mmh": 0.04,
-          "disc_max_mmh": 0.34
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 70.0,
-          "point_mmh": 0.02,
-          "disc_max_mmh": 0.33
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 75.0,
-          "point_mmh": 0.01,
-          "disc_max_mmh": 0.28
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 80.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.18
+          "disc_max_mmh": 0.0
         }
       ],
       "eta_onset_min": 5.0,
-      "peak_mmh": 294.98,
-      "peak_lead_min": 25.0,
+      "peak_mmh": 45.91,
+      "peak_lead_min": 5.0,
       "trend": "decaying",
-      "motion_kmh": 21.2,
-      "motion_dir_deg": 235.0,
+      "motion_kmh": 21.5,
+      "motion_dir_deg": 228.0,
       "motion_cardinal": "SW",
       "key": "linda",
       "label": "LINDA-D (pysteps)",
@@ -431,95 +431,95 @@
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 49.54,
+      "now_disc_mmh": 60.0,
       "series": [
         {
           "lead_min": 5.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 69.95
+          "disc_max_mmh": 66.26
         },
         {
           "lead_min": 10.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 74.42
+          "disc_max_mmh": 52.91
         },
         {
           "lead_min": 15.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 59.06
+          "point_mmh": 0.12,
+          "disc_max_mmh": 33.33
         },
         {
           "lead_min": 20.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 42.97
+          "point_mmh": 0.72,
+          "disc_max_mmh": 116.37
         },
         {
           "lead_min": 25.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 13.83
+          "point_mmh": 0.15,
+          "disc_max_mmh": 81.39
         },
         {
           "lead_min": 30.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 7.02
+          "point_mmh": 0.25,
+          "disc_max_mmh": 80.98
         },
         {
           "lead_min": 35.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 2.29
+          "point_mmh": 0.01,
+          "disc_max_mmh": 65.81
         },
         {
           "lead_min": 40.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.69
+          "point_mmh": 0.04,
+          "disc_max_mmh": 46.36
         },
         {
           "lead_min": 45.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.15
+          "point_mmh": 0.19,
+          "disc_max_mmh": 11.13
         },
         {
           "lead_min": 50.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.05
+          "point_mmh": 0.16,
+          "disc_max_mmh": 10.92
         },
         {
           "lead_min": 55.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 6.08
         },
         {
           "lead_min": 60.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 1.3
         },
         {
           "lead_min": 65.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.41
+          "disc_max_mmh": 1.77
         },
         {
           "lead_min": 70.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.11
+          "disc_max_mmh": 0.7
         },
         {
           "lead_min": 75.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.36
         },
         {
           "lead_min": 80.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
+          "disc_max_mmh": 0.1
         }
       ],
       "eta_onset_min": 5.0,
-      "peak_mmh": 74.42,
-      "peak_lead_min": 10.0,
+      "peak_mmh": 116.37,
+      "peak_lead_min": 20.0,
       "trend": "decaying",
-      "motion_kmh": 21.2,
-      "motion_dir_deg": 235.0,
+      "motion_kmh": 21.5,
+      "motion_dir_deg": 228.0,
       "motion_cardinal": "SW",
       "key": "dgmr",
       "label": "DGMR (DeepMind)",
