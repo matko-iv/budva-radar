@@ -1,75 +1,75 @@
 {
   "ok": true,
-  "generated": "2026-06-26T13:02:11Z",
-  "base_time": "2026-06-26T12:50:00Z",
-  "base_epoch_ms": 1782478200000,
+  "generated": "2026-06-26T13:13:09Z",
+  "base_time": "2026-06-26T13:00:00Z",
+  "base_epoch_ms": 1782478800000,
   "location": "Budva",
   "source": "SKALA NOWCAST — DGMR (DeepMind) na ORD 1 km",
   "horizon_min": 80.0,
   "timestep_min": 5.0,
   "now": {
-    "disc_max_mmh": 0.0,
-    "raining": false
+    "disc_max_mmh": 49.54,
+    "raining": true
   },
   "verdict": {
-    "state": "NO_RAIN",
-    "eta_min": null,
-    "peak_mmh": 0.0,
-    "peak_lead_min": 5.0,
+    "state": "RAIN_NOW",
+    "eta_min": 5.0,
+    "peak_mmh": 74.4,
+    "peak_lead_min": 10.0,
     "total_mm": 0.0,
-    "intensity_sr": "bez kiše",
-    "line_sr": "nema kiše nad Budvom u narednih 80 min (SKALA NOWCAST)"
+    "intensity_sr": "jaka kiša",
+    "line_sr": "kiša nad Budvom — jaka kiša, do ~74.4 mm/h u narednih 80 min (SKALA NOWCAST)"
   },
   "series": [
     {
       "lead_min": 5.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 69.95
     },
     {
       "lead_min": 10.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 74.42
     },
     {
       "lead_min": 15.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 59.06
     },
     {
       "lead_min": 20.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 42.97
     },
     {
       "lead_min": 25.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 13.83
     },
     {
       "lead_min": 30.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 7.02
     },
     {
       "lead_min": 35.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 2.29
     },
     {
       "lead_min": 40.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.69
     },
     {
       "lead_min": 45.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.15
     },
     {
       "lead_min": 50.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.05
     },
     {
       "lead_min": 55.0,
@@ -84,12 +84,12 @@
     {
       "lead_min": 65.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.41
     },
     {
       "lead_min": 70.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.11
     },
     {
       "lead_min": 75.0,
@@ -104,11 +104,6 @@
   ],
   "hourly_mm": [
     {
-      "hour": "2026-06-26T12:00:00Z",
-      "mm": 0.0,
-      "covered_min": 10
-    },
-    {
       "hour": "2026-06-26T13:00:00Z",
       "mm": 0.0,
       "covered_min": 60
@@ -116,7 +111,7 @@
     {
       "hour": "2026-06-26T14:00:00Z",
       "mm": 0.0,
-      "covered_min": 10
+      "covered_min": 20
     }
   ]
 }
