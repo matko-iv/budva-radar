@@ -1,35 +1,35 @@
 {
   "ok": true,
-  "generated": "2026-06-26T09:57:56Z",
-  "base_time": "2026-06-24T16:00:00Z",
-  "base_epoch_ms": 1782316800000,
+  "generated": "2026-06-26T10:00:55Z",
+  "base_time": "2026-06-24T13:40:00Z",
+  "base_epoch_ms": 1782308400000,
   "location": "Budva",
   "source": "SKALA NOWCAST — DGMR (DeepMind) na ORD 1 km",
   "horizon_min": 80.0,
   "timestep_min": 5.0,
   "now": {
-    "disc_max_mmh": 2.18,
-    "raining": true
+    "disc_max_mmh": 0.0,
+    "raining": false
   },
   "verdict": {
-    "state": "RAIN_NOW",
-    "eta_min": 5.0,
-    "peak_mmh": 9.3,
-    "peak_lead_min": 20.0,
+    "state": "RAIN_SOON",
+    "eta_min": 75.0,
+    "peak_mmh": 0.5,
+    "peak_lead_min": 75.0,
     "total_mm": 0.0,
-    "intensity_sr": "jaka kiša",
-    "line_sr": "kiša nad Budvom — jaka kiša, do ~9.3 mm/h u narednih 80 min (SKALA NOWCAST)"
+    "intensity_sr": "slaba kiša",
+    "line_sr": "kiša kreće ~75 min — slaba kiša, do ~0.5 mm/h (SKALA NOWCAST)"
   },
   "series": [
     {
       "lead_min": 5.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 2.53
+      "disc_max_mmh": 0.0
     },
     {
       "lead_min": 10.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 7.1
+      "disc_max_mmh": 0.0
     },
     {
       "lead_min": 15.0,
@@ -39,7 +39,7 @@
     {
       "lead_min": 20.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 9.29
+      "disc_max_mmh": 0.0
     },
     {
       "lead_min": 25.0,
@@ -94,24 +94,24 @@
     {
       "lead_min": 75.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.46
     },
     {
       "lead_min": 80.0,
       "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
+      "disc_max_mmh": 0.3
     }
   ],
   "hourly_mm": [
     {
-      "hour": "2026-06-24T16:00:00Z",
-      "mm": 0.0,
-      "covered_min": 60
-    },
-    {
-      "hour": "2026-06-24T17:00:00Z",
+      "hour": "2026-06-24T13:00:00Z",
       "mm": 0.0,
       "covered_min": 20
+    },
+    {
+      "hour": "2026-06-24T14:00:00Z",
+      "mm": 0.0,
+      "covered_min": 60
     }
   ]
 }
