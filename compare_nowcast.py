@@ -284,6 +284,93 @@ def _mock_dgmr_fc(R_stack, velocity, n_leadtimes):
     return np.clip(fc * ramp, 0.0, None)
 
 
+def _iso_from_ms(ms):
+    if ms is None:
+        return None
+    return datetime.datetime.utcfromtimestamp(ms / 1000.0).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _intensity_sr(mmh):
+    if mmh < 0.5:
+        return "bez kiše"
+    if mmh < 2.5:
+        return "slaba kiša"
+    if mmh < 7.6:
+        return "umjerena kiša"
+    return "jaka kiša"
+
+
+def _hourly_mm(base_ms, series, dt):
+    """Integrate the POINT rate into per-clock-hour mm over the forecast window, so
+    the matko page can override its NWP precipitation for the first ~80 min. Each
+    step (mm/h) covers dt minutes, credited to the hour of its midpoint. Returns
+    [{hour: 'YYYY-MM-DDTHH:00:00Z', mm, covered_min}] ascending in time (UTC)."""
+    base = datetime.datetime.utcfromtimestamp(base_ms / 1000.0)
+    buckets = {}
+    for s in series:
+        mid = base + datetime.timedelta(minutes=s["lead_min"] - dt / 2.0)
+        hour = mid.replace(minute=0, second=0, microsecond=0)
+        slot = buckets.setdefault(hour, [0.0, 0.0])
+        slot[0] += s["point_mmh"] * dt / 60.0
+        slot[1] += dt
+    return [{"hour": h.strftime("%Y-%m-%dT%H:00:00Z"),
+             "mm": round(mm, 2), "covered_min": round(cov)}
+            for h, (mm, cov) in sorted(buckets.items())]
+
+
+def nowcast_status(prod):
+    """Compact Budva rain-FORECAST status from the DGMR model in `prod` — the
+    contract the matko forecast page consumes (verdict + per-lead rate + integrated
+    hourly mm). Returns None if DGMR isn't present/available in the product."""
+    dgmr = next((m for m in prod.get("models", [])
+                 if m.get("key") == "dgmr" and m.get("series")), None)
+    if dgmr is None:
+        return None
+    series = [{"lead_min": s["lead_min"], "point_mmh": s["point_mmh"],
+               "disc_max_mmh": s["disc_max_mmh"]} for s in dgmr["series"]]
+    dt = prod.get("timestep_min", 5.0)
+    base_ms = prod.get("base_epoch_ms")
+    now_mmh = round(float(dgmr.get("now_disc_mmh", 0.0)), 2)
+    raining_now = now_mmh >= RAIN_MMH
+    onset = next((s["lead_min"] for s in series if s["disc_max_mmh"] >= RAIN_MMH), None)
+    peak = max(series, key=lambda s: s["disc_max_mmh"]) if series else None
+    peak_mmh = round(peak["disc_max_mmh"], 1) if peak else 0.0
+    total_mm = round(sum(s["point_mmh"] * dt / 60.0 for s in series), 2)
+    horizon = series[-1]["lead_min"] if series else 0
+    intensity = _intensity_sr(peak_mmh)
+
+    if raining_now:
+        state = "RAIN_NOW"
+        line = (f"kiša nad Budvom — {intensity}, do ~{peak_mmh} mm/h "
+                f"u narednih {horizon:.0f} min (SKALA NOWCAST)")
+    elif onset is not None:
+        state = "RAIN_SOON"
+        line = (f"kiša kreće ~{onset:.0f} min — {intensity}, "
+                f"do ~{peak_mmh} mm/h (SKALA NOWCAST)")
+    else:
+        state = "NO_RAIN"
+        line = f"nema kiše nad Budvom u narednih {horizon:.0f} min (SKALA NOWCAST)"
+
+    return {
+        "ok": True,
+        "generated": prod.get("generated"),
+        "base_time": _iso_from_ms(base_ms),
+        "base_epoch_ms": base_ms,
+        "location": prod.get("location", "Budva"),
+        "source": "SKALA NOWCAST — DGMR (DeepMind) na ORD 1 km",
+        "horizon_min": horizon,
+        "timestep_min": dt,
+        "now": {"disc_max_mmh": now_mmh, "raining": raining_now},
+        "verdict": {
+            "state": state, "eta_min": onset, "peak_mmh": peak_mmh,
+            "peak_lead_min": peak["lead_min"] if peak else None,
+            "total_mm": total_mm, "intensity_sr": intensity, "line_sr": line,
+        },
+        "series": series,
+        "hourly_mm": _hourly_mm(base_ms, series, dt) if base_ms else [],
+    }
+
+
 def write(prod):
     DOCS.mkdir(exist_ok=True)
     OUT_JSON.parent.mkdir(exist_ok=True)
@@ -294,6 +381,11 @@ def write(prod):
         f.write(";\n")
     with open(OUT_JSON, "w", encoding="utf-8") as f:
         json.dump(prod, f, ensure_ascii=False, indent=2, default=str)
+    status = nowcast_status(prod) if prod.get("ok") else None
+    if status is not None:
+        with open(OUT_STATUS, "w", encoding="utf-8") as f:
+            json.dump(status, f, ensure_ascii=False, indent=2, default=str)
+        print(f"  Saved: {OUT_STATUS}  [{status['verdict']['state']}]")
 
 
 def _expand_h5(raw):

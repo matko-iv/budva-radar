@@ -157,15 +157,33 @@ def _resolve_method(requested, scenario, n_frames, ar_order):
     return requested
 
 
+# LINDA shape preservation. pysteps reconstructs the field as a superposition of
+# convolution kernels around detected features; with too FEW features and a WIDE
+# localization window (its default 0.2*min(shape) ~= 51 px on the 256-px tile) the
+# very first forecast frame convolves real cells into round blobs and the precip
+# shape is lost. So: detect more features (pysteps recommends 20-50) and tighten the
+# localization window to a convective-cell scale, with the anisotropic kernel (which
+# aligns with elongated structures). "Maximal detail" preset (sharper, a bit slower).
+LINDA_MAX_FEATURES = 40
+LINDA_LOCAL_KM = 10.0          # localization-window std dev (km); ~51 km was the default
+
+
 def _linda_forecast(precip, velocity, n_leadtimes, ari_order, kmperpixel, timestep_min):
     """Deterministic LINDA (cell-based ARI) nowcast. precip is exactly
     ari_order+2 frames. LINDA leaves dry pixels NaN -- the caller's nan->0 +
-    clip handles that. Blob feature detection needs scikit-image."""
+    clip handles that. Blob feature detection needs scikit-image.
+
+    Shape preservation (see LINDA_* above): more features + a TIGHT, cell-scale
+    localization window + the anisotropic kernel keep the first forecast frame's
+    precip shape instead of rounding it into blobs."""
     from pysteps import nowcasts
+    local_px = max(6.0, LINDA_LOCAL_KM / kmperpixel) if kmperpixel else None
     return nowcasts.get_method("linda")(
         precip, velocity, n_leadtimes,
-        feature_method="blob", max_num_features=15, ari_order=ari_order,
-        add_perturbations=False, kmperpixel=kmperpixel, timestep=timestep_min,
+        feature_method="blob", max_num_features=LINDA_MAX_FEATURES,
+        kernel_type="anisotropic", localization_window_radius=local_px,
+        ari_order=ari_order, add_perturbations=False,
+        kmperpixel=kmperpixel, timestep=timestep_min,
         num_workers=1, measure_time=False)
 
 
