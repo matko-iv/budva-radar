@@ -24,9 +24,8 @@
     <h2>Poruka osnivača</h2>
 
 
-    <p>Sistem je podijeljen na dva osmatračka modula (
-    <a href="radar-map.html">SKALA RAIN</a> i
-    <a href="cloud-map.html">SKALA CLOUD</a>) i jedan prognostički modul (<a href="nowcast-compare.html">SKALA NOWCAST</a>) baziran na Google DeepMind tehnologiji sa rezolucijom od 1km i varljivom temporalnom rezolucijom. Osmatrački moduli prvenstveno postoje za potvrdu tačnosti prognostičkog modula. Model nowcastinga ima automatski podesiv režim regresije, a uglavnom se koriste CONVECTIVE i STRATIFORM opcije. Prognostički modul je direktno povezan na <a href="https://matko-iv.github.io/vrijeme/forecast.html"></p>
+    <p>Sistem je podijeljen na dva osmatračka modula (<a href="radar-map.html">SKALA RAIN</a> i
+    <a href="cloud-map.html">SKALA CLOUD</a>) i jedan prognostički modul (<a href="nowcast-compare.html">SKALA NOWCAST</a>) baziran na Google DeepMind tehnologiji sa rezolucijom od 1km i varljivom temporalnom rezolucijom. Osmatrački moduli prvenstveno postoje za potvrdu tačnosti prognostičkog modula. Model nowcastinga ima automatski podesiv režim regresije, a uglavnom se koriste CONVECTIVE i STRATIFORM opcije. Prognostički modul je direktno povezan na <a href="https://matko-iv.github.io/vrijeme/forecast.html">Matkov NWP model</a> koji, zajedno sa NWP modelom, prognozira precizne i tačne vremenske izvještaje do +80min.</p>
 
     <p>Kod je u potpunosti javno dostupan i tehnički primjenjiv na bilo
     koju lokaciju lokacija je samo par $(\varphi, \lambda)$ plus kalibracija
@@ -34,18 +33,19 @@
     mjesta. Budva je referentna tačka jer tu živim i tu validiram protiv onoga što
     stvarno vidim sa zemlje, što je najpošteniji test koji postoji.</p>
 
-    <p>Krajnji cilj je veći od osmatranja. Zajedno sa projektom
-    <b>weather-forecast</b> — <i>Matkov vremenski model</i>, NWP korekcija
-    pristrasnosti (bias-correction) nad ansamblom globalnih i mezoskalnih modela —
-    namjera je da se <b>osmatranje</b> (radar + satelit; „sad i naredna ~2 h") i
-    <b>modelirana prognoza</b> (NWP; „naredna 2–48 h i dalje") spoje u
-    <b>jednu tačnu i preciznu prognozu — ne samo za Budvu nego i šire.</b> Ovaj
+    <p>Zajedno sa projektom
+    <b>weather-forecast</b> odnosno <i>Matkov vremenski model</i>, NWP korekcija
+    pristrasnosti (bias-correction) nad ansamblom globalnih i mezoskalnih modela, 
+    namjera je da se ovaj program i
+    modelirana prognoza spoje u
+    jednu tačnu i preciznu prognozu, i to ne samo za Budvu nego i šire. Ovaj
     sistem je osmatračka i interpretaciona polovina te slike.</p>
   </section>
 
   <section id="moduli">
     <h2>Moduli</h2>
     <ul>
+	  <li><a href="nowcast-compare.html">SKALA CLOUD</a> — satelitska interpretacija oblačnosti.</li>
       <li><a href="radar-map.html">SKALA RAIN</a> — radarska interpretacija kiše.</li>
       <li><a href="cloud-map.html">SKALA CLOUD</a> — satelitska interpretacija oblačnosti.</li>
     </ul>
