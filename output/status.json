@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-26T12:43:06",
+  "generated": "2026-06-26T12:48:07",
   "location": {
     "name": "Budva",
     "lat": 42.2864,
@@ -9,8 +9,8 @@
     "dhmz": {
       "source": "dhmz",
       "ok": true,
-      "frame_path": "data/frames/dhmz/20260626_124304_e76b4f8ec50a.png",
-      "frame_timestamp": "2026-06-26T12:35:00",
+      "frame_path": "data/frames/dhmz/20260626_124806_cd20c7d88e9c.png",
+      "frame_timestamp": "2026-06-26T12:40:00",
       "data_source": "ord_pvol",
       "motion": null,
       "motion_field": null,
@@ -63,17 +63,17 @@
           "km_per_pixel": 1.0,
           "min_wet_threshold": 12,
           "n_pixels_in_annulus": 312,
-          "n_valid_color": 2,
+          "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
           "n_echo": 0,
           "n_trace": 0,
           "frac_wet": 0.0,
-          "max_dbz": -3.0,
-          "mean_dbz": -3.0,
-          "strongest_bearing": 338.6,
-          "strongest_bearing_cardinal": "N",
-          "strongest_dbz": -3.0,
+          "max_dbz": null,
+          "mean_dbz": null,
+          "strongest_bearing": null,
+          "strongest_bearing_cardinal": null,
+          "strongest_dbz": null,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -88,17 +88,17 @@
           "km_per_pixel": 1.0,
           "min_wet_threshold": 12,
           "n_pixels_in_annulus": 1652,
-          "n_valid_color": 5,
+          "n_valid_color": 0,
           "n_wet": 0,
           "n_wet_raw": 0,
           "n_echo": 0,
           "n_trace": 0,
           "frac_wet": 0.0,
-          "max_dbz": 0.0,
-          "mean_dbz": -3.1,
-          "strongest_bearing": 50.4,
-          "strongest_bearing_cardinal": "NE",
-          "strongest_dbz": 0.0,
+          "max_dbz": null,
+          "mean_dbz": null,
+          "strongest_bearing": null,
+          "strongest_bearing_cardinal": null,
+          "strongest_dbz": null,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -113,17 +113,17 @@
           "km_per_pixel": 1.0,
           "min_wet_threshold": 20,
           "n_pixels_in_annulus": 5883,
-          "n_valid_color": 9,
+          "n_valid_color": 3,
           "n_wet": 0,
           "n_wet_raw": 0,
           "n_echo": 0,
           "n_trace": 0,
           "frac_wet": 0.0,
-          "max_dbz": 0.5,
-          "mean_dbz": -2.7,
-          "strongest_bearing": 95.6,
-          "strongest_bearing_cardinal": "E",
-          "strongest_dbz": 0.5,
+          "max_dbz": -5.0,
+          "mean_dbz": -5.0,
+          "strongest_bearing": 326.0,
+          "strongest_bearing_cardinal": "NW",
+          "strongest_dbz": -5.0,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -138,17 +138,17 @@
           "km_per_pixel": 1.0,
           "min_wet_threshold": 40,
           "n_pixels_in_annulus": 23563,
-          "n_valid_color": 78,
+          "n_valid_color": 98,
           "n_wet": 0,
           "n_wet_raw": 0,
           "n_echo": 0,
           "n_trace": 0,
           "frac_wet": 0.0,
-          "max_dbz": 4.5,
-          "mean_dbz": -5.6,
-          "strongest_bearing": 104.7,
-          "strongest_bearing_cardinal": "E",
-          "strongest_dbz": 4.5,
+          "max_dbz": 3.5,
+          "mean_dbz": -4.9,
+          "strongest_bearing": 327.6,
+          "strongest_bearing_cardinal": "NW",
+          "strongest_dbz": 3.5,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -163,17 +163,17 @@
           "km_per_pixel": 1.0,
           "min_wet_threshold": 100,
           "n_pixels_in_annulus": 38480,
-          "n_valid_color": 201,
+          "n_valid_color": 186,
           "n_wet": 0,
           "n_wet_raw": 0,
-          "n_echo": 2,
-          "n_trace": 2,
+          "n_echo": 4,
+          "n_trace": 4,
           "frac_wet": 0.0,
-          "max_dbz": 7.5,
-          "mean_dbz": -6.7,
-          "strongest_bearing": 309.2,
-          "strongest_bearing_cardinal": "NW",
-          "strongest_dbz": 7.5,
+          "max_dbz": 10.0,
+          "mean_dbz": -7.1,
+          "strongest_bearing": 114.1,
+          "strongest_bearing_cardinal": "SE",
+          "strongest_dbz": 10.0,
           "closest_wet_km": null,
           "closest_wet_bearing": null,
           "closest_wet_bearing_cardinal": null,
@@ -230,48 +230,58 @@
     "opera": {
       "source": "opera",
       "ok": true,
-      "frame_path": "data/frames/opera/20260626_123500.gif",
-      "frame_timestamp": "2026-06-26T12:35:00",
+      "frame_path": "data/frames/opera/20260626_124000.gif",
+      "frame_timestamp": "2026-06-26T12:40:00",
       "data_source": "png",
-      "motion": null,
+      "motion": {
+        "dx_px": -33,
+        "dy_px": -9,
+        "speed_px_per_frame": 34.21,
+        "confidence": 0.375,
+        "direction_deg": 285.3,
+        "direction_cardinal": "W",
+        "px_per_km": 0.237,
+        "speed_kmh": 1732.2,
+        "confidence_band": "low"
+      },
       "motion_field": {
         "vectors": [
           {
             "lat": 72.7136,
             "lon": 13.6043,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.795,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 2,
+            "dy_px": -1,
+            "confidence": 0.44,
+            "speed_px_per_frame": 2.24,
+            "direction_deg": 63.4,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 72.7208,
             "lon": 14.7689,
             "dx_px": 0,
-            "dy_px": -1,
-            "confidence": 0.602,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 0.0,
-            "direction_cardinal": "N"
+            "dy_px": 0,
+            "confidence": 0.707,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 72.7281,
             "lon": 15.9336,
-            "dx_px": 4,
-            "dy_px": 10,
-            "confidence": 0.56,
-            "speed_px_per_frame": 10.77,
-            "direction_deg": 158.2,
-            "direction_cardinal": "S"
+            "dx_px": 0,
+            "dy_px": -1,
+            "confidence": 0.592,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 72.7354,
             "lon": 17.0982,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.878,
+            "confidence": 0.844,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -281,7 +291,7 @@
             "lon": 18.2628,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.863,
+            "confidence": 0.881,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -320,18 +330,18 @@
             "lat": 71.8066,
             "lon": 13.6413,
             "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.582,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dy_px": -1,
+            "confidence": 0.58,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 71.8139,
             "lon": 14.806,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.943,
+            "confidence": 0.813,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -341,7 +351,7 @@
             "lon": 15.9706,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.749,
+            "confidence": 0.824,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -351,7 +361,7 @@
             "lon": 17.1352,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.745,
+            "confidence": 0.811,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -361,7 +371,7 @@
             "lon": 18.2998,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.78,
+            "confidence": 0.828,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -371,7 +381,7 @@
             "lon": 19.4645,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.725,
+            "confidence": 0.895,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -411,7 +421,7 @@
             "lon": -8.4496,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.838,
+            "confidence": 0.787,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -419,19 +429,19 @@
           {
             "lat": 70.7687,
             "lon": -7.2849,
-            "dx_px": 0,
-            "dy_px": 1,
-            "confidence": 0.552,
+            "dx_px": 1,
+            "dy_px": 0,
+            "confidence": 0.713,
             "speed_px_per_frame": 1.0,
-            "direction_deg": 180.0,
-            "direction_cardinal": "S"
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 70.776,
             "lon": -6.1203,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.913,
+            "confidence": 0.955,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -441,7 +451,7 @@
             "lon": -4.9557,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.894,
+            "confidence": 0.864,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -449,29 +459,29 @@
           {
             "lat": 70.8778,
             "lon": 10.1845,
-            "dx_px": 1,
-            "dy_px": 0,
-            "confidence": 0.697,
+            "dx_px": 0,
+            "dy_px": -1,
+            "confidence": 0.652,
             "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 70.8851,
             "lon": 11.3491,
-            "dx_px": 1,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.597,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.69,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 70.8924,
             "lon": 12.5137,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.514,
+            "confidence": 0.775,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -481,7 +491,7 @@
             "lon": 13.6784,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.584,
+            "confidence": 0.773,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -489,19 +499,19 @@
           {
             "lat": 70.9069,
             "lon": 14.843,
-            "dx_px": 0,
+            "dx_px": 5,
             "dy_px": 0,
-            "confidence": 0.921,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.449,
+            "speed_px_per_frame": 5.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 70.9142,
             "lon": 16.0076,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.873,
+            "confidence": 0.835,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -511,7 +521,7 @@
             "lon": 17.1722,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.769,
+            "confidence": 0.825,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -521,7 +531,7 @@
             "lon": 18.3369,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.705,
+            "confidence": 0.652,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -529,12 +539,12 @@
           {
             "lat": 70.936,
             "lon": 19.5015,
-            "dx_px": 0,
+            "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.775,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.798,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 70.9796,
@@ -571,7 +581,7 @@
             "lon": -8.4125,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.891,
+            "confidence": 0.81,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -579,29 +589,29 @@
           {
             "lat": 69.8617,
             "lon": -7.2479,
-            "dx_px": -12,
-            "dy_px": 1,
-            "confidence": 0.668,
-            "speed_px_per_frame": 12.04,
-            "direction_deg": 265.2,
-            "direction_cardinal": "W"
+            "dx_px": 1,
+            "dy_px": 0,
+            "confidence": 0.827,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 69.869,
             "lon": -6.0833,
-            "dx_px": 0,
+            "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.673,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.834,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 69.8763,
             "lon": -4.9186,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.875,
+            "confidence": 0.882,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -611,7 +621,7 @@
             "lon": 9.0569,
             "dx_px": 1,
             "dy_px": -1,
-            "confidence": 0.578,
+            "confidence": 0.526,
             "speed_px_per_frame": 1.41,
             "direction_deg": 45.0,
             "direction_cardinal": "NE"
@@ -619,19 +629,19 @@
           {
             "lat": 69.9708,
             "lon": 10.2215,
-            "dx_px": 1,
-            "dy_px": -1,
-            "confidence": 0.578,
-            "speed_px_per_frame": 1.41,
-            "direction_deg": 45.0,
-            "direction_cardinal": "NE"
+            "dx_px": 0,
+            "dy_px": 0,
+            "confidence": 0.617,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 69.9781,
             "lon": 11.3861,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.728,
+            "confidence": 0.809,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -641,7 +651,7 @@
             "lon": 12.5507,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.681,
+            "confidence": 0.813,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -649,19 +659,19 @@
           {
             "lat": 69.9927,
             "lon": 13.7154,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.73,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 3,
+            "dy_px": -4,
+            "confidence": 0.723,
+            "speed_px_per_frame": 5.0,
+            "direction_deg": 36.9,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 69.9999,
             "lon": 14.88,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.582,
+            "confidence": 0.4,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -671,7 +681,7 @@
             "lon": 16.0446,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.724,
+            "confidence": 0.85,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -681,7 +691,7 @@
             "lon": 17.2093,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.782,
+            "confidence": 0.723,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -691,7 +701,7 @@
             "lon": 18.3739,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.692,
+            "confidence": 0.708,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -701,7 +711,7 @@
             "lon": 19.5385,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.784,
+            "confidence": 0.564,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -711,7 +721,7 @@
             "lon": 20.7031,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.741,
+            "confidence": 0.848,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -749,29 +759,29 @@
           {
             "lat": 68.9402,
             "lon": -9.5401,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.815,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": -6,
+            "dy_px": -2,
+            "confidence": 0.716,
+            "speed_px_per_frame": 6.32,
+            "direction_deg": 288.4,
+            "direction_cardinal": "W"
           },
           {
             "lat": 68.9475,
             "lon": -8.3755,
-            "dx_px": 0,
+            "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.623,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.624,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 68.9548,
             "lon": -7.2109,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.659,
+            "confidence": 0.633,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -781,7 +791,7 @@
             "lon": -6.0463,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.797,
+            "confidence": 0.752,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -791,7 +801,7 @@
             "lon": -4.8816,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.757,
+            "confidence": 0.528,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -801,7 +811,7 @@
             "lon": -3.717,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.964,
+            "confidence": 0.919,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -809,19 +819,19 @@
           {
             "lat": 69.0493,
             "lon": 7.9293,
-            "dx_px": -2,
-            "dy_px": 2,
-            "confidence": 0.403,
+            "dx_px": 2,
+            "dy_px": -2,
+            "confidence": 0.521,
             "speed_px_per_frame": 2.83,
-            "direction_deg": 225.0,
-            "direction_cardinal": "SW"
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 69.0566,
             "lon": 9.0939,
             "dx_px": 1,
             "dy_px": -1,
-            "confidence": 0.718,
+            "confidence": 0.588,
             "speed_px_per_frame": 1.41,
             "direction_deg": 45.0,
             "direction_cardinal": "NE"
@@ -831,7 +841,7 @@
             "lon": 10.2585,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.599,
+            "confidence": 0.601,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -841,7 +851,7 @@
             "lon": 11.4231,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.632,
+            "confidence": 0.68,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -851,7 +861,7 @@
             "lon": 12.5878,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.644,
+            "confidence": 0.478,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -861,7 +871,7 @@
             "lon": 13.7524,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.65,
+            "confidence": 0.816,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -871,7 +881,7 @@
             "lon": 14.917,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.658,
+            "confidence": 0.661,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -881,7 +891,7 @@
             "lon": 16.0817,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.755,
+            "confidence": 0.725,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -889,19 +899,19 @@
           {
             "lat": 69.1075,
             "lon": 17.2463,
-            "dx_px": 0,
+            "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.644,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.439,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 69.1148,
             "lon": 18.4109,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.549,
+            "confidence": 0.784,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -911,7 +921,7 @@
             "lon": 19.5755,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.846,
+            "confidence": 0.683,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -921,7 +931,7 @@
             "lon": 20.7402,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.981,
+            "confidence": 0.967,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -961,7 +971,7 @@
             "lon": -10.6677,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.837,
+            "confidence": 0.796,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -969,19 +979,19 @@
           {
             "lat": 68.0333,
             "lon": -9.5031,
-            "dx_px": 1,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.693,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.718,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 68.0405,
             "lon": -8.3385,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.665,
+            "confidence": 0.724,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -989,19 +999,19 @@
           {
             "lat": 68.0478,
             "lon": -7.1739,
-            "dx_px": 0,
+            "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.521,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.918,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 68.0551,
             "lon": -6.0092,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.603,
+            "confidence": 0.633,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -1011,7 +1021,7 @@
             "lon": -4.8446,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.835,
+            "confidence": 0.852,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1021,7 +1031,7 @@
             "lon": -3.68,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.589,
+            "confidence": 0.637,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1029,39 +1039,39 @@
           {
             "lat": 68.1424,
             "lon": 7.9663,
-            "dx_px": 1,
-            "dy_px": -1,
-            "confidence": 0.779,
-            "speed_px_per_frame": 1.41,
-            "direction_deg": 45.0,
-            "direction_cardinal": "NE"
-          },
-          {
-            "lat": 68.1496,
-            "lon": 9.1309,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.675,
+            "confidence": 0.824,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
           },
           {
+            "lat": 68.1496,
+            "lon": 9.1309,
+            "dx_px": -1,
+            "dy_px": 1,
+            "confidence": 0.5,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 225.0,
+            "direction_cardinal": "SW"
+          },
+          {
             "lat": 68.1569,
             "lon": 10.2955,
-            "dx_px": 0,
-            "dy_px": -1,
-            "confidence": 0.499,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 0.0,
-            "direction_cardinal": "N"
+            "dx_px": -3,
+            "dy_px": 1,
+            "confidence": 0.653,
+            "speed_px_per_frame": 3.16,
+            "direction_deg": 251.6,
+            "direction_cardinal": "W"
           },
           {
             "lat": 68.1642,
             "lon": 11.4602,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.665,
+            "confidence": 0.67,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1071,7 +1081,7 @@
             "lon": 12.6248,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.821,
+            "confidence": 0.855,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1080,28 +1090,28 @@
             "lat": 68.1787,
             "lon": 13.7894,
             "dx_px": 0,
-            "dy_px": -1,
-            "confidence": 0.746,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 0.0,
-            "direction_cardinal": "N"
+            "dy_px": 0,
+            "confidence": 0.716,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 68.1933,
             "lon": 16.1187,
-            "dx_px": -4,
-            "dy_px": -2,
-            "confidence": 0.656,
-            "speed_px_per_frame": 4.47,
-            "direction_deg": 296.6,
-            "direction_cardinal": "NW"
+            "dx_px": 1,
+            "dy_px": 0,
+            "confidence": 0.766,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 68.2005,
             "lon": 17.2833,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.566,
+            "confidence": 0.736,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1111,7 +1121,7 @@
             "lon": 18.4479,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.479,
+            "confidence": 0.607,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1121,7 +1131,7 @@
             "lon": 19.6126,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.782,
+            "confidence": 0.775,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1131,7 +1141,7 @@
             "lon": 20.7772,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.815,
+            "confidence": 0.685,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1169,39 +1179,39 @@
           {
             "lat": 67.119,
             "lon": -10.6307,
-            "dx_px": 1,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.822,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.836,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 67.1263,
             "lon": -9.4661,
-            "dx_px": 1,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.717,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.841,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 67.1336,
             "lon": -8.3015,
-            "dx_px": 1,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.625,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.566,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 67.2354,
             "lon": 8.0033,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.861,
+            "confidence": 0.852,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -1209,19 +1219,19 @@
           {
             "lat": 67.2427,
             "lon": 9.1679,
-            "dx_px": 1,
-            "dy_px": -1,
-            "confidence": 0.637,
-            "speed_px_per_frame": 1.41,
-            "direction_deg": 45.0,
-            "direction_cardinal": "NE"
+            "dx_px": 0,
+            "dy_px": 0,
+            "confidence": 0.722,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 67.2499,
             "lon": 10.3326,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.587,
+            "confidence": 0.815,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1231,7 +1241,7 @@
             "lon": 11.4972,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.79,
+            "confidence": 0.946,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1241,17 +1251,27 @@
             "lon": 12.6618,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.787,
+            "confidence": 0.807,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
+          },
+          {
+            "lat": 67.2936,
+            "lon": 17.3203,
+            "dx_px": 1,
+            "dy_px": 0,
+            "confidence": 0.656,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 67.3008,
             "lon": 18.485,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.604,
+            "confidence": 0.815,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1261,7 +1281,7 @@
             "lon": 19.6496,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.86,
+            "confidence": 0.865,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1271,7 +1291,7 @@
             "lon": 20.8142,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.704,
+            "confidence": 0.705,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1281,7 +1301,7 @@
             "lon": 21.9788,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.783,
+            "confidence": 0.807,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1291,7 +1311,7 @@
             "lon": 23.1435,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.946,
+            "confidence": 0.944,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1331,7 +1351,7 @@
             "lon": 6.8757,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.85,
+            "confidence": 0.81,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1341,7 +1361,7 @@
             "lon": 8.0403,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.841,
+            "confidence": 0.862,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -1351,7 +1371,7 @@
             "lon": 9.205,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.812,
+            "confidence": 0.94,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1361,7 +1381,7 @@
             "lon": 10.3696,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.809,
+            "confidence": 0.97,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1371,7 +1391,7 @@
             "lon": 11.5342,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.905,
+            "confidence": 0.806,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1381,7 +1401,7 @@
             "lon": 12.6988,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.865,
+            "confidence": 0.916,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1389,39 +1409,39 @@
           {
             "lat": 66.3721,
             "lon": 15.0281,
-            "dx_px": -3,
-            "dy_px": 0,
-            "confidence": 0.579,
-            "speed_px_per_frame": 3.0,
-            "direction_deg": 270.0,
-            "direction_cardinal": "W"
+            "dx_px": 1,
+            "dy_px": 1,
+            "confidence": 0.624,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 135.0,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 66.3939,
             "lon": 18.522,
-            "dx_px": 1,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.706,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.668,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 66.4011,
             "lon": 19.6866,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.73,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 14,
+            "dy_px": 3,
+            "confidence": 0.608,
+            "speed_px_per_frame": 14.32,
+            "direction_deg": 102.1,
+            "direction_cardinal": "E"
           },
           {
             "lat": 66.4084,
             "lon": 20.8512,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.908,
+            "confidence": 0.682,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1431,7 +1451,7 @@
             "lon": 22.0159,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.881,
+            "confidence": 0.842,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1441,7 +1461,7 @@
             "lon": 23.1805,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.717,
+            "confidence": 0.951,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1481,7 +1501,7 @@
             "lon": 6.9127,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.856,
+            "confidence": 0.879,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1491,7 +1511,7 @@
             "lon": 8.0774,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.834,
+            "confidence": 0.81,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1501,7 +1521,7 @@
             "lon": 9.242,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.853,
+            "confidence": 0.851,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1509,19 +1529,19 @@
           {
             "lat": 65.436,
             "lon": 10.4066,
-            "dx_px": 1,
-            "dy_px": -1,
-            "confidence": 0.681,
-            "speed_px_per_frame": 1.41,
-            "direction_deg": 45.0,
-            "direction_cardinal": "NE"
+            "dx_px": 0,
+            "dy_px": 0,
+            "confidence": 0.949,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 65.4433,
             "lon": 11.5712,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.936,
+            "confidence": 0.928,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1531,7 +1551,7 @@
             "lon": 12.7359,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.963,
+            "confidence": 0.913,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1539,39 +1559,29 @@
           {
             "lat": 65.4578,
             "lon": 13.9005,
-            "dx_px": 2,
+            "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.656,
-            "speed_px_per_frame": 2.0,
+            "confidence": 0.684,
+            "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
           },
           {
-            "lat": 65.4869,
-            "lon": 18.559,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.996,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
-          },
-          {
             "lat": 65.4942,
             "lon": 19.7236,
-            "dx_px": 0,
+            "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.907,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.719,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 65.5015,
             "lon": 20.8882,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.793,
+            "confidence": 0.629,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1581,7 +1591,7 @@
             "lon": 22.0529,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.913,
+            "confidence": 0.734,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1591,7 +1601,7 @@
             "lon": 23.2175,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.835,
+            "confidence": 0.897,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1601,7 +1611,7 @@
             "lon": 24.3821,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.914,
+            "confidence": 0.718,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1639,39 +1649,39 @@
           {
             "lat": 64.4999,
             "lon": 5.7851,
-            "dx_px": 1,
-            "dy_px": -1,
-            "confidence": 0.468,
-            "speed_px_per_frame": 1.41,
-            "direction_deg": 45.0,
-            "direction_cardinal": "NE"
+            "dx_px": 3,
+            "dy_px": 0,
+            "confidence": 0.445,
+            "speed_px_per_frame": 3.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 64.5072,
             "lon": 6.9498,
-            "dx_px": 1,
-            "dy_px": -1,
-            "confidence": 0.586,
-            "speed_px_per_frame": 1.41,
-            "direction_deg": 45.0,
-            "direction_cardinal": "NE"
+            "dx_px": 0,
+            "dy_px": 0,
+            "confidence": 0.577,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 64.5145,
             "lon": 8.1144,
-            "dx_px": 1,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.638,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.669,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 64.5217,
             "lon": 9.279,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.802,
+            "confidence": 0.803,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1681,7 +1691,7 @@
             "lon": 10.4436,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.816,
+            "confidence": 0.756,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -1691,7 +1701,7 @@
             "lon": 11.6083,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.812,
+            "confidence": 0.857,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1701,7 +1711,7 @@
             "lon": 12.7729,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.963,
+            "confidence": 0.891,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1711,7 +1721,7 @@
             "lon": 13.9375,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.999,
+            "confidence": 0.841,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1721,7 +1731,7 @@
             "lon": 15.1021,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.967,
+            "confidence": 0.6,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1731,7 +1741,7 @@
             "lon": 16.2668,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.878,
+            "confidence": 0.96,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1741,7 +1751,7 @@
             "lon": 17.4314,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.688,
+            "confidence": 0.969,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1749,29 +1759,29 @@
           {
             "lat": 64.5799,
             "lon": 18.596,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.926,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 6,
+            "dy_px": 7,
+            "confidence": 0.921,
+            "speed_px_per_frame": 9.22,
+            "direction_deg": 139.4,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 64.5945,
             "lon": 20.9253,
-            "dx_px": 10,
-            "dy_px": -11,
-            "confidence": 0.665,
-            "speed_px_per_frame": 14.87,
-            "direction_deg": 42.3,
-            "direction_cardinal": "NE"
+            "dx_px": 0,
+            "dy_px": 1,
+            "confidence": 0.709,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 180.0,
+            "direction_cardinal": "S"
           },
           {
             "lat": 64.6018,
             "lon": 22.0899,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.721,
+            "confidence": 0.813,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1779,22 +1789,22 @@
           {
             "lat": 64.609,
             "lon": 23.2545,
-            "dx_px": -2,
-            "dy_px": -4,
-            "confidence": 0.516,
-            "speed_px_per_frame": 4.47,
-            "direction_deg": 333.4,
-            "direction_cardinal": "NW"
+            "dx_px": 1,
+            "dy_px": 1,
+            "confidence": 0.698,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 135.0,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 64.6163,
             "lon": 24.4192,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.747,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": 1,
+            "confidence": 0.852,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 135.0,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 64.6308,
@@ -1829,19 +1839,19 @@
           {
             "lat": 63.593,
             "lon": 5.8222,
-            "dx_px": 2,
-            "dy_px": -1,
-            "confidence": 0.629,
-            "speed_px_per_frame": 2.24,
-            "direction_deg": 63.4,
-            "direction_cardinal": "NE"
+            "dx_px": 0,
+            "dy_px": 0,
+            "confidence": 0.617,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 63.6002,
             "lon": 6.9868,
             "dx_px": 2,
             "dy_px": -1,
-            "confidence": 0.694,
+            "confidence": 0.66,
             "speed_px_per_frame": 2.24,
             "direction_deg": 63.4,
             "direction_cardinal": "NE"
@@ -1851,7 +1861,7 @@
             "lon": 8.1514,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.575,
+            "confidence": 0.686,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1859,19 +1869,19 @@
           {
             "lat": 63.6148,
             "lon": 9.316,
-            "dx_px": 2,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.738,
-            "speed_px_per_frame": 2.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.849,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 63.6221,
             "lon": 10.4807,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.63,
+            "confidence": 0.605,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1881,7 +1891,7 @@
             "lon": 11.6453,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.83,
+            "confidence": 0.814,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1891,7 +1901,7 @@
             "lon": 12.8099,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.88,
+            "confidence": 0.857,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1901,7 +1911,7 @@
             "lon": 13.9745,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.92,
+            "confidence": 0.833,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1911,7 +1921,7 @@
             "lon": 15.1392,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.683,
+            "confidence": 0.777,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -1920,18 +1930,18 @@
             "lat": 63.6584,
             "lon": 16.3038,
             "dx_px": 0,
-            "dy_px": -7,
-            "confidence": 0.358,
-            "speed_px_per_frame": 7.0,
-            "direction_deg": 0.0,
-            "direction_cardinal": "N"
+            "dy_px": 1,
+            "confidence": 0.353,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 180.0,
+            "direction_cardinal": "S"
           },
           {
             "lat": 63.6657,
             "lon": 17.4684,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.693,
+            "confidence": 0.806,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1941,7 +1951,7 @@
             "lon": 18.633,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.668,
+            "confidence": 0.805,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -1949,29 +1959,29 @@
           {
             "lat": 63.6875,
             "lon": 20.9623,
-            "dx_px": 1,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.74,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.798,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 63.6948,
             "lon": 22.1269,
             "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.681,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dy_px": -1,
+            "confidence": 0.584,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 63.7021,
             "lon": 23.2915,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.862,
+            "confidence": 0.786,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2011,7 +2021,7 @@
             "lon": 5.8592,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.821,
+            "confidence": 0.779,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2021,7 +2031,7 @@
             "lon": 7.0238,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.641,
+            "confidence": 0.522,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2039,29 +2049,29 @@
           {
             "lat": 62.7078,
             "lon": 9.3531,
-            "dx_px": 3,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.546,
-            "speed_px_per_frame": 3.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.587,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 62.7151,
             "lon": 10.5177,
-            "dx_px": 0,
+            "dx_px": 1,
             "dy_px": 0,
             "confidence": 0.789,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 62.7224,
             "lon": 11.6823,
             "dx_px": 2,
             "dy_px": 0,
-            "confidence": 0.776,
+            "confidence": 0.831,
             "speed_px_per_frame": 2.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -2071,7 +2081,7 @@
             "lon": 12.8469,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.855,
+            "confidence": 0.824,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2079,19 +2089,19 @@
           {
             "lat": 62.7369,
             "lon": 14.0116,
-            "dx_px": 2,
-            "dy_px": 0,
-            "confidence": 0.703,
-            "speed_px_per_frame": 2.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "dx_px": 1,
+            "dy_px": -1,
+            "confidence": 0.704,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 62.7442,
             "lon": 15.1762,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.647,
+            "confidence": 0.759,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -2099,49 +2109,39 @@
           {
             "lat": 62.7514,
             "lon": 16.3408,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.814,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": -1,
+            "dy_px": -4,
+            "confidence": 0.677,
+            "speed_px_per_frame": 4.12,
+            "direction_deg": 346.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 62.7587,
             "lon": 17.5054,
             "dx_px": 0,
             "dy_px": -1,
-            "confidence": 0.793,
+            "confidence": 0.759,
             "speed_px_per_frame": 1.0,
             "direction_deg": 0.0,
             "direction_cardinal": "N"
           },
           {
-            "lat": 62.766,
-            "lon": 18.6701,
-            "dx_px": 3,
-            "dy_px": 2,
-            "confidence": 0.558,
-            "speed_px_per_frame": 3.61,
-            "direction_deg": 123.7,
-            "direction_cardinal": "SE"
-          },
-          {
             "lat": 62.7805,
             "lon": 20.9993,
-            "dx_px": 0,
-            "dy_px": 1,
-            "confidence": 0.952,
+            "dx_px": 1,
+            "dy_px": 0,
+            "confidence": 0.912,
             "speed_px_per_frame": 1.0,
-            "direction_deg": 180.0,
-            "direction_cardinal": "S"
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 62.7878,
             "lon": 22.1639,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.483,
+            "confidence": 0.404,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2149,12 +2149,12 @@
           {
             "lat": 62.7951,
             "lon": 23.3286,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.887,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 3,
+            "dy_px": 1,
+            "confidence": 0.648,
+            "speed_px_per_frame": 3.16,
+            "direction_deg": 108.4,
+            "direction_cardinal": "E"
           },
           {
             "lat": 62.8169,
@@ -2191,7 +2191,7 @@
             "lon": 5.8962,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.375,
+            "confidence": 0.449,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2201,7 +2201,7 @@
             "lon": 7.0608,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.648,
+            "confidence": 0.653,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2209,19 +2209,19 @@
           {
             "lat": 61.7936,
             "lon": 8.2255,
-            "dx_px": 1,
+            "dx_px": -1,
             "dy_px": 0,
-            "confidence": 0.756,
+            "confidence": 0.729,
             "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "direction_deg": 270.0,
+            "direction_cardinal": "W"
           },
           {
             "lat": 61.8008,
             "lon": 9.3901,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.792,
+            "confidence": 0.826,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2231,7 +2231,7 @@
             "lon": 10.5547,
             "dx_px": 2,
             "dy_px": 0,
-            "confidence": 0.701,
+            "confidence": 0.718,
             "speed_px_per_frame": 2.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -2239,10 +2239,10 @@
           {
             "lat": 61.8154,
             "lon": 11.7193,
-            "dx_px": 3,
+            "dx_px": 2,
             "dy_px": 0,
-            "confidence": 0.812,
-            "speed_px_per_frame": 3.0,
+            "confidence": 0.824,
+            "speed_px_per_frame": 2.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
           },
@@ -2251,7 +2251,7 @@
             "lon": 12.884,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.765,
+            "confidence": 0.509,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2259,29 +2259,29 @@
           {
             "lat": 61.8299,
             "lon": 14.0486,
-            "dx_px": 5,
-            "dy_px": 2,
-            "confidence": 0.526,
-            "speed_px_per_frame": 5.39,
-            "direction_deg": 111.8,
-            "direction_cardinal": "E"
+            "dx_px": 2,
+            "dy_px": 1,
+            "confidence": 0.698,
+            "speed_px_per_frame": 2.24,
+            "direction_deg": 116.6,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 61.859,
             "lon": 18.7071,
-            "dx_px": 3,
-            "dy_px": 2,
-            "confidence": 0.5,
-            "speed_px_per_frame": 3.61,
-            "direction_deg": 123.7,
-            "direction_cardinal": "SE"
+            "dx_px": 0,
+            "dy_px": -3,
+            "confidence": 0.436,
+            "speed_px_per_frame": 3.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 61.8663,
             "lon": 19.8717,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.569,
+            "confidence": 0.691,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2289,20 +2289,20 @@
           {
             "lat": 61.8808,
             "lon": 22.201,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.506,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 9,
+            "dy_px": 4,
+            "confidence": 0.592,
+            "speed_px_per_frame": 9.85,
+            "direction_deg": 114.0,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 61.8881,
             "lon": 23.3656,
-            "dx_px": 1,
+            "dx_px": 2,
             "dy_px": 0,
-            "confidence": 0.505,
-            "speed_px_per_frame": 1.0,
+            "confidence": 0.702,
+            "speed_px_per_frame": 2.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
           },
@@ -2337,31 +2337,21 @@
             "direction_cardinal": null
           },
           {
-            "lat": 60.8648,
-            "lon": 4.7686,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.672,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
-          },
-          {
             "lat": 60.872,
             "lon": 5.9332,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.788,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": -16,
+            "dy_px": 2,
+            "confidence": 0.601,
+            "speed_px_per_frame": 16.12,
+            "direction_deg": 262.9,
+            "direction_cardinal": "W"
           },
           {
             "lat": 60.8793,
             "lon": 7.0978,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.664,
+            "confidence": 0.9,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2369,109 +2359,99 @@
           {
             "lat": 60.8866,
             "lon": 8.2625,
-            "dx_px": 2,
-            "dy_px": -1,
-            "confidence": 0.77,
-            "speed_px_per_frame": 2.24,
-            "direction_deg": 63.4,
-            "direction_cardinal": "NE"
+            "dx_px": 0,
+            "dy_px": 0,
+            "confidence": 0.853,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 60.8939,
             "lon": 9.4271,
-            "dx_px": 2,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.575,
-            "speed_px_per_frame": 2.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.831,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 60.9011,
             "lon": 10.5917,
-            "dx_px": 2,
-            "dy_px": 0,
-            "confidence": 0.743,
-            "speed_px_per_frame": 2.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "dx_px": 0,
+            "dy_px": 1,
+            "confidence": 0.757,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 180.0,
+            "direction_cardinal": "S"
           },
           {
             "lat": 60.9084,
             "lon": 11.7564,
             "dx_px": 2,
             "dy_px": 0,
-            "confidence": 0.729,
+            "confidence": 0.685,
             "speed_px_per_frame": 2.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
           },
           {
-            "lat": 60.9375,
-            "lon": 16.4149,
-            "dx_px": -2,
-            "dy_px": 1,
-            "confidence": 0.663,
-            "speed_px_per_frame": 2.24,
-            "direction_deg": 243.4,
-            "direction_cardinal": "SW"
-          },
-          {
             "lat": 60.9739,
             "lon": 22.238,
-            "dx_px": -2,
-            "dy_px": -2,
-            "confidence": 0.499,
-            "speed_px_per_frame": 2.83,
-            "direction_deg": 315.0,
-            "direction_cardinal": "NW"
+            "dx_px": 1,
+            "dy_px": 0,
+            "confidence": 0.682,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 59.9578,
             "lon": 4.8056,
-            "dx_px": 3,
-            "dy_px": -1,
-            "confidence": 0.363,
-            "speed_px_per_frame": 3.16,
-            "direction_deg": 71.6,
+            "dx_px": 15,
+            "dy_px": 0,
+            "confidence": 0.627,
+            "speed_px_per_frame": 15.0,
+            "direction_deg": 90.0,
             "direction_cardinal": "E"
           },
           {
             "lat": 59.9651,
             "lon": 5.9702,
-            "dx_px": -2,
-            "dy_px": 10,
-            "confidence": 0.441,
-            "speed_px_per_frame": 10.2,
-            "direction_deg": 191.3,
-            "direction_cardinal": "S"
+            "dx_px": 5,
+            "dy_px": -11,
+            "confidence": 0.477,
+            "speed_px_per_frame": 12.08,
+            "direction_deg": 24.4,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 59.9724,
             "lon": 7.1349,
-            "dx_px": 2,
-            "dy_px": -1,
-            "confidence": 0.822,
-            "speed_px_per_frame": 2.24,
-            "direction_deg": 63.4,
-            "direction_cardinal": "NE"
+            "dx_px": 0,
+            "dy_px": 0,
+            "confidence": 0.878,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 59.9796,
             "lon": 8.2995,
-            "dx_px": 1,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.77,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.846,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 59.9869,
             "lon": 9.4641,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.702,
+            "confidence": 0.795,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2479,29 +2459,29 @@
           {
             "lat": 59.9942,
             "lon": 10.6288,
-            "dx_px": 2,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.638,
-            "speed_px_per_frame": 2.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "confidence": 0.675,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 60.0014,
             "lon": 11.7934,
             "dx_px": 0,
-            "dy_px": 11,
-            "confidence": 0.281,
-            "speed_px_per_frame": 11.0,
-            "direction_deg": 180.0,
-            "direction_cardinal": "S"
+            "dy_px": 0,
+            "confidence": 0.48,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 59.0145,
             "lon": -0.9805,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.72,
+            "confidence": 0.527,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2509,19 +2489,19 @@
           {
             "lat": 59.0217,
             "lon": 0.1841,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.759,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": -1,
+            "confidence": 0.744,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 59.029,
             "lon": 1.3488,
             "dx_px": 2,
             "dy_px": 0,
-            "confidence": 0.749,
+            "confidence": 0.898,
             "speed_px_per_frame": 2.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -2529,11 +2509,11 @@
           {
             "lat": 59.0508,
             "lon": 4.8426,
-            "dx_px": 2,
-            "dy_px": -3,
-            "confidence": 0.444,
-            "speed_px_per_frame": 3.61,
-            "direction_deg": 33.7,
+            "dx_px": 8,
+            "dy_px": -5,
+            "confidence": 0.557,
+            "speed_px_per_frame": 9.43,
+            "direction_deg": 58.0,
             "direction_cardinal": "NE"
           },
           {
@@ -2541,7 +2521,7 @@
             "lon": 6.0073,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.604,
+            "confidence": 0.641,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2549,39 +2529,39 @@
           {
             "lat": 59.0654,
             "lon": 7.1719,
-            "dx_px": 2,
-            "dy_px": -1,
-            "confidence": 0.704,
-            "speed_px_per_frame": 2.24,
-            "direction_deg": 63.4,
-            "direction_cardinal": "NE"
+            "dx_px": 1,
+            "dy_px": 1,
+            "confidence": 0.461,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 135.0,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 59.0727,
             "lon": 8.3365,
-            "dx_px": -6,
-            "dy_px": 2,
-            "confidence": 0.407,
-            "speed_px_per_frame": 6.32,
-            "direction_deg": 251.6,
-            "direction_cardinal": "W"
+            "dx_px": 1,
+            "dy_px": -1,
+            "confidence": 0.734,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 59.0799,
             "lon": 9.5011,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.385,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 3,
+            "dy_px": 4,
+            "confidence": 0.39,
+            "speed_px_per_frame": 5.0,
+            "direction_deg": 143.1,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 59.0872,
             "lon": 10.6658,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.817,
+            "confidence": 0.567,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2589,39 +2569,39 @@
           {
             "lat": 59.1599,
             "lon": 22.312,
-            "dx_px": 0,
-            "dy_px": 1,
-            "confidence": 0.642,
+            "dx_px": 1,
+            "dy_px": 0,
+            "confidence": 0.725,
             "speed_px_per_frame": 1.0,
-            "direction_deg": 180.0,
-            "direction_cardinal": "S"
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 59.1672,
             "lon": 23.4767,
-            "dx_px": -4,
-            "dy_px": 4,
-            "confidence": 0.449,
-            "speed_px_per_frame": 5.66,
-            "direction_deg": 225.0,
-            "direction_cardinal": "SW"
+            "dx_px": 1,
+            "dy_px": 0,
+            "confidence": 0.677,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 58.093,
             "lon": -3.2727,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.943,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 2,
+            "dy_px": -2,
+            "confidence": 0.772,
+            "speed_px_per_frame": 2.83,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 58.1002,
             "lon": -2.1081,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.817,
+            "confidence": 0.636,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2629,19 +2609,19 @@
           {
             "lat": 58.1075,
             "lon": -0.9435,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.931,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 2,
+            "dy_px": -1,
+            "confidence": 0.726,
+            "speed_px_per_frame": 2.24,
+            "direction_deg": 63.4,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 58.1148,
             "lon": 0.2212,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.906,
+            "confidence": 0.447,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2649,19 +2629,19 @@
           {
             "lat": 58.122,
             "lon": 1.3858,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.891,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": -1,
+            "confidence": 0.81,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 58.1293,
             "lon": 2.5504,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.762,
+            "confidence": 0.785,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2671,7 +2651,7 @@
             "lon": 4.8797,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.705,
+            "confidence": 0.987,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2680,28 +2660,28 @@
             "lat": 58.1511,
             "lon": 6.0443,
             "dx_px": 0,
-            "dy_px": 1,
-            "confidence": 0.474,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 180.0,
-            "direction_cardinal": "S"
+            "dy_px": 0,
+            "confidence": 0.548,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 58.1584,
             "lon": 7.2089,
-            "dx_px": -1,
-            "dy_px": 14,
-            "confidence": 0.362,
-            "speed_px_per_frame": 14.04,
-            "direction_deg": 184.1,
-            "direction_cardinal": "S"
+            "dx_px": 0,
+            "dy_px": 0,
+            "confidence": 0.602,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 58.1657,
             "lon": 8.3735,
             "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.656,
+            "confidence": 0.45,
             "speed_px_per_frame": 1.0,
             "direction_deg": 90.0,
             "direction_cardinal": "E"
@@ -2709,39 +2689,39 @@
           {
             "lat": 58.173,
             "lon": 9.5382,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.462,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": -3,
+            "dy_px": -1,
+            "confidence": 0.41,
+            "speed_px_per_frame": 3.16,
+            "direction_deg": 288.4,
+            "direction_cardinal": "W"
           },
           {
             "lat": 58.1802,
             "lon": 10.7028,
-            "dx_px": 2,
-            "dy_px": 15,
-            "confidence": 0.673,
-            "speed_px_per_frame": 15.13,
-            "direction_deg": 172.4,
-            "direction_cardinal": "S"
+            "dx_px": -3,
+            "dy_px": 3,
+            "confidence": 0.751,
+            "speed_px_per_frame": 4.24,
+            "direction_deg": 225.0,
+            "direction_cardinal": "SW"
           },
           {
             "lat": 57.1714,
             "lon": -5.5649,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 1.0,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": 1,
+            "confidence": 0.677,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 135.0,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 57.1787,
             "lon": -4.4003,
             "dx_px": 0,
             "dy_px": -1,
-            "confidence": 0.871,
+            "confidence": 0.835,
             "speed_px_per_frame": 1.0,
             "direction_deg": 0.0,
             "direction_cardinal": "N"
@@ -2749,39 +2729,39 @@
           {
             "lat": 57.186,
             "lon": -3.2357,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.914,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": -1,
+            "confidence": 0.787,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 57.1933,
             "lon": -2.0711,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.96,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 2,
+            "dy_px": -1,
+            "confidence": 0.555,
+            "speed_px_per_frame": 2.24,
+            "direction_deg": 63.4,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 57.2005,
             "lon": -0.9064,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.901,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": -1,
+            "confidence": 0.809,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 57.2078,
             "lon": 0.2582,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.864,
+            "confidence": 0.798,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2789,69 +2769,69 @@
           {
             "lat": 57.2151,
             "lon": 1.4228,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.949,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": -1,
+            "confidence": 0.766,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 57.2223,
             "lon": 2.5874,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.934,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 2,
+            "dy_px": -1,
+            "confidence": 0.647,
+            "speed_px_per_frame": 2.24,
+            "direction_deg": 63.4,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 57.2296,
             "lon": 3.7521,
             "dx_px": 0,
-            "dy_px": 1,
-            "confidence": 0.69,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 180.0,
-            "direction_cardinal": "S"
+            "dy_px": 0,
+            "confidence": 0.667,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 57.2369,
             "lon": 4.9167,
             "dx_px": 1,
-            "dy_px": 0,
-            "confidence": 0.364,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
+            "dy_px": -1,
+            "confidence": 0.424,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 57.2442,
             "lon": 6.0813,
-            "dx_px": -1,
-            "dy_px": 1,
-            "confidence": 0.761,
-            "speed_px_per_frame": 1.41,
-            "direction_deg": 225.0,
-            "direction_cardinal": "SW"
+            "dx_px": 11,
+            "dy_px": -16,
+            "confidence": 0.46,
+            "speed_px_per_frame": 19.42,
+            "direction_deg": 34.5,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 57.2514,
             "lon": 7.2459,
-            "dx_px": 15,
-            "dy_px": 2,
-            "confidence": 0.639,
+            "dx_px": -15,
+            "dy_px": -2,
+            "confidence": 0.607,
             "speed_px_per_frame": 15.13,
-            "direction_deg": 97.6,
-            "direction_cardinal": "E"
+            "direction_deg": 277.6,
+            "direction_cardinal": "W"
           },
           {
             "lat": 57.2587,
             "lon": 8.4106,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.611,
+            "confidence": 0.58,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2860,18 +2840,18 @@
             "lat": 56.2572,
             "lon": -6.6926,
             "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.867,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dy_px": -1,
+            "confidence": 0.783,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 56.2645,
             "lon": -5.5279,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.91,
+            "confidence": 0.579,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2881,7 +2861,7 @@
             "lon": -4.3633,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.934,
+            "confidence": 0.783,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2891,7 +2871,7 @@
             "lon": -3.1987,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.84,
+            "confidence": 0.742,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2901,7 +2881,7 @@
             "lon": -2.034,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.927,
+            "confidence": 0.685,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2909,19 +2889,19 @@
           {
             "lat": 56.2936,
             "lon": -0.8694,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.967,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": -15,
+            "dy_px": 10,
+            "confidence": 0.718,
+            "speed_px_per_frame": 18.03,
+            "direction_deg": 236.3,
+            "direction_cardinal": "SW"
           },
           {
             "lat": 56.3008,
             "lon": 0.2952,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.926,
+            "confidence": 0.913,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2931,7 +2911,7 @@
             "lon": 1.4598,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.985,
+            "confidence": 0.801,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2941,7 +2921,7 @@
             "lon": 2.6245,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.998,
+            "confidence": 0.564,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -2951,47 +2931,27 @@
             "lon": 3.7891,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.985,
+            "confidence": 0.807,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
-          },
-          {
-            "lat": 56.3372,
-            "lon": 6.1183,
-            "dx_px": 1,
-            "dy_px": 2,
-            "confidence": 0.643,
-            "speed_px_per_frame": 2.24,
-            "direction_deg": 153.4,
-            "direction_cardinal": "SE"
           },
           {
             "lat": 56.3445,
             "lon": 7.283,
-            "dx_px": -13,
-            "dy_px": 2,
-            "confidence": 0.549,
-            "speed_px_per_frame": 13.15,
-            "direction_deg": 261.3,
-            "direction_cardinal": "W"
-          },
-          {
-            "lat": 55.3429,
-            "lon": -7.8202,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.793,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 7,
+            "dy_px": -1,
+            "confidence": 0.443,
+            "speed_px_per_frame": 7.07,
+            "direction_deg": 81.9,
+            "direction_cardinal": "E"
           },
           {
             "lat": 55.3502,
             "lon": -6.6555,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.611,
+            "confidence": 0.7,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3000,18 +2960,18 @@
             "lat": 55.3575,
             "lon": -5.4909,
             "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.926,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dy_px": -1,
+            "confidence": 0.882,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 55.3648,
             "lon": -4.3263,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.69,
+            "confidence": 0.623,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3019,19 +2979,19 @@
           {
             "lat": 55.372,
             "lon": -3.1616,
-            "dx_px": 0,
+            "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.788,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.664,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 55.3939,
             "lon": 0.3322,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.807,
+            "confidence": 0.59,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3041,7 +3001,7 @@
             "lon": 1.4969,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.946,
+            "confidence": 0.931,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3049,39 +3009,39 @@
           {
             "lat": 55.4084,
             "lon": 2.6615,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.935,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": -2,
+            "confidence": 0.728,
+            "speed_px_per_frame": 2.24,
+            "direction_deg": 26.6,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 55.4157,
             "lon": 3.8261,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.983,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": -2,
+            "dy_px": 16,
+            "confidence": 0.614,
+            "speed_px_per_frame": 16.12,
+            "direction_deg": 187.1,
+            "direction_cardinal": "S"
           },
           {
             "lat": 55.4302,
             "lon": 6.1554,
-            "dx_px": 2,
-            "dy_px": -1,
-            "confidence": 0.551,
-            "speed_px_per_frame": 2.24,
-            "direction_deg": 63.4,
-            "direction_cardinal": "NE"
+            "dx_px": -3,
+            "dy_px": 9,
+            "confidence": 0.741,
+            "speed_px_per_frame": 9.49,
+            "direction_deg": 198.4,
+            "direction_cardinal": "S"
           },
           {
             "lat": 55.4448,
             "lon": 8.4846,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.808,
+            "confidence": 0.541,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3091,7 +3051,7 @@
             "lon": 13.1431,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.708,
+            "confidence": 0.652,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3101,7 +3061,7 @@
             "lon": -8.9478,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.869,
+            "confidence": 0.828,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3110,28 +3070,28 @@
             "lat": 54.436,
             "lon": -7.7831,
             "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.746,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dy_px": -1,
+            "confidence": 0.739,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 54.4433,
             "lon": -6.6185,
-            "dx_px": 18,
-            "dy_px": 2,
-            "confidence": 0.458,
-            "speed_px_per_frame": 18.11,
-            "direction_deg": 96.3,
-            "direction_cardinal": "E"
+            "dx_px": 0,
+            "dy_px": -1,
+            "confidence": 0.445,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 54.4505,
             "lon": -5.4539,
             "dx_px": 0,
             "dy_px": -1,
-            "confidence": 0.929,
+            "confidence": 0.769,
             "speed_px_per_frame": 1.0,
             "direction_deg": 0.0,
             "direction_cardinal": "N"
@@ -3141,7 +3101,7 @@
             "lon": -4.2893,
             "dx_px": 0,
             "dy_px": -1,
-            "confidence": 0.836,
+            "confidence": 0.767,
             "speed_px_per_frame": 1.0,
             "direction_deg": 0.0,
             "direction_cardinal": "N"
@@ -3151,7 +3111,7 @@
             "lon": -3.1246,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.799,
+            "confidence": 0.863,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3159,36 +3119,36 @@
           {
             "lat": 54.4942,
             "lon": 1.5339,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.908,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": -1,
+            "confidence": 0.714,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 54.5014,
             "lon": 2.6985,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.905,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": -11,
+            "dy_px": 18,
+            "confidence": 0.462,
+            "speed_px_per_frame": 21.1,
+            "direction_deg": 211.4,
+            "direction_cardinal": "SW"
           },
           {
             "lat": 54.5233,
             "lon": 6.1924,
-            "dx_px": 0,
+            "dx_px": 1,
             "dy_px": 0,
-            "confidence": 0.899,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.485,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
-            "lat": 54.5524,
-            "lon": 10.8509,
+            "lat": 54.5378,
+            "lon": 8.5216,
             "dx_px": 0,
             "dy_px": 0,
             "confidence": 1.0,
@@ -3197,11 +3157,21 @@
             "direction_cardinal": null
           },
           {
+            "lat": 54.5524,
+            "lon": 10.8509,
+            "dx_px": 2,
+            "dy_px": -6,
+            "confidence": 0.588,
+            "speed_px_per_frame": 6.32,
+            "direction_deg": 18.4,
+            "direction_cardinal": "N"
+          },
+          {
             "lat": 54.5742,
             "lon": 14.3448,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.7,
+            "confidence": 0.892,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3211,7 +3181,7 @@
             "lon": 15.5094,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.983,
+            "confidence": 0.984,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3221,7 +3191,7 @@
             "lon": 17.8387,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.559,
+            "confidence": 0.616,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3229,19 +3199,19 @@
           {
             "lat": 54.6033,
             "lon": 19.0033,
-            "dx_px": 6,
-            "dy_px": 8,
-            "confidence": 0.535,
-            "speed_px_per_frame": 10.0,
-            "direction_deg": 143.1,
-            "direction_cardinal": "SE"
+            "dx_px": 0,
+            "dy_px": 0,
+            "confidence": 0.982,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 53.5217,
             "lon": -8.9107,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.869,
+            "confidence": 0.931,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3249,19 +3219,19 @@
           {
             "lat": 53.5872,
             "lon": 1.5709,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.928,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": -1,
+            "confidence": 0.735,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 53.5945,
             "lon": 2.7355,
             "dx_px": 0,
             "dy_px": -1,
-            "confidence": 0.917,
+            "confidence": 0.674,
             "speed_px_per_frame": 1.0,
             "direction_deg": 0.0,
             "direction_cardinal": "N"
@@ -3270,18 +3240,18 @@
             "lat": 53.6308,
             "lon": 8.5587,
             "dx_px": 0,
-            "dy_px": -1,
-            "confidence": 0.24,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 0.0,
-            "direction_cardinal": "N"
+            "dy_px": 0,
+            "confidence": 0.947,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 53.6672,
             "lon": 14.3818,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.682,
+            "confidence": 0.776,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3291,7 +3261,7 @@
             "lon": 19.0403,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.781,
+            "confidence": 0.759,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3301,7 +3271,7 @@
             "lon": 14.4188,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.242,
+            "confidence": 0.262,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3311,7 +3281,7 @@
             "lon": 15.5834,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.892,
+            "confidence": 0.968,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3319,79 +3289,79 @@
           {
             "lat": 52.7821,
             "lon": 17.9127,
-            "dx_px": 0,
+            "dx_px": -9,
             "dy_px": 0,
-            "confidence": 0.678,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.434,
+            "speed_px_per_frame": 9.0,
+            "direction_deg": 270.0,
+            "direction_cardinal": "W"
           },
           {
             "lat": 52.7893,
             "lon": 19.0773,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.642,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": 3,
+            "confidence": 0.635,
+            "speed_px_per_frame": 3.16,
+            "direction_deg": 161.6,
+            "direction_cardinal": "S"
           },
           {
             "lat": 51.766,
             "lon": 0.4803,
-            "dx_px": 7,
-            "dy_px": 13,
-            "confidence": 0.445,
-            "speed_px_per_frame": 14.76,
-            "direction_deg": 151.7,
-            "direction_cardinal": "SE"
+            "dx_px": 0,
+            "dy_px": -1,
+            "confidence": 0.761,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 51.7805,
             "lon": 2.8096,
-            "dx_px": -3,
-            "dy_px": 5,
-            "confidence": 0.533,
-            "speed_px_per_frame": 5.83,
-            "direction_deg": 211.0,
-            "direction_cardinal": "SW"
+            "dx_px": 13,
+            "dy_px": 1,
+            "confidence": 0.522,
+            "speed_px_per_frame": 13.04,
+            "direction_deg": 94.4,
+            "direction_cardinal": "E"
           },
           {
             "lat": 51.7878,
             "lon": 3.9742,
-            "dx_px": 5,
-            "dy_px": -1,
-            "confidence": 0.78,
-            "speed_px_per_frame": 5.1,
-            "direction_deg": 78.7,
-            "direction_cardinal": "E"
+            "dx_px": -10,
+            "dy_px": -4,
+            "confidence": 0.695,
+            "speed_px_per_frame": 10.77,
+            "direction_deg": 291.8,
+            "direction_cardinal": "W"
           },
           {
             "lat": 50.859,
             "lon": 0.5173,
             "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.954,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dy_px": -2,
+            "confidence": 0.743,
+            "speed_px_per_frame": 2.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 50.8663,
             "lon": 1.682,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.969,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 1,
+            "dy_px": -1,
+            "confidence": 0.826,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 50.8736,
             "lon": 2.8466,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.575,
+            "confidence": 0.449,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3399,29 +3369,29 @@
           {
             "lat": 50.8808,
             "lon": 4.0112,
-            "dx_px": 0,
-            "dy_px": -2,
-            "confidence": 0.307,
-            "speed_px_per_frame": 2.0,
-            "direction_deg": 0.0,
+            "dx_px": -6,
+            "dy_px": -20,
+            "confidence": 0.37,
+            "speed_px_per_frame": 20.88,
+            "direction_deg": 343.3,
             "direction_cardinal": "N"
           },
           {
             "lat": 50.9317,
             "lon": 12.1636,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.43,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 7,
+            "dy_px": -15,
+            "confidence": 0.373,
+            "speed_px_per_frame": 16.55,
+            "direction_deg": 25.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 50.939,
             "lon": 13.3282,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.596,
+            "confidence": 0.651,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3429,59 +3399,49 @@
           {
             "lat": 50.9608,
             "lon": 16.8221,
-            "dx_px": -5,
-            "dy_px": 4,
-            "confidence": 0.85,
-            "speed_px_per_frame": 6.4,
-            "direction_deg": 231.3,
-            "direction_cardinal": "SW"
+            "dx_px": -6,
+            "dy_px": -15,
+            "confidence": 0.987,
+            "speed_px_per_frame": 16.16,
+            "direction_deg": 338.2,
+            "direction_cardinal": "N"
           },
           {
             "lat": 50.9681,
             "lon": 17.9867,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.765,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
-          },
-          {
-            "lat": 50.9754,
-            "lon": 19.1514,
-            "dx_px": -18,
-            "dy_px": 7,
-            "confidence": 0.58,
-            "speed_px_per_frame": 19.31,
-            "direction_deg": 248.7,
-            "direction_cardinal": "W"
+            "dx_px": 1,
+            "dy_px": 1,
+            "confidence": 0.696,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 135.0,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 50.9827,
             "lon": 20.316,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.992,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 5,
+            "dy_px": -1,
+            "confidence": 0.865,
+            "speed_px_per_frame": 5.1,
+            "direction_deg": 78.7,
+            "direction_cardinal": "E"
           },
           {
             "lat": 49.9593,
             "lon": 1.719,
-            "dx_px": 0,
+            "dx_px": 1,
             "dy_px": -1,
-            "confidence": 0.723,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 0.0,
-            "direction_cardinal": "N"
+            "confidence": 0.648,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 50.003,
             "lon": 8.7068,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.635,
+            "confidence": 0.484,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3491,7 +3451,7 @@
             "lon": 12.2006,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.469,
+            "confidence": 0.518,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3499,49 +3459,59 @@
           {
             "lat": 50.032,
             "lon": 13.3653,
-            "dx_px": -1,
+            "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.777,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 270.0,
-            "direction_cardinal": "W"
+            "confidence": 0.837,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 50.0393,
             "lon": 14.5299,
-            "dx_px": 11,
-            "dy_px": -16,
-            "confidence": 0.463,
-            "speed_px_per_frame": 19.42,
-            "direction_deg": 34.5,
-            "direction_cardinal": "NE"
+            "dx_px": -2,
+            "dy_px": -12,
+            "confidence": 0.371,
+            "speed_px_per_frame": 12.17,
+            "direction_deg": 350.5,
+            "direction_cardinal": "N"
           },
           {
             "lat": 50.0466,
             "lon": 15.6945,
             "dx_px": 0,
-            "dy_px": 1,
-            "confidence": 0.635,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 180.0,
-            "direction_cardinal": "S"
+            "dy_px": 0,
+            "confidence": 0.722,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 50.0539,
             "lon": 16.8591,
-            "dx_px": 0,
+            "dx_px": -8,
+            "dy_px": 20,
+            "confidence": 0.423,
+            "speed_px_per_frame": 21.54,
+            "direction_deg": 201.8,
+            "direction_cardinal": "S"
+          },
+          {
+            "lat": 50.0611,
+            "lon": 18.0238,
+            "dx_px": -4,
             "dy_px": 0,
-            "confidence": 0.278,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.644,
+            "speed_px_per_frame": 4.0,
+            "direction_deg": 270.0,
+            "direction_cardinal": "W"
           },
           {
             "lat": 50.1193,
             "lon": 27.3408,
             "dx_px": 1,
             "dy_px": 1,
-            "confidence": 0.684,
+            "confidence": 0.785,
             "speed_px_per_frame": 1.41,
             "direction_deg": 135.0,
             "direction_cardinal": "SE"
@@ -3550,28 +3520,28 @@
             "lat": 49.0523,
             "lon": 1.756,
             "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.927,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dy_px": -1,
+            "confidence": 0.838,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 49.0596,
             "lon": 2.9206,
             "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.905,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dy_px": -1,
+            "confidence": 0.879,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 49.1178,
             "lon": 12.2377,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.528,
+            "confidence": 0.48,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3581,7 +3551,7 @@
             "lon": 13.4023,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.645,
+            "confidence": 0.699,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3591,7 +3561,7 @@
             "lon": 14.5669,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.449,
+            "confidence": 0.519,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3600,38 +3570,38 @@
             "lat": 49.1396,
             "lon": 15.7315,
             "dx_px": -1,
-            "dy_px": 2,
-            "confidence": 0.659,
-            "speed_px_per_frame": 2.24,
-            "direction_deg": 206.6,
-            "direction_cardinal": "SW"
+            "dy_px": 4,
+            "confidence": 0.561,
+            "speed_px_per_frame": 4.12,
+            "direction_deg": 194.0,
+            "direction_cardinal": "S"
           },
           {
             "lat": 49.1469,
             "lon": 16.8962,
-            "dx_px": 5,
-            "dy_px": 10,
-            "confidence": 0.342,
-            "speed_px_per_frame": 11.18,
-            "direction_deg": 153.4,
-            "direction_cardinal": "SE"
+            "dx_px": -7,
+            "dy_px": -3,
+            "confidence": 0.494,
+            "speed_px_per_frame": 7.62,
+            "direction_deg": 293.2,
+            "direction_cardinal": "NW"
           },
           {
             "lat": 49.1542,
             "lon": 18.0608,
-            "dx_px": 14,
-            "dy_px": 11,
-            "confidence": 0.266,
-            "speed_px_per_frame": 17.8,
-            "direction_deg": 128.2,
-            "direction_cardinal": "SE"
+            "dx_px": 1,
+            "dy_px": -20,
+            "confidence": 0.591,
+            "speed_px_per_frame": 20.02,
+            "direction_deg": 2.9,
+            "direction_cardinal": "N"
           },
           {
             "lat": 49.1614,
             "lon": 19.2254,
             "dx_px": 5,
             "dy_px": -5,
-            "confidence": 0.74,
+            "confidence": 0.767,
             "speed_px_per_frame": 7.07,
             "direction_deg": 45.0,
             "direction_cardinal": "NE"
@@ -3639,39 +3609,39 @@
           {
             "lat": 49.1687,
             "lon": 20.39,
-            "dx_px": 0,
+            "dx_px": -10,
             "dy_px": 0,
-            "confidence": 0.403,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.501,
+            "speed_px_per_frame": 10.0,
+            "direction_deg": 270.0,
+            "direction_cardinal": "W"
           },
           {
             "lat": 49.176,
             "lon": 21.5547,
-            "dx_px": 0,
-            "dy_px": 3,
-            "confidence": 0.228,
-            "speed_px_per_frame": 3.0,
-            "direction_deg": 180.0,
-            "direction_cardinal": "S"
+            "dx_px": 5,
+            "dy_px": -1,
+            "confidence": 0.233,
+            "speed_px_per_frame": 5.1,
+            "direction_deg": 78.7,
+            "direction_cardinal": "E"
           },
           {
             "lat": 48.1454,
             "lon": 1.793,
             "dx_px": 0,
-            "dy_px": -1,
-            "confidence": 0.833,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 0.0,
-            "direction_cardinal": "N"
+            "dy_px": 0,
+            "confidence": 0.904,
+            "speed_px_per_frame": 0.0,
+            "direction_deg": null,
+            "direction_cardinal": null
           },
           {
             "lat": 48.1526,
             "lon": 2.9577,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.648,
+            "confidence": 0.788,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3680,68 +3650,68 @@
             "lat": 48.2181,
             "lon": 13.4393,
             "dx_px": 0,
-            "dy_px": -1,
-            "confidence": 0.361,
-            "speed_px_per_frame": 1.0,
+            "dy_px": -9,
+            "confidence": 0.596,
+            "speed_px_per_frame": 9.0,
             "direction_deg": 0.0,
             "direction_cardinal": "N"
           },
           {
             "lat": 48.2254,
             "lon": 14.6039,
-            "dx_px": -11,
-            "dy_px": -3,
-            "confidence": 0.286,
-            "speed_px_per_frame": 11.4,
-            "direction_deg": 285.3,
-            "direction_cardinal": "W"
+            "dx_px": 2,
+            "dy_px": -1,
+            "confidence": 0.317,
+            "speed_px_per_frame": 2.24,
+            "direction_deg": 63.4,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 48.2327,
             "lon": 15.7686,
-            "dx_px": 7,
-            "dy_px": -6,
-            "confidence": 0.683,
-            "speed_px_per_frame": 9.22,
-            "direction_deg": 49.4,
-            "direction_cardinal": "NE"
+            "dx_px": 12,
+            "dy_px": -4,
+            "confidence": 0.765,
+            "speed_px_per_frame": 12.65,
+            "direction_deg": 71.6,
+            "direction_cardinal": "E"
           },
           {
             "lat": 48.2399,
             "lon": 16.9332,
-            "dx_px": 8,
-            "dy_px": 3,
-            "confidence": 0.525,
-            "speed_px_per_frame": 8.54,
-            "direction_deg": 110.6,
-            "direction_cardinal": "E"
+            "dx_px": -7,
+            "dy_px": -4,
+            "confidence": 0.211,
+            "speed_px_per_frame": 8.06,
+            "direction_deg": 299.7,
+            "direction_cardinal": "NW"
           },
           {
             "lat": 48.2472,
             "lon": 18.0978,
-            "dx_px": 20,
-            "dy_px": 11,
-            "confidence": 0.252,
-            "speed_px_per_frame": 22.83,
-            "direction_deg": 118.8,
-            "direction_cardinal": "SE"
+            "dx_px": -4,
+            "dy_px": -13,
+            "confidence": 0.407,
+            "speed_px_per_frame": 13.6,
+            "direction_deg": 342.9,
+            "direction_cardinal": "N"
           },
           {
             "lat": 48.2545,
             "lon": 19.2624,
-            "dx_px": 1,
-            "dy_px": 9,
-            "confidence": 0.363,
-            "speed_px_per_frame": 9.06,
-            "direction_deg": 173.7,
-            "direction_cardinal": "S"
+            "dx_px": 8,
+            "dy_px": -12,
+            "confidence": 0.416,
+            "speed_px_per_frame": 14.42,
+            "direction_deg": 33.7,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 47.2384,
             "lon": 1.8301,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.771,
+            "confidence": 0.884,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3751,7 +3721,7 @@
             "lon": 5.3239,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.894,
+            "confidence": 0.849,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3759,119 +3729,129 @@
           {
             "lat": 47.2748,
             "lon": 7.6532,
-            "dx_px": 0,
+            "dx_px": -2,
             "dy_px": 0,
-            "confidence": 0.645,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "confidence": 0.652,
+            "speed_px_per_frame": 2.0,
+            "direction_deg": 270.0,
+            "direction_cardinal": "W"
           },
           {
             "lat": 47.3184,
             "lon": 14.641,
-            "dx_px": 1,
-            "dy_px": -12,
-            "confidence": 0.4,
-            "speed_px_per_frame": 12.04,
-            "direction_deg": 4.8,
-            "direction_cardinal": "N"
-          },
-          {
-            "lat": 47.3257,
-            "lon": 15.8056,
-            "dx_px": 3,
-            "dy_px": 11,
-            "confidence": 0.759,
-            "speed_px_per_frame": 11.4,
-            "direction_deg": 164.7,
-            "direction_cardinal": "S"
-          },
-          {
-            "lat": 47.333,
-            "lon": 16.9702,
-            "dx_px": -1,
-            "dy_px": -1,
-            "confidence": 0.402,
-            "speed_px_per_frame": 1.41,
-            "direction_deg": 315.0,
-            "direction_cardinal": "NW"
-          },
-          {
-            "lat": 47.3402,
-            "lon": 18.1348,
-            "dx_px": 9,
-            "dy_px": 0,
-            "confidence": 0.528,
-            "speed_px_per_frame": 9.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
-          },
-          {
-            "lat": 47.3475,
-            "lon": 19.2995,
-            "dx_px": 5,
-            "dy_px": 2,
-            "confidence": 0.831,
-            "speed_px_per_frame": 5.39,
-            "direction_deg": 111.8,
-            "direction_cardinal": "E"
-          },
-          {
-            "lat": 46.4187,
-            "lon": 15.8426,
-            "dx_px": 14,
-            "dy_px": 10,
-            "confidence": 0.59,
-            "speed_px_per_frame": 17.2,
-            "direction_deg": 125.5,
-            "direction_cardinal": "SE"
-          },
-          {
-            "lat": 46.426,
-            "lon": 17.0072,
-            "dx_px": 11,
-            "dy_px": -9,
-            "confidence": 0.908,
-            "speed_px_per_frame": 14.21,
-            "direction_deg": 50.7,
-            "direction_cardinal": "NE"
-          },
-          {
-            "lat": 46.4405,
-            "lon": 19.3365,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.756,
+            "confidence": 0.653,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
           },
           {
+            "lat": 47.3257,
+            "lon": 15.8056,
+            "dx_px": -9,
+            "dy_px": -5,
+            "confidence": 0.745,
+            "speed_px_per_frame": 10.3,
+            "direction_deg": 299.1,
+            "direction_cardinal": "NW"
+          },
+          {
+            "lat": 47.333,
+            "lon": 16.9702,
+            "dx_px": -7,
+            "dy_px": 7,
+            "confidence": 0.625,
+            "speed_px_per_frame": 9.9,
+            "direction_deg": 225.0,
+            "direction_cardinal": "SW"
+          },
+          {
+            "lat": 47.3402,
+            "lon": 18.1348,
+            "dx_px": 8,
+            "dy_px": -6,
+            "confidence": 0.598,
+            "speed_px_per_frame": 10.0,
+            "direction_deg": 53.1,
+            "direction_cardinal": "NE"
+          },
+          {
+            "lat": 47.3475,
+            "lon": 19.2995,
+            "dx_px": 17,
+            "dy_px": 14,
+            "confidence": 0.668,
+            "speed_px_per_frame": 22.02,
+            "direction_deg": 129.5,
+            "direction_cardinal": "SE"
+          },
+          {
+            "lat": 46.4187,
+            "lon": 15.8426,
+            "dx_px": -1,
+            "dy_px": -17,
+            "confidence": 0.564,
+            "speed_px_per_frame": 17.03,
+            "direction_deg": 356.6,
+            "direction_cardinal": "N"
+          },
+          {
+            "lat": 46.426,
+            "lon": 17.0072,
+            "dx_px": -8,
+            "dy_px": -5,
+            "confidence": 0.697,
+            "speed_px_per_frame": 9.43,
+            "direction_deg": 302.0,
+            "direction_cardinal": "NW"
+          },
+          {
+            "lat": 46.4405,
+            "lon": 19.3365,
+            "dx_px": -1,
+            "dy_px": 0,
+            "confidence": 0.676,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 270.0,
+            "direction_cardinal": "W"
+          },
+          {
+            "lat": 45.5263,
+            "lon": 18.2089,
+            "dx_px": 0,
+            "dy_px": 1,
+            "confidence": 0.619,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 180.0,
+            "direction_cardinal": "S"
+          },
+          {
             "lat": 44.4448,
             "lon": -9.7051,
-            "dx_px": -10,
-            "dy_px": 2,
-            "confidence": 0.647,
-            "speed_px_per_frame": 10.2,
-            "direction_deg": 258.7,
-            "direction_cardinal": "W"
+            "dx_px": 1,
+            "dy_px": 0,
+            "confidence": 0.526,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 90.0,
+            "direction_cardinal": "E"
           },
           {
             "lat": 44.452,
             "lon": -8.5405,
             "dx_px": 0,
-            "dy_px": -1,
-            "confidence": 0.632,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 0.0,
-            "direction_cardinal": "N"
+            "dy_px": 2,
+            "confidence": 0.521,
+            "speed_px_per_frame": 2.0,
+            "direction_deg": 180.0,
+            "direction_cardinal": "S"
           },
           {
             "lat": 44.5466,
             "lon": 6.5996,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.968,
+            "confidence": 0.879,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3879,19 +3859,29 @@
           {
             "lat": 44.5539,
             "lon": 7.7643,
+            "dx_px": 16,
+            "dy_px": -20,
+            "confidence": 0.413,
+            "speed_px_per_frame": 25.61,
+            "direction_deg": 38.7,
+            "direction_cardinal": "NE"
+          },
+          {
+            "lat": 44.6193,
+            "lon": 18.2459,
             "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.429,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dy_px": -3,
+            "confidence": 0.6,
+            "speed_px_per_frame": 3.0,
+            "direction_deg": 0.0,
+            "direction_cardinal": "N"
           },
           {
             "lat": 43.5378,
             "lon": -9.6681,
             "dx_px": 1,
             "dy_px": -1,
-            "confidence": 0.756,
+            "confidence": 0.616,
             "speed_px_per_frame": 1.41,
             "direction_deg": 45.0,
             "direction_cardinal": "NE"
@@ -3900,38 +3890,28 @@
             "lat": 43.5451,
             "lon": -8.5035,
             "dx_px": 1,
-            "dy_px": 0,
-            "confidence": 0.699,
-            "speed_px_per_frame": 1.0,
-            "direction_deg": 90.0,
-            "direction_cardinal": "E"
-          },
-          {
-            "lat": 43.6396,
-            "lon": 6.6367,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.928,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dy_px": -1,
+            "confidence": 0.631,
+            "speed_px_per_frame": 1.41,
+            "direction_deg": 45.0,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 43.6469,
             "lon": 7.8013,
-            "dx_px": 2,
-            "dy_px": 1,
-            "confidence": 0.732,
-            "speed_px_per_frame": 2.24,
-            "direction_deg": 116.6,
-            "direction_cardinal": "SE"
+            "dx_px": 6,
+            "dy_px": -3,
+            "confidence": 0.514,
+            "speed_px_per_frame": 6.71,
+            "direction_deg": 63.4,
+            "direction_cardinal": "NE"
           },
           {
             "lat": 43.7487,
             "lon": 24.1061,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.9,
+            "confidence": 0.868,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3941,7 +3921,7 @@
             "lon": 25.2707,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.766,
+            "confidence": 0.956,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3951,27 +3931,37 @@
             "lon": -10.7957,
             "dx_px": 1,
             "dy_px": -1,
-            "confidence": 0.974,
+            "confidence": 0.563,
             "speed_px_per_frame": 1.41,
             "direction_deg": 45.0,
             "direction_cardinal": "NE"
+          },
+          {
+            "lat": 42.8345,
+            "lon": 22.9785,
+            "dx_px": -1,
+            "dy_px": 0,
+            "confidence": 0.881,
+            "speed_px_per_frame": 1.0,
+            "direction_deg": 270.0,
+            "direction_cardinal": "W"
           },
           {
             "lat": 42.8417,
             "lon": 24.1431,
-            "dx_px": 1,
-            "dy_px": -1,
-            "confidence": 0.454,
+            "dx_px": -1,
+            "dy_px": 1,
+            "confidence": 0.526,
             "speed_px_per_frame": 1.41,
-            "direction_deg": 45.0,
-            "direction_cardinal": "NE"
+            "direction_deg": 225.0,
+            "direction_cardinal": "SW"
           },
           {
-            "lat": 41.7166,
-            "lon": -10.7587,
+            "lat": 40.0263,
+            "lon": 9.114,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.754,
+            "confidence": 0.576,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
@@ -3979,38 +3969,48 @@
           {
             "lat": 36.4348,
             "lon": 15.0852,
-            "dx_px": 0,
-            "dy_px": 0,
-            "confidence": 0.809,
-            "speed_px_per_frame": 0.0,
-            "direction_deg": null,
-            "direction_cardinal": null
+            "dx_px": 7,
+            "dy_px": 1,
+            "confidence": 0.73,
+            "speed_px_per_frame": 7.07,
+            "direction_deg": 98.1,
+            "direction_cardinal": "E"
           },
           {
             "lat": 36.442,
             "lon": 16.2499,
-            "dx_px": 0,
-            "dy_px": -2,
-            "confidence": 0.841,
-            "speed_px_per_frame": 2.0,
-            "direction_deg": 0.0,
-            "direction_cardinal": "N"
+            "dx_px": 2,
+            "dy_px": 2,
+            "confidence": 0.968,
+            "speed_px_per_frame": 2.83,
+            "direction_deg": 135.0,
+            "direction_cardinal": "SE"
           },
           {
             "lat": 35.5278,
             "lon": 15.1223,
             "dx_px": 0,
             "dy_px": 0,
-            "confidence": 0.534,
+            "confidence": 0.578,
             "speed_px_per_frame": 0.0,
             "direction_deg": null,
             "direction_cardinal": null
+          },
+          {
+            "lat": 35.5351,
+            "lon": 16.2869,
+            "dx_px": 0,
+            "dy_px": 15,
+            "confidence": 0.568,
+            "speed_px_per_frame": 15.0,
+            "direction_deg": 180.0,
+            "direction_cardinal": "S"
           }
         ],
         "median": {
           "dx": 0.0,
           "dy": 0.0,
-          "n": 377
+          "n": 376
         },
         "px_per_km": 0.237,
         "block_px": 24
@@ -4029,7 +4029,7 @@
         "nowcast_details": {
           "p_rain": 0.0,
           "eta_minutes": null,
-          "n_cells_considered": 838,
+          "n_cells_considered": 1112,
           "approaching": false,
           "bypassing": false,
           "dominant": {
@@ -4068,18 +4068,20 @@
       "storm_mode": {
         "mode": "embedded convection",
         "confidence": "medium",
-        "flags": [],
-        "n_cells": 1119,
-        "n_convective": 116,
+        "flags": [
+          "strong cell deviating 89° to the left of mean flow — SUSPECTED supercell; needs Doppler velocity to confirm rotation"
+        ],
+        "n_cells": 1112,
+        "n_convective": 136,
         "max_dbz": 50.0,
         "largest_area_km2": 119275.6
       },
       "scenario": {
         "state": "CLEAR",
-        "narrative": "No echo on the radar within target area.",
+        "narrative": "No echo on the radar within target area. (Caution: strong cell deviating 89° to the left of mean flow — SUSPECTED supercell; needs Doppler velocity to confirm rotation)",
         "action": "CLEAR",
-        "severe_present": false,
-        "severe_detail": null,
+        "severe_present": true,
+        "severe_detail": "strong cell deviating 89° to the left of mean flow — SUSPECTED supercell; needs Doppler velocity to confirm rotation",
         "eta_min": null
       },
       "zr_scenario": "convective",
@@ -5564,7 +5566,7 @@
     "scenario_state": "CLEAR",
     "scenario_narrative": "No echo on the radar within target area.",
     "scenario_source": "dhmz",
-    "severe_present": false,
+    "severe_present": true,
     "scenario_eta_minutes": null,
     "per_radar": {
       "dhmz": {
@@ -5575,8 +5577,8 @@
       },
       "opera": {
         "state": "CLEAR",
-        "narrative": "No echo on the radar within target area.",
-        "severe_present": false,
+        "narrative": "No echo on the radar within target area. (Caution: strong cell deviating 89° to the left of mean flow — SUSPECTED supercell; needs Doppler velocity to confirm rotation)",
+        "severe_present": true,
         "eta_min": null
       }
     },
@@ -5586,7 +5588,7 @@
     "closest_eta_minutes": null,
     "lines": [
       "DHMZ Uljenje: [CLEAR] No echo on the radar within target area.",
-      "OPERA composite: [CLEAR] No echo on the radar within target area."
+      "OPERA composite: [CLEAR] No echo on the radar within target area. (Caution: strong cell deviating 89° to the left of mean flow — SUSPECTED supercell; needs Doppler velocity to confirm rotation)"
     ],
     "budva_verdict": {
       "source": "dhmz",
