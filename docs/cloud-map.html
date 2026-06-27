@@ -87,11 +87,14 @@
 <footer><p>SKALA — satelitska analiza oblačnosti · HighSight satelitska slika (privremeno) · EUMETSAT MTG L2 u izradi</p></footer>
 
 <script src="cloud_data.js"></script>
+<script src="skala-r2.js"></script>
 <script src="cloud-text.js"></script>
 <script src="cloud-nowcast-browser.js"></script>
 <script src="cloud-sections.js"></script>
 <script>
-(function () {
+// Pull the freshest CLOUD_DATA from R2 (cloud_data.js already set a Pages fallback),
+// then run the app. boot() overwrites window.CLOUD_DATA if R2/Pages JSON loads.
+SKALA_R2.boot('cloud_status.json', 'CLOUD_DATA', function () {
   var SVGNS = "http://www.w3.org/2000/svg";
   var CITIES = {
     "budva": [42.2864, 18.84], "petrovac": [42.205, 18.943],
@@ -227,7 +230,7 @@
       if (he) he.textContent = _fmtFrameTime(fr.t) + (showingLatest ? " · najnovije" : "");
     };
     im.onerror = function () {};            // keep the current frame on a load error
-    im.src = fr.image;
+    im.src = SKALA_R2.url(fr.image);
     var sl = document.getElementById("hist-slider");
     if (sl && +sl.value !== i) sl.value = i;
   }
@@ -302,8 +305,8 @@
     wireApp();                                   // boot removed — reveal the app immediately
   };
   img.onerror = function () { log("[x] ne mogu učitati " + field.image); wireApp(); };
-  img.src = field.image;
-})();
+  img.src = SKALA_R2.url(field.image);
+});
 </script>
 </body>
 </html>

@@ -105,6 +105,7 @@
 </footer>
 
 <script src="data.js"></script>
+<script src="skala-r2.js"></script>
 <script src="skala-text.js"></script>
 <script src="skala-cells-viz.js"></script>
 <script src="skala-sections.js"></script>
@@ -163,9 +164,9 @@ function renderStormMode() {
   }
   el.innerHTML = html;
 }
-// Reveal the app once the script has finished loading (deferred via setTimeout so
-// every top-level definition is ready — exactly how the old boot triggered it).
-setTimeout(startApp, 0);
+// Pull the freshest RADAR_DATA from R2 (data.js already set a Pages fallback), then
+// reveal the app (deferred via setTimeout so every top-level definition is ready).
+SKALA_R2.boot('radar_status.json', 'RADAR_DATA', function () { setTimeout(startApp, 0); });
 
 
 const IMG_W = 720, IMG_H = 751;
@@ -323,7 +324,7 @@ function initApp() {
     }
   };
   img.onerror = () => setStatus('greska: latest_dhmz.png nije nadjen', 'err');
-  img.src = 'latest_dhmz.png?t=' + Date.now();
+  img.src = SKALA_R2.url('latest_dhmz.png');
 
   canvas.addEventListener('click', (ev) => {
     const rect = canvas.getBoundingClientRect();

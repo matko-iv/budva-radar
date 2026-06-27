@@ -60,8 +60,10 @@
 
 <script src="vendor/leaflet.js"></script>
 <script src="compare_data.js"></script>
+<script src="skala-r2.js"></script>
 <script>
-(function () {
+// Pull the freshest COMPARE_DATA from R2 (compare_data.js is the Pages fallback).
+SKALA_R2.boot('compare.json', 'COMPARE_DATA', function () {
   var D = window.COMPARE_DATA || {};
   function el(id){ return document.getElementById(id); }
   function f1(x){ return x == null ? "?" : Number(x).toFixed(1); }
@@ -107,7 +109,7 @@
   L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
     { maxNativeZoom: 13, maxZoom: 18, attribution: "Relief: Esri" }).addTo(map);
-  var overlay = L.imageOverlay(dgmr.frames[0].image, bounds,
+  var overlay = L.imageOverlay(SKALA_R2.url(dgmr.frames[0].image), bounds,
     { opacity: 0.8, className: "radar-ovl" }).addTo(map);
   if (M.budva_latlon) {
     L.circleMarker(M.budva_latlon, { radius: 5, color: "#fff", weight: 2,
@@ -130,7 +132,7 @@
     (D.base_epoch_ms ? " &nbsp;·&nbsp; <small>sat = lokalno vrijeme</small>" : "");
   function draw(i) {
     var fr = frames[i];
-    overlay.setUrl(fr.image);
+    overlay.setUrl(SKALA_R2.url(fr.image));
     var hhmm = clock(fr.lead_min);
     el("lead").textContent = (fr.is_now ? "sada" : ("+" + fr.lead_min + " min")) +
       (hhmm ? " · " + hhmm : "");
@@ -153,7 +155,7 @@
   }).join("");
   el("seriestab").innerHTML =
     "<tr><th>+min</th><th>disk-max mm/h (≤8 km)</th><th>tačka mm/h</th></tr>" + rows;
-})();
+});
 </script>
 </body>
 </html>

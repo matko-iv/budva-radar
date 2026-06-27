@@ -403,11 +403,19 @@ def write(prod):
         f.write(";\n")
     with open(OUT_JSON, "w", encoding="utf-8") as f:
         json.dump(prod, f, ensure_ascii=False, indent=2, default=str)
+    # docs/compare.json: pure-JSON twin of compare_data.js so the page can FETCH it
+    # (from R2 / Pages, cache-busted) instead of loading the JS synchronously.
+    with open(DOCS / "compare.json", "w", encoding="utf-8") as f:
+        json.dump(prod, f, ensure_ascii=False, indent=2, default=str)
     status = nowcast_status(prod) if prod.get("ok") else None
     if status is not None:
         with open(OUT_STATUS, "w", encoding="utf-8") as f:
             json.dump(status, f, ensure_ascii=False, indent=2, default=str)
         print(f"  Saved: {OUT_STATUS}  [{status['verdict']['state']}]")
+    # Mirror to Cloudflare R2 for instant serving (no-op if R2 isn't configured).
+    from radar import r2_publish
+    r2_publish.publish(["compare_data.js", "compare.json", "nowcast_status.json"])
+    r2_publish.publish_glob([f"{FRAMES_ROOT}/**/*.png", f"{FRAMES_ROOT}/*.png"])
 
 
 def _expand_h5(raw):

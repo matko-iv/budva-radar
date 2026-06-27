@@ -4,6 +4,10 @@ requests>=2.31
 scipy>=1.10
 h5py>=3.10
 
+# Cloudflare R2 publishing (radar/r2_publish.py) — mirror outputs to R2 (S3-compatible)
+# for instant serving. Only needed when R2_* creds are set; no-op otherwise.
+boto3>=1.34
+
 # Cloud module (clouds/) — EUMETSAT Data Store access + product reading.
 # Only needed for the LIVE cloud fetch; `run_clouds.py --demo` and the tests
 # run without them.

@@ -166,25 +166,50 @@ def _resolve_method(requested, scenario, n_frames, ar_order):
 # aligns with elongated structures). "Maximal detail" preset (sharper, a bit slower).
 LINDA_MAX_FEATURES = 40
 LINDA_LOCAL_KM = 10.0          # localization-window std dev (km); ~51 km was the default
+# Realism (project PDF Part 2): deterministic LINDA-D converges to the smooth
+# conditional mean -- "rounded blobs". Instead run a STOCHASTIC LINDA-P ensemble and
+# collapse it to ONE field via the probability-matched ensemble mean (PMM): the mean
+# keeps the location skill, probability matching restores realistic intensity texture
+# / cores. More members = smoother mean but slower (~2 min for 20 x 16 leads on the
+# 256 tile); lower LINDA_ENS_MEMBERS if you need speed (or set add_perturbations=False
+# below for the fast deterministic LINDA-D, best pixel-CSI but blobby).
+LINDA_ENS_MEMBERS = 20
+LINDA_SEED = 42                # reproducible perturbations
 
 
 def _linda_forecast(precip, velocity, n_leadtimes, ari_order, kmperpixel, timestep_min):
-    """Deterministic LINDA (cell-based ARI) nowcast. precip is exactly
-    ari_order+2 frames. LINDA leaves dry pixels NaN -- the caller's nan->0 +
-    clip handles that. Blob feature detection needs scikit-image.
-
-    Shape preservation (see LINDA_* above): more features + a TIGHT, cell-scale
-    localization window + the anisotropic kernel keep the first forecast frame's
-    precip shape instead of rounding it into blobs."""
+    """REALISTIC LINDA: a stochastic LINDA-P ensemble (add_perturbations=True)
+    collapsed to a single field by the PROBABILITY-MATCHED ENSEMBLE MEAN (PMM).
+    precip is exactly ari_order+2 frames (oldest->newest). The ensemble mean keeps
+    LINDA-D's location skill; probability matching to the latest scan restores the
+    realistic intensity distribution / high-intensity cores that deterministic
+    LINDA-D smooths into round blobs (Pulkkinen et al. 2021 LINDA; Ebert 2001 PMM;
+    project PDF Part 2). LINDA leaves dry pixels NaN -- handled here + by the caller;
+    blob detection needs scikit-image, and on any error the caller falls back to
+    ANVIL. Returns (n_leadtimes, m, n)."""
+    import numpy as np
     from pysteps import nowcasts
+    from pysteps.postprocessing import probmatching
     local_px = max(6.0, LINDA_LOCAL_KM / kmperpixel) if kmperpixel else None
-    return nowcasts.get_method("linda")(
+    ens = nowcasts.get_method("linda")(
         precip, velocity, n_leadtimes,
         feature_method="blob", max_num_features=LINDA_MAX_FEATURES,
         kernel_type="anisotropic", localization_window_radius=local_px,
-        ari_order=ari_order, add_perturbations=False,
-        kmperpixel=kmperpixel, timestep=timestep_min,
+        ari_order=ari_order, add_perturbations=True,
+        n_ens_members=LINDA_ENS_MEMBERS, vel_pert_method="bps",
+        kmperpixel=kmperpixel, timestep=timestep_min, seed=LINDA_SEED,
         num_workers=1, measure_time=False)
+    ens = np.asarray(ens, dtype="float64")                  # (members, leads, m, n)
+    ens_mean = np.nanmean(ens, axis=0)
+    obs = np.nan_to_num(precip[-1], nan=0.0)                # match intensities to the latest scan
+    out = np.empty_like(ens_mean)
+    for k in range(ens_mean.shape[0]):
+        fld = np.nan_to_num(ens_mean[k], nan=0.0)
+        try:
+            out[k] = probmatching.nonparam_match_empirical_cdf(fld, obs)
+        except Exception:
+            out[k] = fld
+    return out
 
 
 def nowcast_fields(R_stack, n_leadtimes, ar_order=DEFAULT_AR_ORDER, velocity=None,

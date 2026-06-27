@@ -367,3 +367,24 @@ CLOUDS = {
 # 2-48 h cloud OUTLOOK band on cloud-map.html. Observed (satellite) vs modeled
 # (NWP) are rendered in separate bands — never conflated.
 NWP_FORECAST_URL = "https://matko-iv.github.io/vrijeme/forecast_data/forecast_48h.json"
+
+# ============================================================================
+# Cloudflare R2 (instant data serving)
+# ============================================================================
+# GitHub Pages rebuilds on every push (minutes) AND hard-codes a 10-min CDN cache you
+# cannot change, so pushed data stays stale for a while. Instead the pipeline mirrors
+# its docs/ outputs to a Cloudflare R2 bucket (no build step, you control caching) and
+# the pages fetch the data client-side from R2_PUBLIC_BASE (cache-busted) -> ~instant.
+# Writes need creds in the ENVIRONMENT (never commit these):
+#   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
+# See radar/r2_publish.py. If unset, publishing is a silent no-op (local/CI still run).
+R2 = {
+    "enabled": True,
+    "bucket": "skala-data",                 # the R2 bucket name you create
+    # Public read base, NO trailing slash. Either the bucket's r2.dev "Public
+    # Development URL" or a custom domain. Pages fetch <public_base>/<docs-rel-path>.
+    "public_base": "https://pub-3d539da10a4c4aa8a3f0048f8dcb067c.r2.dev",
+    # Cache header stamped on every uploaded object. With the page's ?v= cache-buster
+    # this gives ~instant propagation while still allowing brief edge caching.
+    "cache_control": "public, max-age=15",
+}

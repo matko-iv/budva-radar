@@ -309,6 +309,10 @@ def _write(status):
         json.dump(status, f, indent=2, ensure_ascii=False, default=str)
     print(f"  Saved: {OUTPUT_JSON}\n  Saved: {OUTPUT_JS}\n  Saved: {DOCS_STATUS_JSON}")
     print(f"  Saved: {LATEST_PNG}")
+    # Mirror to Cloudflare R2 for instant serving (no-op if R2 isn't configured).
+    from radar import r2_publish
+    r2_publish.publish(["cloud_data.js", "cloud_status.json", LATEST_PNG.name])
+    r2_publish.publish_glob(["cloud_history/*.png"])
 
 
 def main(argv):

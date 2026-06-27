@@ -115,6 +115,11 @@ def main():
             json.dump(status, f, indent=2, ensure_ascii=False, default=str)
         print(f"  Saved: {LOCAL_WEATHER_FORECAST_DOCS}")
 
+    # 5) Mirror to Cloudflare R2 for instant serving (bypasses GH Pages build + CDN
+    # cache); silent no-op if R2 isn't configured. See radar/r2_publish.py.
+    from radar import r2_publish
+    r2_publish.publish(["data.js", "radar_status.json", "latest_dhmz.png", "latest_opera.gif"])
+
     # Self-verification + feature log (PDF Stage 3): append one slim row per
     # run, then re-score the accumulated history. Both are best-effort and must
     # never break the main output.

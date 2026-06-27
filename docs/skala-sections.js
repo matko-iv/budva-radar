@@ -163,7 +163,7 @@
       wrap.innerHTML = `
         <h3>${src.toUpperCase()} — ${info.frame_timestamp || ''}</h3>
         <div class="radar-canvas">
-          <img src="${fileName}?t=${Date.now()}" alt="${src} radar">
+          <img src="${global.SKALA_R2 ? global.SKALA_R2.url(fileName) : fileName + '?t=' + Date.now()}" alt="${src} radar">
           <svg class="overlay" viewBox="0 0 ${imgW} ${imgH}" preserveAspectRatio="none">${svgInner}</svg>
         </div>`;
       if (hasCells) {
