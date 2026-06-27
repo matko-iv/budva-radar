@@ -1,29 +1,89 @@
 {
   "ok": true,
-  "generated": "2026-06-27T11:57:09Z",
-  "base_time": "2026-06-27T11:45:00Z",
-  "base_epoch_ms": 1782560700000,
+  "generated": "2026-06-27T12:50:18Z",
+  "base_time": "2026-06-27T12:40:00Z",
+  "base_epoch_ms": 1782564000000,
   "location": "Budva",
   "source": "SKALA NOWCAST — DGMR (DeepMind) na ORD 1 km",
-  "horizon_min": 560.0,
-  "timestep_min": 35.0,
+  "horizon_min": 80.0,
+  "timestep_min": 5.0,
   "now": {
     "point_mmh": 0.0,
-    "disc_max_mmh": 0.15,
+    "disc_max_mmh": 0.0,
     "raining": false
   },
   "verdict": {
     "state": "NO_RAIN",
     "eta_min": null,
     "peak_mmh": 0.0,
-    "peak_lead_min": 35.0,
+    "peak_lead_min": 5.0,
     "total_mm": 0.0,
     "intensity_sr": "bez kiše",
-    "line_sr": "nema kiše nad Budvom (tačka) u narednih 560 min (SKALA NOWCAST)"
+    "line_sr": "nema kiše nad Budvom (tačka) u narednih 80 min (SKALA NOWCAST)"
   },
   "series": [
     {
+      "lead_min": 5.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 10.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 15.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 20.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 25.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 30.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
       "lead_min": 35.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 40.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 45.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 50.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 55.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 60.0,
+      "point_mmh": 0.0,
+      "disc_max_mmh": 0.0
+    },
+    {
+      "lead_min": 65.0,
       "point_mmh": 0.0,
       "disc_max_mmh": 0.0
     },
@@ -33,72 +93,12 @@
       "disc_max_mmh": 0.0
     },
     {
-      "lead_min": 105.0,
+      "lead_min": 75.0,
       "point_mmh": 0.0,
       "disc_max_mmh": 0.0
     },
     {
-      "lead_min": 140.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 175.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 210.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 245.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 280.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 315.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 350.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 385.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 420.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 455.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 490.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 525.0,
-      "point_mmh": 0.0,
-      "disc_max_mmh": 0.0
-    },
-    {
-      "lead_min": 560.0,
+      "lead_min": 80.0,
       "point_mmh": 0.0,
       "disc_max_mmh": 0.0
     }
@@ -107,47 +107,12 @@
     {
       "hour": "2026-06-27T12:00:00Z",
       "mm": 0.0,
-      "covered_min": 70
+      "covered_min": 20
     },
     {
       "hour": "2026-06-27T13:00:00Z",
       "mm": 0.0,
-      "covered_min": 70
-    },
-    {
-      "hour": "2026-06-27T14:00:00Z",
-      "mm": 0.0,
-      "covered_min": 70
-    },
-    {
-      "hour": "2026-06-27T15:00:00Z",
-      "mm": 0.0,
-      "covered_min": 35
-    },
-    {
-      "hour": "2026-06-27T16:00:00Z",
-      "mm": 0.0,
-      "covered_min": 70
-    },
-    {
-      "hour": "2026-06-27T17:00:00Z",
-      "mm": 0.0,
-      "covered_min": 70
-    },
-    {
-      "hour": "2026-06-27T18:00:00Z",
-      "mm": 0.0,
-      "covered_min": 35
-    },
-    {
-      "hour": "2026-06-27T19:00:00Z",
-      "mm": 0.0,
-      "covered_min": 70
-    },
-    {
-      "hour": "2026-06-27T20:00:00Z",
-      "mm": 0.0,
-      "covered_min": 70
+      "covered_min": 60
     }
   ]
 }

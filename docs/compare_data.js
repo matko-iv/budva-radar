@@ -3,10 +3,10 @@ window.COMPARE_DATA = {
   "ok": true,
   "mode": "ord-h5",
   "demo": false,
-  "generated": "2026-06-27T11:57:09Z",
+  "generated": "2026-06-27T12:50:18Z",
   "location": "Budva",
-  "base_epoch_ms": 1782560700000,
-  "timestep_min": 35.0,
+  "base_epoch_ms": 1782564000000,
+  "timestep_min": 5.0,
   "n_frames": 4,
   "horizon_cap_min": 45,
   "disc_km": 8.0,
@@ -41,104 +41,104 @@ window.COMPARE_DATA = {
       "method": "extrapolation",
       "source": "ord",
       "scenario": "stratiform",
-      "timestep_min": 35.0,
+      "timestep_min": 5.0,
       "n_frames": 4,
       "domain_px": [
         256,
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 0.15,
+      "now_disc_mmh": 0.0,
       "now_point_mmh": 0.0,
       "series": [
         {
+          "lead_min": 5.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 10.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 15.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 20.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 25.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 30.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
           "lead_min": 35.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.12
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 40.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 45.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 50.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 55.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 60.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 65.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 70.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.09
+          "disc_max_mmh": 0.0
         },
         {
-          "lead_min": 105.0,
+          "lead_min": 75.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.09
+          "disc_max_mmh": 0.0
         },
         {
-          "lead_min": 140.0,
+          "lead_min": 80.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.12
-        },
-        {
-          "lead_min": 175.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.15
-        },
-        {
-          "lead_min": 210.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.12
-        },
-        {
-          "lead_min": 245.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.09
-        },
-        {
-          "lead_min": 280.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.09
-        },
-        {
-          "lead_min": 315.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.11
-        },
-        {
-          "lead_min": 350.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.14
-        },
-        {
-          "lead_min": 385.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.11
-        },
-        {
-          "lead_min": 420.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.08
-        },
-        {
-          "lead_min": 455.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.08
-        },
-        {
-          "lead_min": 490.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.11
-        },
-        {
-          "lead_min": 525.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.13
-        },
-        {
-          "lead_min": 560.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.11
+          "disc_max_mmh": 0.0
         }
       ],
       "eta_onset_min": null,
-      "peak_mmh": 0.15,
-      "peak_lead_min": 175.0,
-      "trend": "decaying",
-      "motion_kmh": 0.3,
-      "motion_dir_deg": 267.0,
-      "motion_cardinal": "W",
+      "peak_mmh": 0.0,
+      "peak_lead_min": 5.0,
+      "trend": "steady",
+      "motion_kmh": 0.0,
+      "motion_dir_deg": null,
+      "motion_cardinal": null,
       "key": "extrapolation",
       "label": "Ekstrapolacija (Lagrange persistencija)",
       "role": "baseline",
@@ -149,189 +149,189 @@ window.COMPARE_DATA = {
           "is_now": true
         },
         {
-          "lead_min": 35.0,
+          "lead_min": 5.0,
           "image": "compare_frames/extrapolation/f01.png",
           "is_now": false
         },
         {
-          "lead_min": 70.0,
+          "lead_min": 10.0,
           "image": "compare_frames/extrapolation/f02.png",
           "is_now": false
         },
         {
-          "lead_min": 105.0,
+          "lead_min": 15.0,
           "image": "compare_frames/extrapolation/f03.png",
           "is_now": false
         },
         {
-          "lead_min": 140.0,
+          "lead_min": 20.0,
           "image": "compare_frames/extrapolation/f04.png",
           "is_now": false
         },
         {
-          "lead_min": 175.0,
+          "lead_min": 25.0,
           "image": "compare_frames/extrapolation/f05.png",
           "is_now": false
         },
         {
-          "lead_min": 210.0,
+          "lead_min": 30.0,
           "image": "compare_frames/extrapolation/f06.png",
           "is_now": false
         },
         {
-          "lead_min": 245.0,
+          "lead_min": 35.0,
           "image": "compare_frames/extrapolation/f07.png",
           "is_now": false
         },
         {
-          "lead_min": 280.0,
+          "lead_min": 40.0,
           "image": "compare_frames/extrapolation/f08.png",
           "is_now": false
         },
         {
-          "lead_min": 315.0,
+          "lead_min": 45.0,
           "image": "compare_frames/extrapolation/f09.png",
           "is_now": false
         },
         {
-          "lead_min": 350.0,
+          "lead_min": 50.0,
           "image": "compare_frames/extrapolation/f10.png",
           "is_now": false
         },
         {
-          "lead_min": 385.0,
+          "lead_min": 55.0,
           "image": "compare_frames/extrapolation/f11.png",
           "is_now": false
         },
         {
-          "lead_min": 420.0,
+          "lead_min": 60.0,
           "image": "compare_frames/extrapolation/f12.png",
           "is_now": false
         },
         {
-          "lead_min": 455.0,
+          "lead_min": 65.0,
           "image": "compare_frames/extrapolation/f13.png",
           "is_now": false
         },
         {
-          "lead_min": 490.0,
+          "lead_min": 70.0,
           "image": "compare_frames/extrapolation/f14.png",
           "is_now": false
         },
         {
-          "lead_min": 525.0,
+          "lead_min": 75.0,
           "image": "compare_frames/extrapolation/f15.png",
           "is_now": false
         },
         {
-          "lead_min": 560.0,
+          "lead_min": 80.0,
           "image": "compare_frames/extrapolation/f16.png",
           "is_now": false
         }
       ]
     },
     {
-      "method": "anvil",
+      "method": "linda",
       "source": "ord",
       "scenario": "stratiform",
-      "timestep_min": 35.0,
+      "timestep_min": 5.0,
       "n_frames": 4,
       "domain_px": [
         256,
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 0.15,
+      "now_disc_mmh": 0.0,
       "now_point_mmh": 0.0,
       "series": [
         {
+          "lead_min": 5.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.02
+        },
+        {
+          "lead_min": 10.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 15.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.01
+        },
+        {
+          "lead_min": 20.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 25.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 30.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
           "lead_min": 35.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.11
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 40.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 45.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 50.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 55.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 60.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 65.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
         },
         {
           "lead_min": 70.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.08
+          "disc_max_mmh": 0.0
         },
         {
-          "lead_min": 105.0,
+          "lead_min": 75.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.08
+          "disc_max_mmh": 0.0
         },
         {
-          "lead_min": 140.0,
+          "lead_min": 80.0,
           "point_mmh": 0.0,
-          "disc_max_mmh": 0.11
-        },
-        {
-          "lead_min": 175.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.13
-        },
-        {
-          "lead_min": 210.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.11
-        },
-        {
-          "lead_min": 245.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.08
-        },
-        {
-          "lead_min": 280.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.08
-        },
-        {
-          "lead_min": 315.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.1
-        },
-        {
-          "lead_min": 350.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.13
-        },
-        {
-          "lead_min": 385.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.1
-        },
-        {
-          "lead_min": 420.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.08
-        },
-        {
-          "lead_min": 455.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.07
-        },
-        {
-          "lead_min": 490.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.1
-        },
-        {
-          "lead_min": 525.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.12
-        },
-        {
-          "lead_min": 560.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.1
+          "disc_max_mmh": 0.0
         }
       ],
       "eta_onset_min": null,
-      "peak_mmh": 0.13,
-      "peak_lead_min": 175.0,
-      "trend": "decaying",
-      "motion_kmh": 0.3,
-      "motion_dir_deg": 267.0,
-      "motion_cardinal": "W",
+      "peak_mmh": 0.02,
+      "peak_lead_min": 5.0,
+      "trend": "steady",
+      "motion_kmh": 0.0,
+      "motion_dir_deg": null,
+      "motion_cardinal": null,
       "key": "linda",
       "label": "LINDA-D (pysteps)",
       "role": "headline",
@@ -342,82 +342,82 @@ window.COMPARE_DATA = {
           "is_now": true
         },
         {
-          "lead_min": 35.0,
+          "lead_min": 5.0,
           "image": "compare_frames/linda/f01.png",
           "is_now": false
         },
         {
-          "lead_min": 70.0,
+          "lead_min": 10.0,
           "image": "compare_frames/linda/f02.png",
           "is_now": false
         },
         {
-          "lead_min": 105.0,
+          "lead_min": 15.0,
           "image": "compare_frames/linda/f03.png",
           "is_now": false
         },
         {
-          "lead_min": 140.0,
+          "lead_min": 20.0,
           "image": "compare_frames/linda/f04.png",
           "is_now": false
         },
         {
-          "lead_min": 175.0,
+          "lead_min": 25.0,
           "image": "compare_frames/linda/f05.png",
           "is_now": false
         },
         {
-          "lead_min": 210.0,
+          "lead_min": 30.0,
           "image": "compare_frames/linda/f06.png",
           "is_now": false
         },
         {
-          "lead_min": 245.0,
+          "lead_min": 35.0,
           "image": "compare_frames/linda/f07.png",
           "is_now": false
         },
         {
-          "lead_min": 280.0,
+          "lead_min": 40.0,
           "image": "compare_frames/linda/f08.png",
           "is_now": false
         },
         {
-          "lead_min": 315.0,
+          "lead_min": 45.0,
           "image": "compare_frames/linda/f09.png",
           "is_now": false
         },
         {
-          "lead_min": 350.0,
+          "lead_min": 50.0,
           "image": "compare_frames/linda/f10.png",
           "is_now": false
         },
         {
-          "lead_min": 385.0,
+          "lead_min": 55.0,
           "image": "compare_frames/linda/f11.png",
           "is_now": false
         },
         {
-          "lead_min": 420.0,
+          "lead_min": 60.0,
           "image": "compare_frames/linda/f12.png",
           "is_now": false
         },
         {
-          "lead_min": 455.0,
+          "lead_min": 65.0,
           "image": "compare_frames/linda/f13.png",
           "is_now": false
         },
         {
-          "lead_min": 490.0,
+          "lead_min": 70.0,
           "image": "compare_frames/linda/f14.png",
           "is_now": false
         },
         {
-          "lead_min": 525.0,
+          "lead_min": 75.0,
           "image": "compare_frames/linda/f15.png",
           "is_now": false
         },
         {
-          "lead_min": 560.0,
+          "lead_min": 80.0,
           "image": "compare_frames/linda/f16.png",
           "is_now": false
         }
@@ -427,18 +427,78 @@ window.COMPARE_DATA = {
       "method": "dgmr",
       "source": "ord",
       "scenario": "stratiform",
-      "timestep_min": 35.0,
+      "timestep_min": 5.0,
       "n_frames": 4,
       "domain_px": [
         256,
         256
       ],
       "km_per_px": 1.0,
-      "now_disc_mmh": 0.15,
+      "now_disc_mmh": 0.0,
       "now_point_mmh": 0.0,
       "series": [
         {
+          "lead_min": 5.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 10.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 15.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 20.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 25.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 30.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
           "lead_min": 35.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 40.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 45.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 50.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 55.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 60.0,
+          "point_mmh": 0.0,
+          "disc_max_mmh": 0.0
+        },
+        {
+          "lead_min": 65.0,
           "point_mmh": 0.0,
           "disc_max_mmh": 0.0
         },
@@ -448,83 +508,23 @@ window.COMPARE_DATA = {
           "disc_max_mmh": 0.0
         },
         {
-          "lead_min": 105.0,
+          "lead_min": 75.0,
           "point_mmh": 0.0,
           "disc_max_mmh": 0.0
         },
         {
-          "lead_min": 140.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 175.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 210.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 245.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 280.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 315.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 350.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 385.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 420.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 455.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 490.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 525.0,
-          "point_mmh": 0.0,
-          "disc_max_mmh": 0.0
-        },
-        {
-          "lead_min": 560.0,
+          "lead_min": 80.0,
           "point_mmh": 0.0,
           "disc_max_mmh": 0.0
         }
       ],
       "eta_onset_min": null,
       "peak_mmh": 0.0,
-      "peak_lead_min": 35.0,
-      "trend": "decaying",
-      "motion_kmh": 0.3,
-      "motion_dir_deg": 267.0,
-      "motion_cardinal": "W",
+      "peak_lead_min": 5.0,
+      "trend": "steady",
+      "motion_kmh": 0.0,
+      "motion_dir_deg": null,
+      "motion_cardinal": null,
       "key": "dgmr",
       "label": "DGMR (DeepMind)",
       "role": "compare",
@@ -536,82 +536,82 @@ window.COMPARE_DATA = {
           "is_now": true
         },
         {
-          "lead_min": 35.0,
+          "lead_min": 5.0,
           "image": "compare_frames/dgmr/f01.png",
           "is_now": false
         },
         {
-          "lead_min": 70.0,
+          "lead_min": 10.0,
           "image": "compare_frames/dgmr/f02.png",
           "is_now": false
         },
         {
-          "lead_min": 105.0,
+          "lead_min": 15.0,
           "image": "compare_frames/dgmr/f03.png",
           "is_now": false
         },
         {
-          "lead_min": 140.0,
+          "lead_min": 20.0,
           "image": "compare_frames/dgmr/f04.png",
           "is_now": false
         },
         {
-          "lead_min": 175.0,
+          "lead_min": 25.0,
           "image": "compare_frames/dgmr/f05.png",
           "is_now": false
         },
         {
-          "lead_min": 210.0,
+          "lead_min": 30.0,
           "image": "compare_frames/dgmr/f06.png",
           "is_now": false
         },
         {
-          "lead_min": 245.0,
+          "lead_min": 35.0,
           "image": "compare_frames/dgmr/f07.png",
           "is_now": false
         },
         {
-          "lead_min": 280.0,
+          "lead_min": 40.0,
           "image": "compare_frames/dgmr/f08.png",
           "is_now": false
         },
         {
-          "lead_min": 315.0,
+          "lead_min": 45.0,
           "image": "compare_frames/dgmr/f09.png",
           "is_now": false
         },
         {
-          "lead_min": 350.0,
+          "lead_min": 50.0,
           "image": "compare_frames/dgmr/f10.png",
           "is_now": false
         },
         {
-          "lead_min": 385.0,
+          "lead_min": 55.0,
           "image": "compare_frames/dgmr/f11.png",
           "is_now": false
         },
         {
-          "lead_min": 420.0,
+          "lead_min": 60.0,
           "image": "compare_frames/dgmr/f12.png",
           "is_now": false
         },
         {
-          "lead_min": 455.0,
+          "lead_min": 65.0,
           "image": "compare_frames/dgmr/f13.png",
           "is_now": false
         },
         {
-          "lead_min": 490.0,
+          "lead_min": 70.0,
           "image": "compare_frames/dgmr/f14.png",
           "is_now": false
         },
         {
-          "lead_min": 525.0,
+          "lead_min": 75.0,
           "image": "compare_frames/dgmr/f15.png",
           "is_now": false
         },
         {
-          "lead_min": 560.0,
+          "lead_min": 80.0,
           "image": "compare_frames/dgmr/f16.png",
           "is_now": false
         }
