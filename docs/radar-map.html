@@ -307,6 +307,9 @@ function initApp() {
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   const img = new Image();
+  img.crossOrigin = 'anonymous';   // R2 serves the image cross-origin; with R2's CORS
+                                   // header this keeps the canvas untainted so the
+                                   // per-pixel dBZ scan (getImageData) keeps working.
   img.onload = () => {
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
@@ -318,9 +321,8 @@ function initApp() {
       // file:// taints the canvas, so the per-pixel dBZ scan is unavailable.
       // The cell catalog (data.js) is unaffected — clicks keep working in a
       // nowcast-only degraded mode (see setLocation).
-      setStatus('pixel-scan nedostupan (canvas blokiran — file://). Pokreni lokalni server ' +
-                '(<code>python -m http.server</code> u docs/) ili koristi objavljeni sajt. ' +
-                'Klikovi rade u degradiranom rezimu: samo nowcast iz kataloga celija.', 'warn');
+      setStatus('pixel-scan nedostupan (canvas blokiran — CORS/file://). Klikovi rade u ' +
+                'degradiranom režimu: samo nowcast iz kataloga ćelija.', 'warn');
     }
   };
   img.onerror = () => setStatus('greska: latest_dhmz.png nije nadjen', 'err');

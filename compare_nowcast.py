@@ -17,9 +17,11 @@ Input:
     python compare_nowcast.py --ord-latest               # fetch the latest ORD volumes
     python compare_nowcast.py --demo                     # synthetic cell (page preview)
 
-On a successful run the outputs (docs/compare_data.js, docs/nowcast_status.json,
-docs/compare_frames/) are committed + pushed to git so GitHub Pages updates — add
---no-push to skip that (e.g. when serving docs/ locally).
+On a successful run the outputs are published to Cloudflare R2 (instant serving; see
+radar/r2_publish.py + config.R2). It then pushes to git ONLY if R2 isn't configured
+(so the data still reaches GitHub Pages) or if --push is given (refresh the slower
+Pages fallback + archive). --no-push always skips — so a routine R2 run no longer
+triggers the slow Pages rebuild.
 
 The honest accuracy comparison is the verification harness (verify_nowcast.py,
 FSS/CSI vs lead time on your archive); this page is the qualitative side-by-side.
@@ -510,7 +512,12 @@ def main(argv):
         print("GEO: map centre is Budva. If the BROWSER still shows the old spot, hard-refresh "
               "(Ctrl+F5) — it cached compare_data.js.")
     print("DGMR enabled:", prod["dgmr_enabled"], "| Saved:", OUT_JS)
-    if "--no-push" not in argv:
+    # Serving is via Cloudflare R2 now (instant; done in write()). Push to git ONLY
+    # when R2 isn't configured (so the data still reaches GitHub Pages) or when --push
+    # is given (refresh the slower Pages fallback + archive the run). --no-push always
+    # skips. The point: a routine R2 run no longer triggers the slow Pages rebuild.
+    from radar import r2_publish
+    if "--no-push" not in argv and ("--push" in argv or not r2_publish.available()):
         try:
             from loop import push_docs        # reuse the loop's commit+pull-rebase+push
             push_docs()
