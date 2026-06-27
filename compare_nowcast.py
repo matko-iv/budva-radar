@@ -98,6 +98,11 @@ def _from_h5(paths):
         deltas = [d for d in deltas if d > 0]
         if deltas:
             dt = float(np.median(deltas))
+    if not (2.5 <= dt <= 7.5):               # ORD scans are 5 min apart; an out-of-range
+        print(f"  WARN: input frames ~{dt:.0f} min apart (not a consecutive 5-min run); "
+              f"clamping timestep to 5 min (else the horizon is wrong, e.g. 16x35=560 min)",
+              file=sys.stderr)
+        dt = 5.0
     # absolute time of the NEWEST observed frame ("sada"); forecast frame N is base
     # + lead_min, so the page can label each frame with a real clock time.
     base = ts[-1] if ts else None
@@ -439,6 +444,26 @@ def _expand_h5(raw):
     return sorted(out)
 
 
+def _pick_consecutive(paths, n=N_FRAMES, step_min=5.0, tol_min=2.5):
+    """Pick the MOST RECENT run of `n` ORD frames spaced ~step_min apart (gap-free),
+    oldest->newest. ORD scans are 5 min apart and DGMR is fixed at 5-min cadence, so a
+    non-consecutive set gives a garbage nowcast AND an absurd horizon (16x35=560 min).
+    Falls back to the last n by time if no clean run exists (caller clamps the step)."""
+    from radar import ord as ordmod
+    timed = sorted((t, p) for t, p in
+                   ((ordmod.nominal_time_utc(p), p) for p in paths) if t is not None)
+    if len(timed) < n:
+        return [p for _, p in timed] or list(paths)[-n:]
+    best = None
+    for i in range(len(timed) - n + 1):
+        win = timed[i:i + n]
+        if all(abs((win[j + 1][0] - win[j][0]).total_seconds() / 60.0 - step_min) <= tol_min
+               for j in range(n - 1)):
+            best = win                                   # keep the LATEST qualifying window
+    chosen = best if best is not None else timed[-n:]
+    return [p for _, p in chosen]
+
+
 def _check_dgmr():
     """Diagnose why DGMR is/ isn't active (run: python compare_nowcast.py --check-dgmr)."""
     import importlib.util
@@ -469,7 +494,7 @@ def main(argv):
     if "--h5" in argv:
         i = argv.index("--h5")
         found = _expand_h5(argv[i + 1:])
-        paths = found[-N_FRAMES:]            # the most recent N_FRAMES for the nowcast
+        paths = _pick_consecutive(found)     # most recent gap-free 5-min run of N_FRAMES
         mode = "ord-h5"
         print(f"using {len(paths)} of {len(found)} H5 file(s): "
               f"{', '.join(__import__('os').path.basename(p) for p in paths)}")
@@ -477,7 +502,7 @@ def main(argv):
         from radar import ord as ordmod
         # fetch a few recent volumes
         latest = ordmod.fetch_latest()
-        paths = sorted(str(p) for p in ordmod.ORD_FRAMES_DIR.glob("*.h5"))[-N_FRAMES:]
+        paths = _pick_consecutive([str(p) for p in ordmod.ORD_FRAMES_DIR.glob("*.h5")])
         mode = "ord-h5"
     elif "--demo" in argv:
         mode = "demo"
