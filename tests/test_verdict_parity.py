@@ -111,7 +111,7 @@ def main():
     # ---- Part B: synthetic branch coverage ------------------------------
     dom_severe = {"dist_km": 40.0, "max_dbz": 57.5, "bearing_cardinal": "W",
                   "eta_minutes": 35.0, "intensity_label": "extreme (hail core)"}
-    # Same severe cell but CPA-classified HIT -> SEVERE fires (PDF Part E gate).
+    # Same severe cell but CPA-classified HIT -> SEVERE fires gate.
     dom_severe_hit = {"dist_km": 30.0, "max_dbz": 57.5, "bearing_cardinal": "W",
                       "eta_minutes": 25.0, "intensity_label": "extreme (hail core)",
                       "classification": "HIT"}

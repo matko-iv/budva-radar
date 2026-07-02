@@ -1,7 +1,7 @@
 """Tests for clouds/clm.py — classify the MTG FCI CLM `cloud_state` by MEANING
 read from the netCDF enum, not by a hardcoded integer map.
 
-The PDF: the integer<->category mapping is written as a netCDF4 ENUM inside the
+The integer<->category mapping is written as a netCDF4 ENUM inside the
 file and is NOT publicly hardcoded; dust/ash are SEPARATE flags, not cloud_state
 4-7. The five official categories are cloud-free, cloud contaminated, cloud
 filled, snow/ice contaminated, undefined/non-processed. So read the enum and map
@@ -77,7 +77,7 @@ def test_enum_from_flag_attrs():
 
 def test_spatial_coherence_drops_isolated_pixel():
     # A lone cloudy pixel (the textbook coastline false alarm) has 0 cloudy
-    # neighbours -> dropped by the N-adjacent test (PDF Part A1).
+    # neighbours -> dropped by the N-adjacent test.
     m = np.zeros((5, 5), dtype=bool)
     m[2, 2] = True
     out = clm.spatial_coherence(m, min_neighbors=2)

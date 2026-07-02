@@ -1,4 +1,4 @@
-"""Tests for radar/volume.py — full-volume radar products (PDF Part C2):
+"""Tests for radar/volume.py — full-volume radar products:
 Vertically Integrated Liquid (Greene-Clark), 18-dBZ echo-top, and VIL density,
 plus the 4/3-earth beam-height geometry. Pure numpy/math; no HDF5 needed here
 (the polar-volume I/O is exercised separately against a cached ORD file).
@@ -22,7 +22,7 @@ def test_beam_height_increases_with_range_and_elevation():
     h50 = volume.beam_height_m(50_000, 0.5)
     h130 = volume.beam_height_m(130_000, 0.5)
     assert h130 > h50 > 0
-    # PDF anchor: 0.5deg beam over Budva at ~130 km is ~2.5 km AGL.
+    # Anchor: 0.5deg beam over Budva at ~130 km is ~2.5 km AGL.
     assert 2000 < h130 < 3200, f"130 km / 0.5deg beam height {h130:.0f} m not ~2.5 km"
     # Higher elevation -> higher beam at the same range.
     assert volume.beam_height_m(130_000, 1.5) > h130
@@ -86,7 +86,7 @@ def test_column_products_bundles_vil_eth_density():
 
 def test_zdr_column_above_freezing_level():
     # ZDR >= 1 dB in real echo (>= 20 dBZ) extending above the 0C level marks an
-    # updraft (PDF Part C2). Freezing level 3500 m; ZDR>=1 up to 6000 m -> a
+    # updraft. Freezing level 3500 m; ZDR>=1 up to 6000 m -> a
     # 2500 m deep column.
     heights = [2000.0, 3000.0, 4000.0, 5000.0, 6000.0, 7000.0]
     zdr =     [0.3,    0.8,    1.5,    2.0,    1.2,    0.4]
@@ -134,7 +134,7 @@ def test_real_volume_column_over_budva_overshoots():
     assert len(vol["sweeps"]) >= 5, "expected a multi-sweep volume"
     prof = volume.column_profile_at(vol, BUDVA_LAT, BUDVA_LON)
     # Budva is ~130 km from the Uljenje site -> the lowest beam is ~2.5 km up
-    # (the overshoot the PDF flags). Geometry is echo-independent: the 0.5deg
+    # (beam overshoot). Geometry is echo-independent: the 0.5deg
     # beam height over Budva must be ~2.5 km regardless of whether it rained.
     import math as _m
     s_km, _ = volume._ground_range_az(vol["site"], BUDVA_LAT, BUDVA_LON)

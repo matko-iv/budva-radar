@@ -1,4 +1,4 @@
-"""Tests for the 3-D growth/decay survival signal (PDF Part C2/B2): the nowcast
+"""Tests for the 3-D growth/decay survival signal: the nowcast
 survival timescale should prefer the full-volume VIL trend over the 2-D dBZ
 trend when VIL is available, since VIL tracks the mixed-phase updraft far better
 than peak reflectivity. Falls back to the dBZ trend when there is no volume.

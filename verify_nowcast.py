@@ -1,25 +1,21 @@
-"""Verification harness: the HONEST accuracy comparison the Skala PDF asks for.
+"""Verification harness: the quantitative model comparison.
 
-Given a time-ordered archive of ORD ODIM HDF5 frames (e.g. your 2022 hrulj
-volumes), it hindcasts each model from every origin time t and scores the
-forecast against the ACTUAL observed frames at t+lead, using pysteps
-verification:
-  * FSS (Fractions Skill Score) at neighbourhood scales 2-32 km -- the
-    displacement-tolerant metric that kills the pixel-exact false alarms the PDF
-    warns about ("replace pixel-exact detection with neighbourhood FSS");
-  * CSI / POD / FAR vs lead time (categorical, at a rain threshold).
+Given a time-ordered archive of ORD ODIM HDF5 frames, hindcast each model from
+every origin time t and score against the observed frames at t+lead, using
+pysteps verification: FSS at neighbourhood scales 2-32 km (displacement-
+tolerant, unlike pixel-exact detection) and CSI/POD/FAR vs lead time at a rain
+threshold.
 
-Models scored: extrapolation (baseline), LINDA-D (headline) and -- if the plugin
-is installed -- DGMR. Output: output/verify.json + docs/verify_data.js
-(window.VERIFY_DATA) which docs/nowcast-compare.html renders as a skill table.
-This is the real LINDA-vs-DGMR accuracy answer; the side-by-side maps are only
-qualitative.
+Models: extrapolation (baseline), LINDA-D (headline), and DGMR when installed.
+Writes output/verify.json + docs/verify_data.js, rendered as a skill table by
+docs/nowcast-compare.html. This is the real LINDA-vs-DGMR accuracy answer;
+the side-by-side maps are qualitative.
 
-    python verify_nowcast.py --h5 archive/*.h5            # whole archive
+    python verify_nowcast.py --h5 archive/*.h5
     python verify_nowcast.py --h5 archive/*.h5 --leads 12 --stride 3 --max-origins 200
 
-Benchmark (PDF): when FSS at the smallest useful scale falls below ~0.5 at a
-lead, that lead is unskillful -- stop alerting on it.
+When FSS at the smallest useful scale falls below ~0.5 at a lead, that lead is
+unskillful — stop alerting on it.
 """
 
 import datetime

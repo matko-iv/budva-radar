@@ -7,16 +7,9 @@ MeteoGate gateway; verified live 2026-06-11. hrulj publishes a full polar
 volume every 5 minutes (~4 min latency): 9 elevations, 400 m gates, with
 DBZH + RHOHV + TH + VRADH + ZDR.
 
-What this module provides:
-  fetch_latest()     - list + download the newest PVOL into data/frames/ord/
-  load_grid(path)    - lowest-sweep DBZH -> cartesian dBZ grid around the site,
-                       with RHOHV-based non-meteorological echo removed (the
-                       principled clutter filter the PNG path can never have)
-  GridCal            - latlon<->pixel mapping for that grid (calibration-like)
-  sample_rings(...)  - same annulus statistics sampling.sample_concentric
-                       produces, computed from raw dBZ instead of colours
-
-Only h5py + numpy + requests beyond the stdlib.
+fetch_latest() downloads the newest PVOL; load_grid() turns its lowest sweep
+into a RHOHV-filtered cartesian dBZ grid; sample_rings() reproduces the
+sampling.sample_concentric annulus statistics from raw dBZ.
 """
 
 import datetime

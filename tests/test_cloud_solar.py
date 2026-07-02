@@ -1,5 +1,5 @@
 """Tests for clouds/solar.py — dependency-free solar zenith angle + Beer-Lambert
-direct-beam transmittance + sun/shade state. These encode the PDF's core
+direct-beam transmittance + sun/shade state. These encode the
 correction: "is the sun blocked" is a function of optical thickness AND solar
 geometry, separate from "is there cloud" (CLM presence).
 
@@ -85,7 +85,7 @@ def test_sun_state_night_returns_none():
     assert solar.sun_state(20.0, 85.0, phase="water") is None
 
 
-# --- Cloud Modification Factor (PDF Part A2; Papachristopoulou et al. 2024) ----
+# --- Cloud Modification Factor (Papachristopoulou et al. 2024) ----
 # The CMF (all-sky / clear-sky GLOBAL irradiance) is now what the sun/shade
 # verdict runs on (via cmf_sun_state), replacing the direct-beam metric that
 # under-read thin forward-scattering cloud as "blocked". The paper's transcribed
@@ -118,7 +118,7 @@ def test_cmf_monotone_non_increasing_in_cot():
 
 
 def test_cmf_thin_cloud_stays_bright():
-    # The PDF worked example: thin altocumulus COT~2.1 is visibly sunny -> high
+    # The paper's worked example: thin altocumulus COT~2.1 is visibly sunny -> high
     # CMF (NOT the direct-beam ~4.8% that wrongly reads "sun blocked").
     assert solar.cmf(2.1, 46.0) >= 0.8, solar.cmf(2.1, 46.0)
     assert solar.cmf(1.0, 46.0) >= 0.85
@@ -162,7 +162,7 @@ def test_cmf_sun_state_bands():
     assert solar.cmf_sun_state(None) is None
 
 
-# --- Sun-glint geometry (PDF Part A1) -----------------------------------------
+# --- Sun-glint geometry  -----------------------------------------
 
 def test_solar_azimuth_noon_is_south():
     # Summer-solstice ~solar noon over Budva: the sun is due south -> az ~180.

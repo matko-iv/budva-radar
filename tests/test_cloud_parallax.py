@@ -1,6 +1,6 @@
 """Tests for clouds/parallax.py — geostationary parallax over Budva.
 
-The PDF (Section 6): MTG sits at 0 N, 0 E; the satellite zenith over Budva is
+MTG sits at 0 N, 0 E; the satellite zenith over Budva is
 ~52 deg, so a cloud at height H is displaced in the nadir image by ~H*tan(52)
 ~= 1.3*H (up to ~13 km = ~4 FCI pixels for a 10 km top), radially AWAY from the
 sub-satellite point. A cloud truly OVER Budva therefore appears shifted toward

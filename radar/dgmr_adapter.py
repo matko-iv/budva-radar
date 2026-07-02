@@ -1,28 +1,18 @@
-"""DeepMind DGMR (Deep Generative Model of Radar) as a second nowcast engine,
-to run side-by-side with LINDA-D for accuracy comparison (Skala PDF asks for a
-two-track view; the user asked specifically for pySTEPS/pysteps-dgmr-nowcasts).
+"""DeepMind DGMR (Ravuri et al. 2021, Nature 597) as a second nowcast engine,
+run side-by-side with LINDA for comparison.
 
-DGMR is a pretrained generative nowcaster from Ravuri et al. 2021 (Nature 597),
-trained on UK 1 km radar. Its fixed contract is:
-    input  (4, 256, 256, 1)  -- 4 past frames, 1 km grid, 5 min cadence, mm/h
-    output (num_samples, 18, 256, 256, 1) -- 18 lead frames = 90 min @ 5 min
+DGMR's fixed contract — input (4, 256, 256, 1) at 1 km / 5 min, output 18 lead
+frames — matches the ORD (hrulj) grid natively, which is why it is offered for
+the ORD path and not the 4 km OPERA composite.
 
-That 1 km / 5 min / 256 px contract is a NATIVE fit for the ORD (hrulj) ODIM
-grid (radar/ord.py load_grid is 1 km/px), which is exactly why it is offered for
-the ORD path and NOT for the 4 km OPERA composite.
-
-Heavy deps (TensorFlow + the pysteps-dgmr-nowcasts plugin + its pretrained
-weights) are imported lazily and the whole thing is GATED on availability: if the
-plugin/weights are not installed, `available()` is False and `forecast()` returns
-(None, reason) so the comparison simply omits the DGMR column instead of
-breaking. Install to enable (on a machine with internet):
+TensorFlow and the pysteps-dgmr-nowcasts plugin are imported lazily; when
+missing, available() is False and forecast() returns (None, reason) so the
+comparison omits the DGMR column instead of breaking. To enable:
     pip install tensorflow wradlib xarray pyproj
     pip install git+https://github.com/pySTEPS/pysteps-dgmr-nowcasts.git
-The plugin downloads + caches the pretrained weights on first use.
 
-NOTE on transfer: DGMR was trained on UK radar; applied to the Adriatic it is an
-out-of-distribution test. That is the point of the comparison -- verify it on the
-local archive (verify_nowcast.py), do not assume it wins.
+DGMR was trained on UK radar, so the Adriatic is out-of-distribution — verify
+against the local archive (verify_nowcast.py) rather than assuming it wins.
 """
 
 import numpy as np
@@ -33,25 +23,45 @@ DGMR_LEADS = 18               # fixed number of output frames (90 min @ 5 min)
 DGMR_TIMESTEP_MIN = 5.0
 
 
+def _dgmr_cache_dir():
+    """Where the plugin caches its weights (matches dgmr_module_plugin.dgmr)."""
+    import os
+    sub = "pysteps" if os.name == "nt" else ".pysteps"
+    return os.path.join(os.path.expanduser("~"), sub, "pystepscache")
+
+
+def _heal_dgmr_cache():
+    """The plugin downloads weights at import time; an interrupted first
+    download leaves the cache dir without a 'models--' folder and every later
+    import dies with StopIteration. Clear that state so the next import
+    re-downloads; a healthy cache is untouched."""
+    import os
+    import shutil
+    cache = _dgmr_cache_dir()
+    try:
+        if os.path.isdir(cache) and not any("models--" in d for d in os.listdir(cache)):
+            shutil.rmtree(cache, ignore_errors=True)
+    except Exception:
+        pass
+
+
 def _import_forecast():
     """Return the plugin's forecast callable, or raise ImportError. Tries every
     name the plugin is known to expose (the package module and the pysteps plugin
     entry point) so an install that registers only one of them still works."""
+    _heal_dgmr_cache()
     errs = []
-    # 1) the package module (what example.py uses)
     try:
         from dgmr_module_plugin.dgmr import forecast
         return forecast
     except Exception as e:
         errs.append(f"dgmr_module_plugin.dgmr: {type(e).__name__}")
-    # 2) the documented pysteps plugin path: from pysteps.nowcasts import dgmr
     try:
         from pysteps.nowcasts import dgmr as _d
         if hasattr(_d, "forecast"):
             return _d.forecast
     except Exception as e:
         errs.append(f"pysteps.nowcasts.dgmr: {type(e).__name__}")
-    # 3) pysteps method registry
     try:
         from pysteps import nowcasts
         m = nowcasts.get_method("dgmr")

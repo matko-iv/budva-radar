@@ -1,11 +1,10 @@
 """Geostationary parallax over a fixed ground point.
 
-The PDF (Section 6, "Parallax — kritično za 'nad mojom tačkom'"): MTG is at the
-sub-satellite point SSP = (0 N, 0 E). The satellite zenith over Budva is ~52 deg,
-so an elevated cloud is displaced in the nadir-projected image AWAY from the SSP
-by ~ height * tan(satellite_zenith) (~1.3 * height, up to ~13 km / ~4 FCI pixels
-for a 10 km top). A cloud that is truly OVER Budva therefore APPEARS shifted away
-from the SSP (toward the NE for Budva).
+MTG sits at the sub-satellite point (0 N, 0 E). The satellite zenith over
+Budva is ~52 deg, so an elevated cloud is displaced in the nadir-projected
+image away from the SSP by ~height * tan(satellite_zenith) — ~1.3x height, up
+to ~13 km (~4 FCI pixels) for a 10 km top. A cloud truly over Budva appears
+shifted toward the NE.
 
 To read "what is really over the point" we either (a) sample a disc large enough
 to absorb the shift (the cheap, robust default already in use), or (b) move the

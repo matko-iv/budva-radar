@@ -1,6 +1,6 @@
 """Parity test: clouds/verdict.py (Python, authoritative) must match the browser
 port docs/cloud-text.js for the SAME facts — including the new two-axis / night
-branches the PDF work added (sun gets through, sun blocked, IR-only at night).
+branches the sun/shade work added (sun gets through, sun blocked, IR-only at night).
 
 Run from repo root:  python tests/test_cloud_text_parity.py
 Exit 0 = parity holds; exit 1 = mismatch. Requires node.

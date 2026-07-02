@@ -34,10 +34,10 @@ def geocolour_verdict_ok(cfg, loc, when=None):
     """Is the GeoColour RGB a usable cloud proxy for the verdict right now?
 
     Only by day with the sun high enough: GeoColour brightness reads as false
-    "cloud" over sun-glint on the sea, on snow, at low sun and at night (where
-    brightness is cloud-top temperature, not albedo). When `geocolour_verdict_day_only`
-    is set we require a daytime frame with SZA <= geocolour_max_sza; otherwise the
-    caller falls back to the L2 verdict (PDF Section 5)."""
+    "cloud" over sun-glint, snow, low sun, and at night (where brightness is
+    cloud-top temperature, not albedo). With geocolour_verdict_day_only set,
+    a daytime frame with SZA <= geocolour_max_sza is required; otherwise the
+    caller falls back to the L2 verdict."""
     if not cfg.get("geocolour_verdict_day_only", True):
         return True
     if not when:

@@ -1,7 +1,7 @@
 """Tests for radar/pysteps_nowcast.py — the pysteps (ANVIL + Lucas-Kanade) rain
 nowcast. Proves the things the old cross-correlation / dBZ-trend nowcast could
 NOT do: a dense motion field, and GROWTH/DECAY extrapolation (ANVIL) that plain
-advection cannot produce (PDF Part B/C).
+advection cannot produce.
 
 Needs pysteps + opencv. Run from repo root with the pysteps venv:
     psenv/bin/python tests/test_pysteps_nowcast.py     (exit 0 = pass)

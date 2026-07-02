@@ -1,25 +1,22 @@
 """HighSight true-colour satellite tiles -> normalized CloudField + display image.
 
-The SKALA CLOUD interim source (while the L2/OCA verdict is being repaired): read
-the actual visible satellite PICTURE from HighSight's XYZ tiles, exactly like
-SKALA RAIN reads radar PNG frames. Cloud = bright + near-neutral (white) against
-the dark sea / green land; the resulting cloud-fraction field drives the SAME
-advection nowcast (clouds/motion.py + clouds/nowcast.py) and the same per-point
-disc reads as the L2 path — so every clicked point reads the picture, not a
-phantom L2 retrieval (the "only Budva is right" bug).
+The interim SKALA CLOUD source while the L2/OCA verdict is being repaired:
+read the visible satellite picture from HighSight's XYZ tiles the way SKALA
+RAIN reads radar PNG frames. Cloud = bright + near-neutral (white) against
+dark sea / green land; the cloud-fraction field drives the same advection
+nowcast and per-point disc reads as the L2 path, so every clicked point reads
+the picture rather than a phantom L2 retrieval.
 
 Tiles:  GET https://api.highsight.dev/v1/satellite/{z}/{x}/{y}?date=YYYY/MM/DD/HHmm
-        JPEG 512x512, Web-Mercator XYZ, 10-min cadence. ALL tiles are pinned to one
-        explicit UTC `date` slot, so the multi-tile mosaic is ONE coherent frame and
-        the reported sensing_time is that slot's TRUE time. HighSight runs ~20 min
-        behind real-time; a request with no `date` silently serves the ~30-min-ago
-        default and may even mix frames across tiles (the spec warns of this), which
-        is why we pin the slot and never report "now".
-        Auth: `Authorization: Bearer <HIGHSIGHT_KEY>` (key from env, never
-        hardcoded). Set HIGHSIGHT_KEY locally and as a GitHub Actions secret.
+        JPEG 512x512, Web-Mercator XYZ, 10-min cadence. All tiles are pinned
+        to one explicit UTC slot so the mosaic is one coherent frame and
+        sensing_time is that slot's true time; a request without `date`
+        silently serves a ~30-min-old default and can mix frames across
+        tiles. Auth: Bearer HIGHSIGHT_KEY from the environment (also a
+        GitHub Actions secret).
 
-The pure geometry / brightness helpers take plain numpy arrays so they are
-unit-testable without the network; only `fetch_field` touches HTTP.
+The geometry / brightness helpers take plain numpy arrays so they test
+without the network; only fetch_field touches HTTP.
 """
 
 import datetime
@@ -43,9 +40,6 @@ TILE_PX = 512
 _BASE_URL = "https://api.highsight.dev/v1/satellite"
 
 
-# --------------------------------------------------------------------------
-# Web-Mercator tile geometry (pure)
-# --------------------------------------------------------------------------
 def merc_norm(lat, lon):
     """(lon,lat) deg -> normalized Web-Mercator (x, y) in [0,1] (y grows south).
     Vectorized: accepts scalars or numpy arrays."""
@@ -72,9 +66,6 @@ def tile_range(bbox, z):
     return min(x0, x1), max(x0, x1), min(y0, y1), max(y0, y1)
 
 
-# --------------------------------------------------------------------------
-# Reprojection mosaic(Web-Mercator) -> regular lat/lon (plate carree) (pure)
-# --------------------------------------------------------------------------
 def reproject(mosaic, origin_px, z, lats, lons):
     """Sample a Web-Mercator `mosaic` (HxWx3, top-left at `origin_px`=(px,py) in
     world pixels at zoom z) onto a regular lat/lon grid. `lats` descending (north
@@ -89,10 +80,8 @@ def reproject(mosaic, origin_px, z, lats, lons):
     return mosaic[gy, gx]
 
 
-# --------------------------------------------------------------------------
-# Brightness -> cloud (pure). Cloud = bright AND near-neutral (white/grey);
-# optically-thick (sun-blocking) cloud = very bright. Sea/land stay clear.
-# --------------------------------------------------------------------------
+# Cloud = bright and near-neutral (white/grey); sun-blocking cloud = very
+# bright. Sea and land stay clear.
 def cloud_fields(rgb, cfg=None):
     """(H,W,3) RGB -> (cloud, thick) float arrays in {0.,1.}. Mirrors
     clouds/visible._cloud_masks so the picture is read the same way everywhere."""
@@ -121,9 +110,7 @@ def build_field(rgb_grid, lats, lons, sensing_time, cfg=None):
     }, meta={"sensing_time": sensing_time, "source": "HighSight"})
 
 
-# --------------------------------------------------------------------------
-# Frame cache (mirrors clouds/fetch.py so the nowcast has prev + curr frames)
-# --------------------------------------------------------------------------
+# Frame cache mirrors clouds/fetch.py so the nowcast has prev + curr frames.
 def _frame_dir():
     FRAMES_DIR.mkdir(parents=True, exist_ok=True)
     return FRAMES_DIR
@@ -199,9 +186,9 @@ def _parse_iso(s):
 
 
 def _within_interval(nominal, last, min_interval_min):
-    """True when a NEW slot should be SKIPPED (reuse the cache) because less than
-    `min_interval_min` has elapsed since the last downloaded slot — the tile-quota
-    throttle. 0 / no last frame -> never skip."""
+    """True when a new slot should be skipped (cache reused) because less than
+    min_interval_min has elapsed since the last download — the tile-quota
+    throttle. 0 or no last frame: never skip."""
     if not min_interval_min or last is None:
         return False
     return (nominal - last) < datetime.timedelta(minutes=float(min_interval_min))
@@ -244,9 +231,6 @@ def latest_two_fields():
     return prev, curr
 
 
-# --------------------------------------------------------------------------
-# Live fetch (network)
-# --------------------------------------------------------------------------
 def _api_key(cfg):
     """HighSight key, in order: env HIGHSIGHT_KEY -> gitignored local file
     (highsight_key.txt / .highsight_key at repo root) -> cfg. Never hardcoded so
@@ -285,10 +269,10 @@ def _fetch_tile(z, x, y, key, date=None, timeout=30):
 
 
 def _freshest_slot(cfg=None):
-    """The freshest HighSight frame we can RELIABLY request: now (UTC) minus the
-    publish lag, floored to HighSight's 10-min satellite cadence. Imagery is up to
-    ~20 min behind real-time and more-recent requests may fail or serve older
-    tiles, so we pin a known slot and report ITS true time — never 'now'."""
+    """The freshest slot we can reliably request: now (UTC) minus the publish
+    lag, floored to the 10-min cadence. Imagery runs up to ~20 min behind
+    real-time and fresher requests may fail or serve older tiles, so pin a
+    known slot and report its true time — never 'now'."""
     cfg = cfg or config.CLOUDS
     lag = int(cfg.get("highsight_lag_min", 30))
     t = (datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)

@@ -1,16 +1,13 @@
-"""Mirror pipeline outputs to Cloudflare R2 for INSTANT serving.
+"""Mirror pipeline outputs to Cloudflare R2.
 
-GitHub Pages rebuilds on every push and hard-codes a 10-min CDN cache, so pushed
-data is stale for minutes. R2 has no build step and lets us set cache headers, so
-mirroring the docs/ outputs here + fetching them client-side (cache-busted) makes
-updates ~instant. R2 is S3-compatible, so this uses boto3.
+GitHub Pages rebuilds on every push and pins a 10-min CDN cache, so pushed
+data goes stale for minutes; R2 has no build step and honours our cache
+headers, so mirroring docs/ there and fetching client-side (cache-busted)
+makes updates near-instant. R2 is S3-compatible, hence boto3.
 
-Credentials come from the ENVIRONMENT (never commit them):
-    R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
-Bucket name + public base URL + cache header live in config.R2.
-
-If the creds are missing this is a silent no-op, so local runs and CI without the
-secrets still work (they just don't publish to R2). Quick check:
+Credentials come from the environment (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
+R2_SECRET_ACCESS_KEY); bucket, public base URL, and cache header live in
+config.R2. Missing creds make this a silent no-op. Quick check:
     python -m radar.r2_publish --test
 """
 

@@ -1,138 +1,32 @@
-# budva-radar
+# docs/
 
-A program that **reads radar so you don't have to** — for Budva (or any
-configurable location).
+Static pages served by GitHub Pages, plus the data files the pipelines
+generate for them. See the repository [README](../README.md) for how the
+pipelines work and how to run them.
 
-Pulls from two sources:
+## Pages
 
-| Source | Coverage | Update | Format |
-|---|---|---|---|
-| **DHMZ Uljenje** (`https://vrijeme.hr/uljenje-stat.png`) | Adriatic / Croatia / Montenegro | ~5-10 min | PNG 720×751 |
-| **OPERA Odyssey** (FMI CDN) | All of Europe | 5 min | GIF 950×1100, JSON listing |
+| Page | Shows |
+|---|---|
+| `index.html` | SKALA RAIN status: verdict, ring table, per-source detail |
+| `radar-map.html` | radar map with cells, rings, and a per-point nowcast on click |
+| `cloud-map.html` | SKALA CLOUD: satellite picture, verdict, 2 h history loop |
+| `nowcast-compare.html` | SKALA NOWCAST: DGMR forecast frames + skill table |
+| `nowcast.html` | pysteps (ANVIL/LINDA) nowcast page |
+| `nowcast-compare.legacy.html`, `nowcastcompare.html` | older comparison layouts |
 
-## What it does
+## Generated files — do not edit
 
-1. Downloads radar images every 5-10 min, caches them under `data/frames/`.
-2. Maps pixels to lat/lon coordinates (affine calibration anchored on Budva).
-3. Maps colors to precipitation intensity (RGB → dBZ → mm/h).
-4. Samples **concentric rings** (10, 25, 50, 100, 150 km) around the location.
-5. Detects **motion** by cross-correlating two consecutive frames.
-6. Extrapolates: if rain is moving toward us at X km/h from Y km away,
-   **ETA = Y / X**.
-7. Writes output:
-   - `output/status.json` (for machines)
-   - `docs/data.js` (inline for the local HTML preview)
-   - `c:/Users/Matija/weather-forecast/docs/radar_status.json` (consumed by the
-     main XGBoost forecast page in the "Trenutno stanje" card)
+`data.js`, `cloud_data.js`, `nowcast_data.js`, `compare_data.js`,
+`verify_data.js`, `radar_status.json`, `cloud_status.json`,
+`nowcast_status.json`, `compare.json`, `latest_*.png/gif`,
+`cloud_history/`, `compare_frames/`, `nowcast_frames/`, and
+`skala_log_*.csv` are all written by the pipelines (`run.py`,
+`run_clouds.py`, `run_nowcast.py`, `compare_nowcast.py`,
+`verify_nowcast.py`).
 
-## Quickstart
-
-```powershell
-# One-time setup
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-
-# Single run (fetch + interpret + write outputs)
-python run.py
-
-# Background loop (every 5 min)
-python loop.py
-```
-
-Open `docs/index.html` in a browser to see the status.
-
-## Layout
-
-```
-budva-radar/
-├── config.py                  # Location, source URLs, valid-area masks
-├── radar/
-│   ├── fetch.py               # Download + cache
-│   ├── calibration.py         # Pixel <-> lat/lon (affine + anchor)
-│   ├── colormap.py            # RGB -> dBZ -> mm/h (Marshall-Palmer)
-│   ├── sampling.py            # Concentric ring sampling
-│   ├── motion.py              # Frame-to-frame motion vector
-│   └── interpret.py           # High-level summary
-├── run.py                     # One full cycle
-├── loop.py                    # Background loop
-├── data/frames/{dhmz,opera}/  # Cached image frames
-├── output/status.json         # Current interpretation
-└── docs/                      # Static HTML / CSS preview
-```
-
-## Calibration
-
-If the radar source changes layout (e.g. DHMZ redesigns the map), the
-hardcoded pixel landmarks in `radar/calibration.py` need to be updated.
-Budva is treated as the "anchor" — its user-verified pixel position is
-preserved exactly, while the affine fit handles local geometry around it.
-
-## Weather sandbox (simulator)
-
-`docs/simulator.html` is an interactive toy weather model for the Budva box: a
-single-layer moist-atmosphere fluid sim (`docs/windsim.js`) running on **real
-terrain**. Elevation comes from a baked DEM (`docs/terrain-data.js`), generated
-from AWS terrarium tiles (SRTM/Copernicus) — not a hand-drawn guess. It's a
-physics playground, **not** a forecast.
-
-```powershell
-# Regenerate the terrain DEM (needs requests + Pillow). Re-run if you move the box.
-python tools/build_terrain_dem.py    # writes docs/terrain-data.js
-
-# Physics regression test (stability + terrain); needs Node.
-node tests/test_windsim.js
-```
-
-## GitHub Actions (automatic updates)
-
-A workflow in `.github/workflows/update.yml` runs `run.py` every ~15 minutes
-on GitHub's free-tier runner. It commits these outputs back to the repo:
-- `docs/radar_status.json` (served via GitHub Pages, consumed by the main
-  weather-forecast page)
-- `docs/data.js` (used by `docs/index.html` for the local preview)
-- `docs/latest_dhmz.png` and `docs/latest_opera.gif` (latest frames for the preview)
-- `data/frames/{dhmz,opera}/...` (full motion history, kept up to KEEP_FRAMES)
-
-### One-time setup
-
-1. **Create the GitHub repo (public)**
-   ```powershell
-   cd c:\Users\Matija\budva-radar
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git branch -M main
-   git remote add origin https://github.com/matko-iv/budva-radar.git
-   git push -u origin main
-   ```
-
-2. **Enable GitHub Pages**
-   - Repo → Settings → Pages
-   - Source: **Deploy from a branch**
-   - Branch: **main**, Folder: **/docs**
-   - Save. URL becomes `https://matko-iv.github.io/budva-radar/`
-
-3. **The workflow runs automatically** every ~15 minutes (cron) once the repo
-   is pushed. First run can be triggered manually under Actions tab.
-
-### Integration with weather-forecast
-
-The main XGBoost forecast page (`weather-forecast/docs/forecast.html`) fetches
-radar status from this repo's GitHub Pages URL with a local-file fallback:
-
-```javascript
-const RADAR_STATUS_URLS = [
-    'radar_status.json',                                    // local fallback
-    'https://matko-iv.github.io/budva-radar/radar_status.json',  // GH Pages
-];
-```
-
-GH Pages serves with `Access-Control-Allow-Origin: *`, so cross-origin fetch
-works without any extra configuration.
-
-## Disclaimer
-
-DHMZ images are public radar imagery. Polite fetching (every 5+ min) follows
-best practice. Don't use this for commercial / mass-distribution purposes
-without permission from DHMZ (vrijeme.hr) or EUMETNET (OPERA).
+The hand-written sources are the HTML pages, `style.css`, and the JS
+interpreters (`skala-*.js`, `cloud-*.js`, `nowcast-browser.js`,
+`cloud-nowcast-browser.js`, `skala-cells-viz.js`, `skala-r2.js`). The
+`skala-text.js` / `cloud-text.js` interpreters are kept in lockstep with
+their Python ports (`radar/verdict.py`, `clouds/verdict.py`) by parity tests.

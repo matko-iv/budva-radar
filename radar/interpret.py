@@ -11,10 +11,8 @@ from radar import fetch, calibration, colormap, sampling, motion
 import nowcast
 import tracking
 
-# Track histories between runs. Persisted to disk so per-cell velocities work
-# in ONE-SHOT runs too (GH Actions / cron run a fresh process each time; a
-# memory-only cache meant every cell looked brand new and fell back to the
-# scene-motion prior).
+# Track histories persist to disk so per-cell velocities survive one-shot
+# runs (GH Actions starts a fresh process each time).
 _TRACK_CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "track_cache.json"
 _TRACK_CACHE = None
 
@@ -53,9 +51,7 @@ def _load_rgb(path) -> np.ndarray:
     return np.array(img)
 
 
-# Range-dependent confidence taper (beam overshoot at long range). Distance-
-# from-point proxy; full confidence within ~60 km, declining to a floor by
-# 150 km. Used to annotate the per-source ring table.
+# Beam-overshoot confidence taper: full within ~60 km, floor by 150 km.
 RANGE_TAPER_FULL_KM = 60.0
 RANGE_TAPER_MIN_CONF = 0.3
 
@@ -70,17 +66,14 @@ def _range_confidence(km):
 
 
 def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
-    """Interpret the latest frame using Stage 2 object tracking and probabilistic nowcasting."""
+    """Interpret the latest frame: tracking, ring sampling, nowcast, verdict inputs."""
     frames = fetch.list_cached_frames(source_id)
     if not frames:
         return {"source": source_id, "ok": False, "reason": "no_frames"}
 
     latest_path = frames[-1]
     latest_rgb = _load_rgb(latest_path)
-    
-    # 1. Global motion vector (from motion.py) + the block/TREC dense motion
-    # field (PDF Part B1): the single global vector assumes rigid-block motion;
-    # the field captures differential motion/growth for advection.
+
     motion_info = None
     motion_field = None
     if len(frames) >= 2:
@@ -104,10 +97,9 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         except Exception as e:
             motion_info = {"error": str(e)}
 
-    # STAGE 4: raw ODIM volume (MeteoGate ORD) is the primary DATA source for
-    # the dhmz/Uljenje interpretation — measured dBZ + RHOHV clutter filter
-    # instead of colour classification. The PNG stays the display layer and
-    # the automatic fallback whenever ORD fetch/decode fails.
+    # The raw ODIM volume (MeteoGate ORD) is the primary data source for dhmz:
+    # measured dBZ + RHOHV clutter filter. The PNG stays the display layer and
+    # the fallback when the ORD fetch/decode fails.
     ord_grid = None
     if source_id == "dhmz" and getattr(config, "ORD_ENABLED", False):
         try:
@@ -118,14 +110,12 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         except Exception as e:
             print(f"  [{source_id}] ORD unavailable, PNG fallback: {e}")
 
-    # 2. STAGE 2: Object Extraction & ring sampling (ORD raw-dBZ or PNG colours)
     ord_volume = None
     if ord_grid is not None:
         data_source = "ord_pvol"
         current_cells = ord_mod.cells_from_grid(ord_grid, location["lat"], location["lon"])
-        # Per-cell full-volume products (PDF C2/B2) attached BEFORE tracking, so
-        # update_summaries can compute the VIL trend across frames. One volume
-        # read, reused by STAGE 4b for the Budva column.
+        # Attach per-cell volume products before tracking so update_summaries
+        # can compute VIL trends; the volume read is reused for the Budva column.
         try:
             from radar import volume as volume_mod
             ord_volume = volume_mod.read_volume(vol_path)
@@ -146,9 +136,6 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
     else:
         data_source = "png"
         current_cells = tracking.extract_cells(latest_rgb, source_id, location["lat"], location["lon"])
-        # Concentric-ring sampling for the transparent per-source detail table.
-        # (The cell/nowcast path above is the brain; these rings are the raw view
-        # the UI table shows.)
         try:
             rings = sampling.sample_concentric(latest_rgb, source_id, location["lat"], location["lon"], radii_km)
         except Exception as e:
@@ -156,13 +143,12 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
             print(f"  [{source_id}] ring sampling failed: {e}")
         frame_ts = motion._frame_timestamp(latest_path).isoformat() if "_" in latest_path.stem else None
         frame_key = f"png:{latest_path.name}"
-    # Annotate the beam-overshoot range-confidence taper on either path.
     for r in rings:
         r["confidence"] = _range_confidence(r.get("radius_km"))
 
-    # Track continuity (disk-persisted): reuse summaries when the frame hasn't
-    # changed (re-tracking an identical frame would zero all velocities), else
-    # match against the previous frame with the TRUE time step between them.
+    # Reuse summaries when the frame hasn't changed (re-tracking an identical
+    # frame would zero all velocities); otherwise match against the previous
+    # frame with the true time step between them.
     prev_entry = _track_cache().get(source_id) or {}
     if prev_entry.get("frame_key") == frame_key and prev_entry.get("summaries"):
         cell_summaries = prev_entry["summaries"]
@@ -177,14 +163,12 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
             current_cells, prev_entry.get("summaries") or [], motion_info, dt_min=dt_min)
         _track_cache_put(source_id, frame_key, frame_ts, cell_summaries)
 
-    # 3. STAGE 2: Probabilistic Nowcast & Storm Mode Morphology
     nowcast_results = nowcast.arrival_nowcast(cell_summaries, location["lat"], location["lon"])
     storm_mode = nowcast.classify_storm_mode(current_cells, cell_summaries, motion_info)
 
-    # STAGE 4: the "needs Doppler velocity to confirm" flags can now actually
-    # be checked — the ORD volume carries VRADH. Run the gate-to-gate azimuthal
-    # shear (mesocyclone proxy) at the strongest cell and report the measurement
-    # alongside the suspicion. Confirmation aid only; the verdict is untouched.
+    # The ORD volume carries VRADH, so "needs Doppler to confirm" flags get an
+    # actual gate-to-gate shear check at the strongest cell. Confirmation aid
+    # only; the verdict is untouched.
     if (ord_grid is not None and current_cells
             and any("Doppler" in fl for fl in storm_mode.get("flags", []))):
         try:
@@ -213,11 +197,10 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         except Exception as e:
             print(f"  [{source_id}] VRADH rotation check failed: {e}")
 
-    # STAGE 4b: full-volume column products over the location (PDF Part C2/C1).
-    # VIL / 18-dBZ echo-top / VIL-density from ALL sweeps, the ZDR-column updraft
-    # proxy, and the surface-rain confidence cue — the lowest beam is ~2.5 km up
-    # over Budva at 130 km, so an aloft echo is NOT guaranteed to reach ground.
-    # Purely additive (shipped under source.volume); the verdict is untouched.
+    # Full-volume column products over the location: VIL, echo top, ZDR-column
+    # updraft proxy, and the surface-rain confidence cue (the lowest beam is
+    # ~2.5 km up over Budva, so aloft echo may never reach ground). Shipped
+    # under source.volume; the verdict is untouched.
     volume_products = None
     if ord_grid is not None and ord_volume is not None:
         try:
@@ -243,23 +226,19 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
         except Exception as e:
             print(f"  [{source_id}] volume products failed: {e}")
 
-    # Convert probabilistic nowcast into Legacy states to satisfy the UI/Verification.
-    # IMPORTANT: the cell detector finds cells across the WHOLE image — for the
-    # OPERA composite that is all of Europe — so a storm 3000 km away must NOT
-    # be reported as "rain nearby". Bound the "in the area" / "closest rain"
-    # fields to the monitored vicinity (the outermost sampling ring). The
+    # The cell detector scans the whole image — all of Europe for OPERA — so
+    # "rain nearby" fields are bounded to the outermost sampling ring. The
     # probabilistic nowcast already discounts distant cells, so is_approaching
-    # and P_rain are unaffected by this bound.
+    # and P_rain are unaffected.
     VICINITY_MAX_KM = max(config.SAMPLE_RADII_KM)
     nearby = [c for c in current_cells
               if c.get("edge_km") is not None and c["edge_km"] <= VICINITY_MAX_KM]
     nearest = min(nearby, key=lambda c: c["edge_km"]) if nearby else None
     dom = nowcast_results["dominant"]
 
-    # Coastal-arrival score for the dominant cell (PDF Part C3): combine the
-    # base arrival probability with the growth/decay trend and the Dinaric-ridge
-    # dissipation filter (cells that must descend the seaward slope are
-    # down-weighted). Additive; shipped under nowcast_details.coastal_arrival.
+    # Coastal-arrival score for the dominant cell: base probability adjusted by
+    # growth/decay trend and the Dinaric-ridge dissipation filter. Shipped
+    # under nowcast_details.coastal_arrival.
     if dom:
         from radar import coastal as coastal_mod
         dom_summ = next((s for s in cell_summaries
@@ -309,15 +288,11 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
     except (ValueError, OSError):
         frame_path_rel = str(latest_path.name)
 
-    # Browser-side per-point nowcast (radar-map.html): ship the tracked cell
-    # catalog so docs/nowcast-browser.js can replay arrival_nowcast for ANY
-    # clicked point. Absolute lat/lon (location-independent) + each cell's own
-    # track velocity is all the JS port needs; it recomputes edge/bearing per
-    # point. ALL cells are shipped (NOT bounded to Budva's vicinity): a point
-    # clicked near the frame edge can have a relevant cell that is far from Budva
-    # but close to that point, and the nowcast's own reach gate (~240 km) handles
-    # distance. Only for DHMZ — radar-map is DHMZ-based and its cells are few and
-    # local; the OPERA composite is Europe-wide. Purely additive.
+    # Cell catalog for the browser-side per-point nowcast (radar-map.html /
+    # docs/nowcast-browser.js). All cells ship, not just Budva's vicinity: a
+    # clicked point near the frame edge may care about a cell far from Budva,
+    # and the nowcast's own reach gate handles distance. DHMZ only — the OPERA
+    # composite is Europe-wide.
     cells_catalog = []
     if source_id == "dhmz":
         for s in cell_summaries:
@@ -358,9 +333,9 @@ def interpret_source(source_id: str, location: dict, radii_km: list) -> dict:
 
 
 def classify_scenario(approaching, storm_mode):
-    """Generates human-readable state merging the deterministic closest cell and severe flags."""
+    """Human-readable state from the closest cell plus severe flags."""
     a = approaching or {}
-    
+
     has_rain = a.get("any_rain_within_radii")
     rain_at_loc = a.get("rain_at_location")
     is_appr = a.get("is_approaching")
@@ -369,8 +344,7 @@ def classify_scenario(approaching, storm_mode):
     card = a.get("closest_rain_bearing_cardinal")
     eta = a.get("eta_minutes")
     intensity = a.get("closest_rain_intensity_label")
-    
-    # Parse Storm Mode Flags
+
     severe_present = False
     severe_detail = None
     if storm_mode and storm_mode.get("flags"):
@@ -394,9 +368,9 @@ def classify_scenario(approaching, storm_mode):
 
     if rain_at_loc:
         return _result("RAINING", f"Rain at the location: {txt}.")
-        
+
     if is_appr:
-        # SEVERE removed — it false-triggered on distant high-dBZ cells.
+        # no SEVERE state here; it false-triggered on distant high-dBZ cells
         if (dbz or 0) >= config.HEAVY_DBZ_THRESHOLD and km <= 25:
             return _result("IMMINENT", f"Rain imminent: {txt}, ETA ~{eta:.0f} min.")
         if (dbz or 0) >= config.MODERATE_DBZ:
@@ -421,13 +395,12 @@ def interpret_all() -> dict:
     SRC_LABEL = {"dhmz": "DHMZ Uljenje", "opera": "OPERA composite"}
     per_radar = {}
     summary_lines = []
-    
-    # Priority scaling
+
     SCENARIO_PRIORITY = {
-        "SEVERE": 0, "RAINING": 1, "IMMINENT": 2, "LIKELY": 3, 
+        "SEVERE": 0, "RAINING": 1, "IMMINENT": 2, "LIKELY": 3,
         "POSSIBLE": 4, "LIKELY_NO_RAIN": 5, "BIO_NOISE": 6, "CLEAR": 7, "UNAVAILABLE": 99
     }
-    
+
     composite_state = None
     composite_narrative = None
     composite_src = None
@@ -476,10 +449,8 @@ def interpret_all() -> dict:
         "lines": summary_lines,
     }
 
-    # THE canonical Budva verdict — computed ONCE here, rendered verbatim by
-    # every page (budva-radar index + radar-map, and the forecast page). Also
-    # a per-source verdict so the per-radar summary lines come from the same
-    # interpreter instead of being re-derived in browser JS.
+    # Canonical Budva verdict, computed once and rendered verbatim by every
+    # page; per-source verdicts keep the per-radar lines out of browser JS.
     try:
         from radar import verdict as verdict_mod
         loc_name = config.LOCATION.get("name") or "Budva"

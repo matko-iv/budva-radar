@@ -1,5 +1,5 @@
 """Tests for clouds/contamination.py — sun-glint / coastal false-cloud
-suppression (PDF Part A1). The decision logic is pure and exhaustively tested;
+suppression. The decision logic is pure and exhaustively tested;
 the geometry reuses the (separately tested) scalar solar/parallax helpers, so we
 check parity with them plus the field-cleaning wiring.
 

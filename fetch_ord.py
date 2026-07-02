@@ -1,8 +1,8 @@
 """Download MeteoGate ORD (hrulj / Uljenje) ODIM volumes for a chosen time window.
 
-The upstream bucket (openradar-24h) keeps only a ROLLING ~24 h, so you can fetch any
-range within roughly the last 24-38 h; older ranges come back empty. Run --list to
-see the exact boundaries available right now.
+The upstream bucket (openradar-24h) keeps a rolling ~24 h, so any range within
+roughly the last 24-38 h works; older ranges come back empty. Run --list to
+see the boundaries available right now.
 
     python fetch_ord.py --list                                  # what's available now
     python fetch_ord.py --last 3h                               # now-3h .. now

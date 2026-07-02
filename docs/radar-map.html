@@ -111,9 +111,7 @@
 <script src="skala-sections.js"></script>
 <script src="nowcast-browser.js"></script>
 <script>
-// ---------------------------------------------------------------------------
-// App start (boot sequence removed — the app is shown immediately).
-// ---------------------------------------------------------------------------
+// App start; the app is shown immediately.
 function startApp() {
   document.getElementById('app').hidden = false;
   initApp();
@@ -414,14 +412,11 @@ function classifyIntensity(dbz) {
   return 'extreme (hail core)';
 }
 
-// ---------------------------------------------------------------------------
-// Centralized interpretation — mirrors radar/interpret.py:classify_scenario.
-// ONE coherent English narrative per scan, same state machine as the main
-// pipeline. NOTE: the explorer loads only the latest DHMZ frame, so there is
-// no previous scan to confirm persistence; we therefore trust the current
-// frame (treat clusters above threshold as confirmed). The motion vector is
-// reused from data.js — it is global to the DHMZ field, valid for any point.
-// ---------------------------------------------------------------------------
+// Centralized interpretation, mirrors radar/interpret.py:classify_scenario —
+// the same state machine as the main pipeline. The explorer loads only the
+// latest DHMZ frame, so clusters above threshold are treated as confirmed
+// (no previous scan for persistence). The motion vector from data.js is
+// global to the DHMZ field, valid for any point.
 const SEVERE_THREAT_KM = 50.0;       // matches interpret.SEVERE_THREAT_KM
 
 const SCENARIO_PRIORITY = {
@@ -545,13 +540,10 @@ function cellNowcastAt(cx, cy) {
   return NOWCAST.arrivalNowcast(cells, ll.lat, ll.lon);
 }
 
-// ---------------------------------------------------------------------------
-// Cell-catalog visualization layer: draws each tracked DHMZ cell (circle sized
-// by equivalent diameter, coloured by max dBZ), its 30-min velocity arrow and
-// the 60-min advection cone (the same +-2-sigma directional spread the nowcast
-// integrates over: base spread + growth*t). Makes the verdict inspectable —
-// you SEE which cell drives "approaching" and where the model lets it go.
-// ---------------------------------------------------------------------------
+// Cell-catalog layer: each tracked DHMZ cell (circle sized by equivalent
+// diameter, coloured by max dBZ), its 30-min velocity arrow, and the 60-min
+// advection cone the nowcast integrates over. Shows which cell drives
+// "approaching" and where the model lets it go.
 let ringsHTML = '';
 let lastDomId = null;
 

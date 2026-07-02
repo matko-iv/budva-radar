@@ -1,24 +1,27 @@
-"""Run the SKALA pipelines, each waiting for its OWN upstream source to advance.
+"""Run the SKALA pipelines, each waiting for its own upstream source to advance.
 
-Instead of a fixed N-minute cycle, loop.py polls each module's source on a short
-tick and runs that module's pipeline ONLY when a newer frame has appeared:
+Rather than a fixed cycle, loop.py polls each module's source on a short tick
+and runs the pipeline only when a newer frame has appeared:
   * SKALA RAIN  (run.py)        — newest OPERA composite epoch (~5-min cadence)
-  * SKALA CLOUD (run_clouds.py) — freshest HighSight slot (10-min cadence, lagged),
-                                  gated to the tile-quota interval so we don't
-                                  re-fetch faster than the free quota allows.
-Each module is independent (its own cadence); on a successful run docs/ is
-committed + pushed immediately so GitHub Pages updates as soon as that module has
-new data.
+  * SKALA CLOUD (run_clouds.py) — freshest HighSight slot (10-min cadence,
+                                  lagged), gated to the tile-quota interval
+  * NOWCAST (compare_nowcast.py --ord-latest) — newest ORD (hrulj) volume;
+                                  opt-in, meant for its own terminal via
+                                  --only-nowcast since the DGMR comparison is
+                                  slower than the RAIN/CLOUD cadence
+On a successful run docs/ is committed and pushed immediately.
 
 Flags:
-  --no-push    skip the git commit/push (serve docs/ locally instead)
-  --no-rain    don't watch / run the radar pipeline
-  --no-cloud   don't watch / run the satellite pipeline
-  --once       run any module whose source is already new once, then exit
-  --poll SEC   source-check interval in seconds (default 60)
+  --no-push        skip the git commit/push (serve docs/ locally instead)
+  --no-rain        don't watch / run the radar pipeline
+  --no-cloud       don't watch / run the satellite pipeline
+  --nowcast        also watch ORD volumes + run compare_nowcast.py
+  --only-nowcast   watch only the nowcast comparison (implies --no-rain --no-cloud)
+  --once           run any module whose source is already new once, then exit
+  --poll SEC       source-check interval in seconds (default 60)
 
-The cloud pipeline needs HIGHSIGHT_KEY (or EUMETSAT creds for the L2 path); if a
-source can't be reached that module simply waits and the other keeps running.
+The cloud pipeline needs HIGHSIGHT_KEY (or EUMETSAT creds for the L2 path); an
+unreachable source just makes that module wait while the others keep running.
 """
 
 import time
@@ -28,17 +31,27 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import config
+from radar import r2_publish
 
 BASE_DIR = Path(__file__).resolve().parent
-PUSH_TO_GIT = "--no-push" not in sys.argv
-RUN_RAIN = "--no-rain" not in sys.argv
-RUN_CLOUD = "--no-cloud" not in sys.argv
+# With R2 configured the modules already publish there, so pushing to GitHub
+# (slow Pages rebuild) is only the fallback when R2 isn't set up, or forced
+# with --push. --no-push always disables it.
+PUSH_TO_GIT = ("--no-push" not in sys.argv
+               and ("--push" in sys.argv or not r2_publish.available()))
+ONLY_NOWCAST = "--only-nowcast" in sys.argv
+RUN_RAIN = "--no-rain" not in sys.argv and not ONLY_NOWCAST
+RUN_CLOUD = "--no-cloud" not in sys.argv and not ONLY_NOWCAST
+RUN_NOWCAST = "--nowcast" in sys.argv or ONLY_NOWCAST
 
 DEFAULT_POLL_SEC = 60                  # how often to check the upstream sources
 RAIN_MIN_GAP_SEC = 0                   # OPERA's 5-min epoch already gates re-runs
 # Don't re-run CLOUD faster than the HighSight tile-quota throttle (else we burn
 # the free tile quota); newer 10-min slots inside this gap are skipped.
 CLOUD_MIN_GAP_SEC = int(config.CLOUDS.get("highsight_min_interval_min", 20)) * 60
+# NOWCAST's token is the newest ORD volume time, which only advances when a new
+# volume lands (~radar cadence), so no extra floor is needed.
+NOWCAST_MIN_GAP_SEC = 0
 
 
 def push_docs():
@@ -97,12 +110,14 @@ def push_docs():
         print(f"  git: skip ({e})")
 
 
-def _run(script):
-    """Run a pipeline script; never let a crash kill the loop."""
+def _run(cmd):
+    """Run a pipeline command (script + optional args) with our interpreter; never
+    let a crash kill the loop. `cmd` is a list, e.g. ["run.py"] or
+    ["compare_nowcast.py", "--ord-latest"]."""
     try:
-        subprocess.run([sys.executable, script], check=False, cwd=BASE_DIR)
+        subprocess.run([sys.executable, *cmd], check=False, cwd=BASE_DIR)
     except Exception as e:
-        print(f"{script} crashed: {e}")
+        print(f"{' '.join(cmd)} crashed: {e}")
 
 
 def _rain_source_token():
@@ -128,13 +143,23 @@ def _cloud_source_token():
     return t.replace(minute=(t.minute // 10) * 10, second=0, microsecond=0).isoformat()
 
 
+def _nowcast_source_token():
+    """NOWCAST's freshness signal: the newest ORD (hrulj) volume's nominal time (UTC
+    ISO). Two lightweight S3 listings via radar.ord; returns None if the bucket can't
+    be reached (the module then just waits and retries next tick)."""
+    from radar import ord as o
+    times = [t1 for (_d, n, _t0, t1) in o.available_window() if n and t1]
+    return max(times).isoformat() if times else None
+
+
 class Watcher:
     """Watches one module's upstream source and runs its pipeline only when the
     source token advances (and at least min_gap_sec has passed since the last run)."""
 
     def __init__(self, name, script, token_fn, min_gap_sec):
         self.name = name
-        self.script = script
+        # `script` may be a bare script name or a [script, *args] list.
+        self.cmd = [script] if isinstance(script, str) else list(script)
         self.token_fn = token_fn
         self.min_gap_sec = min_gap_sec
         self.last_token = None
@@ -152,8 +177,8 @@ class Watcher:
             return False
         if (time.time() - self.last_run) < self.min_gap_sec:
             return False                       # newer source, but inside the min gap
-        print(f"  [{self.name}] new source ({token}) -> running {self.script}")
-        _run(self.script)
+        print(f"  [{self.name}] new source ({token}) -> running {' '.join(self.cmd)}")
+        _run(self.cmd)
         self.last_token = token
         self.last_run = time.time()
         return True
@@ -176,8 +201,15 @@ def main():
         watchers.append(Watcher("RAIN", "run.py", _rain_source_token, RAIN_MIN_GAP_SEC))
     if RUN_CLOUD:
         watchers.append(Watcher("CLOUD", "run_clouds.py", _cloud_source_token, CLOUD_MIN_GAP_SEC))
+    if RUN_NOWCAST:
+        # compare_nowcast.py mirrors its outputs to R2 itself (instant); --no-push lets
+        # loop.py remain the single git-push authority (its push_docs runs below only
+        # when PUSH_TO_GIT), exactly like RAIN/CLOUD.
+        watchers.append(Watcher("NOWCAST", ["compare_nowcast.py", "--ord-latest", "--no-push"],
+                                _nowcast_source_token, NOWCAST_MIN_GAP_SEC))
 
-    mode = "with git push" if PUSH_TO_GIT else "no push (--no-push)"
+    mode = ("git push (R2 not configured)" if PUSH_TO_GIT
+            else ("R2 publish, no git push" if r2_publish.available() else "no push"))
     names = " + ".join(w.name for w in watchers) or "nothing"
     print(f"SKALA loop [{names}] — each module waits for its OWN source to advance "
           f"(poll {poll}s), {mode}. Ctrl+C to stop.")

@@ -106,6 +106,9 @@ def test_dgmr_center_tile_centers_budva():
 
 
 def test_dgmr_gated_without_plugin():
+    if dg.available():
+        print("  (skip: DGMR plugin installed on this machine)")
+        return
     fc, meta = dg.forecast(np.zeros((4, 241, 241)),
                            {"km_per_px": 1.0, "budva_crop_xy": (120, 120)}, 12)
     assert fc is None and "reason" in meta            # plugin not installed -> graceful

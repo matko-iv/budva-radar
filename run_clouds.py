@@ -138,9 +138,9 @@ def build_status(field, prev_field, data_source):
     use_hs = cfg.get("use_highsight", False)
     parts = _highsight_parts(loc, cfg) if use_hs else None
     if use_hs and parts is None:
-        # The user selected HighSight — do NOT silently serve an EUMETSAT verdict.
+        # Never silently swap in an EUMETSAT verdict when HighSight is selected.
         raise RuntimeError(
-            "HighSight is the selected SKALA CLOUD source but it is UNAVAILABLE "
+            "HighSight is the selected SKALA CLOUD source but it is unavailable "
             "(missing HIGHSIGHT_KEY or fetch failed). Refusing to fall back to the "
             "EUMETSAT L2 verdict. Set the key (env HIGHSIGHT_KEY or highsight_key.txt) "
             "and re-run, or set use_highsight=False to use L2 on purpose.")
@@ -156,9 +156,7 @@ def build_status(field, prev_field, data_source):
         mot = cmotion.compute_motion(prev_field, field, loc["lat"], loc["lon"],
                                      _dt_min(prev_field, field))
 
-    # GeoColour (what EUMETView shows) drives BOTH the Budva verdict and the map.
-    # Fetch the LATEST frame ONCE; the L2 field is the fallback when GeoColour
-    # can't be fetched.
+    # Fetch the latest GeoColour frame once; the L2 field is the fallback.
     gc_rgb = None
     gc_time = None
     if cfg.get("use_geocolour_map", True) or cfg.get("use_geocolour_verdict", False):
@@ -167,11 +165,9 @@ def build_status(field, prev_field, data_source):
         except Exception as e:
             print(f"  GeoColour unavailable ({e}); using L2 field", file=sys.stderr)
 
-    # Default verdict source is the L2 retrieval (CLM presence + OCA COT + solar
-    # zenith). GeoColour is a rendered picture, not a measurement, so it only
-    # drives the verdict when explicitly opted in AND the sun is high enough that
-    # brightness is a usable cloud proxy (no glint/twilight/night); otherwise it
-    # falls back to L2 (PDF Section 5).
+    # Default verdict source is the L2 retrieval. GeoColour is a rendered
+    # picture, not a measurement, so it only drives the verdict when opted in
+    # and the sun is high enough that brightness is a usable cloud proxy.
     use_gc = (gc_rgb is not None and cfg.get("use_geocolour_verdict", False)
               and visible.geocolour_verdict_ok(cfg, loc, gc_time))
     if use_gc:
@@ -179,10 +175,9 @@ def build_status(field, prev_field, data_source):
         facts = visible.geocolour_facts(sky, loc, cfg, motion=mot)
         verdict_source = "GeoColour"
     else:
-        # L2 verdict, with the GeoColour picture as a DAYTIME cross-check that vetoes
-        # the OCA optical-thickness over-read (a phantom thick high-ice shield where
-        # the picture is clear). Downward-only + day-gated, so glint/night can never
-        # ADD cloud; at night / low sun gc_sky stays None and pure L2 is used.
+        # L2 verdict, with GeoColour as a daytime cross-check that vetoes the
+        # OCA COT over-read. Downward-only and day-gated, so glint or night
+        # can never add cloud; otherwise gc_sky stays None and pure L2 is used.
         gc_sky = None
         if (gc_rgb is not None and cfg.get("use_geocolour_crosscheck", True)
                 and visible.geocolour_verdict_ok(cfg, loc, gc_time)):
@@ -277,9 +272,8 @@ def run_demo():
 def run_live():
     cfg = config.CLOUDS
     highsight_on = cfg.get("use_highsight", False)
-    # In HighSight mode the visible picture is the source and needs NO EUMETSAT
-    # credentials, so skip the L2 live fetch entirely (the L2 fix runs separately).
-    # Cached L2 frames, if any, are still read for the fallback.
+    # HighSight mode needs no EUMETSAT credentials, so skip the L2 live fetch;
+    # cached L2 frames are still read for the fallback.
     if not highsight_on:
         try:
             meta = fetch.fetch_latest()

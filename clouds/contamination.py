@@ -1,27 +1,17 @@
-"""Suppress likely-FALSE cloud at sun-glint / coastal pixels (PDF Part A1).
+"""Suppress likely-false cloud at sun-glint / coastal pixels.
 
-EUMETSAT's CLM (and the NWC SAF CMa it descends from) is deliberately
-"clear-conservative": when in doubt it flags a pixel cloudy, which structurally
-over-detects cloud over two hard surfaces — the sun-glint sea and the coastline.
-Budva is a coastal pixel right next to the Adriatic, the textbook worst case, and
-this is the "90% cloud / blocks sun 67% while it is clearly sunny" false alarm.
+EUMETSAT's CLM is deliberately clear-conservative: when in doubt it flags a
+pixel cloudy, which over-detects over the sun-glint sea and the coastline.
+Budva is a coastal pixel next to the Adriatic — the textbook worst case, and
+the source of the "90% cloud while clearly sunny" false alarm.
 
-Two mitigations the PDF prescribes, combined conservatively here:
-
-  * sun-glint mask — compute the glint angle (between the satellite view direction
-    and the specular reflection of the sun) per pixel and flag the glint zone
-    (glint angle < glint_max_deg, ~25-30 deg), where specular sea reflectance
-    trips the cloud tests;
-  * retrieval consistency — a CLM-"cloudy" pixel with NO retrievable cloud top
-    (CTTH) and NO optical thickness (OCA) is a strong false-alarm candidate; a
-    real cloud has a retrievable top/COT, glint and coastline false-cloud do not.
-
-A pixel is dropped ONLY when it is BOTH in the glint zone AND lacks any CTTH/OCA
-corroboration. That is deliberately conservative: genuine cloud — including thin
-cirrus, which still has a cloud top — is always kept; only the geometry-flagged,
-unretrievable "cloud" over the glint sea/coast is removed. The geometry reuses the
-already-unit-tested scalar helpers in clouds/solar.py + clouds/parallax.py, so
-there is no new trigonometry to get wrong.
+Two mitigations, combined conservatively: a per-pixel sun-glint mask (glint
+angle < glint_max_deg, ~25-30 deg, where specular sea reflectance trips the
+cloud tests), and retrieval consistency (a CLM-cloudy pixel with no CTTH top
+and no OCA thickness is a strong false-alarm candidate — real cloud has a
+retrievable top/COT). A pixel is dropped only when both hold, so genuine
+cloud, including thin cirrus, always survives. The geometry reuses the
+unit-tested scalar helpers in clouds/solar.py + clouds/parallax.py.
 """
 
 import numpy as np
@@ -49,9 +39,8 @@ def glint_angle_grid(lats, lons, sensing_time):
 
 
 def suppress_mask(cloudy, in_glint, has_retrieval):
-    """The PDF A1 decision, as a pure boolean array: drop a CLM-cloudy pixel only
-    where it is in the sun-glint zone AND has no corroborating CTTH/OCA retrieval.
-    Returns the boolean `drop` array (same shape as the inputs)."""
+    """Boolean `drop` array: a CLM-cloudy pixel is dropped only when it is in
+    the sun-glint zone and has no corroborating CTTH/OCA retrieval."""
     cloudy = np.asarray(cloudy, dtype=bool)
     in_glint = np.asarray(in_glint, dtype=bool)
     has_retrieval = np.asarray(has_retrieval, dtype=bool)
@@ -59,9 +48,9 @@ def suppress_mask(cloudy, in_glint, has_retrieval):
 
 
 def clean_field(field, cfg=None):
-    """Drop sun-glint / coastal false-cloud from a CloudField IN PLACE and return
-    it (PDF A1). No-op when disabled, at night (no glint after dark), or with no
-    sensing time. Records the number of dropped pixels in field.meta."""
+    """Drop sun-glint / coastal false-cloud from a CloudField in place and
+    return it. No-op when disabled, at night (no glint after dark), or with
+    no sensing time. Records the dropped-pixel count in field.meta."""
     cfg = cfg or config.CLOUDS
     if not cfg.get("glint_suppress", True):
         return field

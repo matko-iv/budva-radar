@@ -1,30 +1,22 @@
-"""Side-by-side nowcast comparison for Budva: run several models on the SAME
-input frames and write docs/compare_data.js (+ output/compare.json) for
-docs/nowcast-compare.html.
+"""SKALA NOWCAST for Budva: run DeepMind DGMR on the ORD radar frames and
+write docs/compare_data.js (+ output/compare.json + docs/nowcast_status.json)
+for docs/nowcast-compare.html.
 
-Models (each on an identical Budva-centred 256 x 256 / 1 km tile so the maps
-overlay exactly):
-  * extrapolation  - Lagrangian persistence (pysteps) -- robustness baseline
-  * linda          - LINDA-D (pysteps) -- the headline deterministic nowcast the
-                     Skala PDF recommends for localized convective cells
-  * dgmr           - DeepMind DGMR (pysteps-dgmr-nowcasts) -- a pretrained deep
-                     generative nowcaster, shown for accuracy comparison. Gated:
-                     if the plugin/weights are not installed it shows an enable
-                     note instead of a column (a labelled stand-in in --demo).
+DGMR only — no LINDA, no extrapolation (the multi-model comparison lives in
+verify_nowcast.py and the legacy page). DGMR runs on a Budva-centred
+256 x 256 / 1 km tile, its native grid. Without the plugin/weights installed
+it writes an enable note instead of a forecast, plus a labelled stand-in in
+--demo so the page stays previewable.
 
 Input:
     python compare_nowcast.py --h5 a.h5 b.h5 c.h5 d.h5   # ORD ODIM frames (oldest first)
     python compare_nowcast.py --ord-latest               # fetch the latest ORD volumes
     python compare_nowcast.py --demo                     # synthetic cell (page preview)
 
-On a successful run the outputs are published to Cloudflare R2 (instant serving; see
-radar/r2_publish.py + config.R2). It then pushes to git ONLY if R2 isn't configured
-(so the data still reaches GitHub Pages) or if --push is given (refresh the slower
-Pages fallback + archive). --no-push always skips — so a routine R2 run no longer
-triggers the slow Pages rebuild.
-
-The honest accuracy comparison is the verification harness (verify_nowcast.py,
-FSS/CSI vs lead time on your archive); this page is the qualitative side-by-side.
+Outputs publish to Cloudflare R2; git push happens only when R2 isn't
+configured or --push is given, so a routine R2 run doesn't trigger the slow
+Pages rebuild. The honest accuracy comparison is verify_nowcast.py (FSS/CSI
+vs lead time); this page is the qualitative side-by-side.
 """
 
 import datetime
@@ -38,8 +30,8 @@ BASE = Path(__file__).resolve().parent
 DOCS = BASE / "docs"
 OUT_JS = DOCS / "compare_data.js"
 OUT_JSON = BASE / "output" / "compare.json"
-# Compact Budva rain-FORECAST status for downstream consumers (the matko
-# forecast page): DGMR verdict + per-lead rate + integrated hourly mm.
+# Compact rain-forecast status for the matko forecast page: DGMR verdict +
+# per-lead rate + integrated hourly mm.
 OUT_STATUS = DOCS / "nowcast_status.json"
 FRAMES_ROOT = "compare_frames"          # docs/compare_frames/<model>/fNN.png
 
@@ -56,14 +48,11 @@ def _utc_now():
         microsecond=0, tzinfo=None).isoformat() + "Z"
 
 
-# --------------------------------------------------------------------------
-# input -> a Budva-centred 256x256 / 1 km rain-rate stack (+ cal, timestep)
-# --------------------------------------------------------------------------
 def _force_tile(R_stack, info, cal, size=TILE):
-    """Center-crop/pad every frame to size x size with Budva at the centre, so all
-    models (incl. DGMR) share one geometry. Returns (stack, info2). info2["cal"] is
-    a fresh Budva-centred GridCal for the TILE -- the crop changes the pixel origin,
-    so the radar-centred input cal must NOT be reused for the tile's geo-corners."""
+    """Center-crop/pad every frame to size x size with Budva at the centre so
+    all models share one geometry. info2["cal"] is a fresh Budva-centred
+    GridCal: the crop moves the pixel origin, so the radar-centred input cal
+    must not be reused for the tile's geo-corners."""
     import numpy as np
     from radar import dgmr_adapter as dg, ord as ordmod
     cx, cy = info["budva_crop_xy"]
@@ -98,13 +87,13 @@ def _from_h5(paths):
         deltas = [d for d in deltas if d > 0]
         if deltas:
             dt = float(np.median(deltas))
-    if not (2.5 <= dt <= 7.5):               # ORD scans are 5 min apart; an out-of-range
+    if not (2.5 <= dt <= 7.5):
         print(f"  WARN: input frames ~{dt:.0f} min apart (not a consecutive 5-min run); "
               f"clamping timestep to 5 min (else the horizon is wrong, e.g. 16x35=560 min)",
               file=sys.stderr)
         dt = 5.0
-    # absolute time of the NEWEST observed frame ("sada"); forecast frame N is base
-    # + lead_min, so the page can label each frame with a real clock time.
+    # Absolute time of the newest observed frame; forecast frame N is base +
+    # lead_min, so the page can label frames with real clock times.
     base = ts[-1] if ts else None
     info["base_epoch_ms"] = int(base.timestamp() * 1000) if base else None
     return R_stack, info, info["cal"], dt        # the Budva-centred TILE cal
@@ -132,9 +121,6 @@ def _demo_input():
     return stack, info, cal, 5.0
 
 
-# --------------------------------------------------------------------------
-# per-model rendering
-# --------------------------------------------------------------------------
 def _render_frames(R_now, fc, model_key, timestep_min):
     """Write now + forecast fields to docs/compare_frames/<model_key>/fNN.png and
     return the frame list (stepped radar palette, transparent where dry)."""
@@ -169,12 +155,11 @@ def _merc(lat, lon):
 
 
 def _bake_basemap(nw, se, out_png, max_px=1024):
-    """Fetch a NO-LABEL shaded-relief basemap for the tile bbox (Esri World Shaded
-    Relief, exported in Web Mercator so it aligns with Leaflet) -> a local PNG used
-    by the LEGACY compare page (the main nowcast-compare page uses live tiles). The
-    Esri export silently returns a blank dark-grey image at large sizes, so keep
-    max_px conservative AND reject a near-uniform response. Returns the docs-relative
-    path, or None on any failure (the page then falls back to live relief tiles)."""
+    """Label-free shaded-relief basemap for the tile bbox (Esri, Web Mercator
+    so it aligns with Leaflet), used by the legacy compare page. The Esri
+    export silently returns a blank dark-grey image at large sizes, so keep
+    max_px conservative and reject a near-uniform response. Returns the
+    docs-relative path, or None (page falls back to live relief tiles)."""
     try:
         import requests
         x0, y1 = _merc(nw[0], nw[1])         # NW: north lat, west lon
@@ -192,8 +177,6 @@ def _bake_basemap(nw, se, out_png, max_px=1024):
         r.raise_for_status()
         if r.content[:8] != b"\x89PNG\r\n\x1a\n":
             return None
-        # The Esri export silently returns a uniform dark-grey image at some sizes;
-        # never serve that blank canvas (the page falls back to live relief tiles).
         try:
             import io
             import numpy as np
@@ -230,9 +213,6 @@ def _map_meta(info, cal):
     }
 
 
-# --------------------------------------------------------------------------
-# orchestration
-# --------------------------------------------------------------------------
 def build(mode, paths=None):
     import numpy as np
     from radar import pysteps_nowcast as pn, dgmr_adapter as dg
@@ -245,24 +225,10 @@ def build(mode, paths=None):
 
     models = []
 
-    # 1) extrapolation (baseline) and 2) LINDA-D (headline) -- both pysteps
-    for key, req, label, role in (
-            ("extrapolation", "extrapolation", "Ekstrapolacija (Lagrange persistencija)", "baseline"),
-            ("linda", "linda", "LINDA-D (pysteps)", "headline")):
-        fc, _, m = pn.nowcast_fields(R_stack, N_LEAD, velocity=velocity, method=req,
-                                     scenario=scenario, kmperpixel=info["km_per_px"],
-                                     timestep_min=dt)
-        # nowcast_product needs the velocity for the motion vector
-        prod = pn.nowcast_product(R_stack, info, "ord", n_leadtimes=N_LEAD,
-                                  timestep_min=dt, disc_km=DISC_KM, scenario=scenario,
-                                  fc=fc, velocity=velocity, method=m, cal=cal)
-        prod.update(key=key, label=label, role=role,
-                    frames=_render_frames(R_stack[-1], fc, key, dt))
-        models.append(prod)
-
-    # 3) DGMR (DeepMind) -- gated on the plugin/weights; labelled stand-in in demo
+    # DGMR is the only forecast model here; the Lucas-Kanade velocity is still
+    # computed but only as the observed storm-motion vector in the product.
     dgmr_fc, dmeta = dg.forecast(R_stack, info, N_LEAD, timestep_min=dt)
-    dgmr_entry = {"key": "dgmr", "label": "DGMR (DeepMind)", "role": "compare"}
+    dgmr_entry = {"key": "dgmr", "label": "DGMR (DeepMind)", "role": "headline"}
     if dgmr_fc is not None:
         prod = pn.nowcast_product(R_stack, info, "ord", n_leadtimes=dgmr_fc.shape[0],
                                   timestep_min=dt, disc_km=DISC_KM, scenario=scenario,
@@ -298,8 +264,7 @@ def build(mode, paths=None):
 
 
 def _mock_dgmr_fc(R_stack, velocity, n_leadtimes):
-    """Cheap advection+growth stand-in for DGMR in --demo only (clearly badged in
-    the page). NOT the real model -- install the plugin for that."""
+    """Advection+growth stand-in for DGMR, --demo only, badged in the page."""
     import numpy as np
     from pysteps import nowcasts
     fc = np.asarray(nowcasts.get_method("extrapolation")(R_stack[-1], velocity, n_leadtimes))
@@ -343,9 +308,8 @@ def _hourly_mm(base_ms, series, dt):
 
 
 def nowcast_status(prod):
-    """Compact Budva rain-FORECAST status from the DGMR model in `prod` — the
-    contract the matko forecast page consumes (verdict + per-lead rate + integrated
-    hourly mm). Returns None if DGMR isn't present/available in the product."""
+    """Compact rain-forecast status from the DGMR model in `prod` — the
+    contract the matko forecast page consumes. None if DGMR isn't available."""
     dgmr = next((m for m in prod.get("models", [])
                  if m.get("key") == "dgmr" and m.get("series")), None)
     if dgmr is None:
@@ -354,9 +318,8 @@ def nowcast_status(prod):
                "disc_max_mmh": s["disc_max_mmh"]} for s in dgmr["series"]]
     dt = prod.get("timestep_min", 5.0)
     base_ms = prod.get("base_epoch_ms")
-    # The verdict is for the BUDVA POINT ONLY (exact at Budva). The disc-max is still
-    # shipped in `now`/`series` so the PAGE can show cloud/thunderstorm for cells in
-    # the region around Budva, but the VERDICT amount is strictly the point.
+    # The verdict amount is strictly the Budva point; disc-max still ships in
+    # now/series so the page can show cells in the surrounding region.
     now_point = round(float(dgmr.get("now_point_mmh", 0.0)), 2)
     now_disc = round(float(dgmr.get("now_disc_mmh", 0.0)), 2)
     raining_now = now_point >= RAIN_MMH
@@ -410,8 +373,8 @@ def write(prod):
         f.write(";\n")
     with open(OUT_JSON, "w", encoding="utf-8") as f:
         json.dump(prod, f, ensure_ascii=False, indent=2, default=str)
-    # docs/compare.json: pure-JSON twin of compare_data.js so the page can FETCH it
-    # (from R2 / Pages, cache-busted) instead of loading the JS synchronously.
+    # Pure-JSON twin of compare_data.js so the page can fetch it cache-busted
+    # instead of loading the JS synchronously.
     with open(DOCS / "compare.json", "w", encoding="utf-8") as f:
         json.dump(prod, f, ensure_ascii=False, indent=2, default=str)
     status = nowcast_status(prod) if prod.get("ok") else None
@@ -419,7 +382,6 @@ def write(prod):
         with open(OUT_STATUS, "w", encoding="utf-8") as f:
             json.dump(status, f, ensure_ascii=False, indent=2, default=str)
         print(f"  Saved: {OUT_STATUS}  [{status['verdict']['state']}]")
-    # Mirror to Cloudflare R2 for instant serving (no-op if R2 isn't configured).
     from radar import r2_publish
     r2_publish.publish(["compare_data.js", "compare.json", "nowcast_status.json"])
     r2_publish.publish_glob([f"{FRAMES_ROOT}/**/*.png", f"{FRAMES_ROOT}/*.png"])
@@ -445,10 +407,9 @@ def _expand_h5(raw):
 
 
 def _pick_consecutive(paths, n=N_FRAMES, step_min=5.0, tol_min=2.5):
-    """Pick the MOST RECENT run of `n` ORD frames spaced ~step_min apart (gap-free),
-    oldest->newest. ORD scans are 5 min apart and DGMR is fixed at 5-min cadence, so a
-    non-consecutive set gives a garbage nowcast AND an absurd horizon (16x35=560 min).
-    Falls back to the last n by time if no clean run exists (caller clamps the step)."""
+    """Most recent gap-free run of n ORD frames ~step_min apart, oldest first.
+    DGMR is fixed at 5-min cadence, so a non-consecutive set gives a garbage
+    nowcast and an absurd horizon. Falls back to the last n by time."""
     from radar import ord as ordmod
     timed = sorted((t, p) for t, p in
                    ((ordmod.nominal_time_utc(p), p) for p in paths) if t is not None)
@@ -518,7 +479,7 @@ def main(argv):
         f"peak {m.get('peak_mmh')}@+{m.get('peak_lead_min')}" if m.get("series")
         else f"n/a ({m.get('reason','')[:30]})") for m in prod["models"])
     print(f"[{prod['mode']}] {line}")
-    # --- geo report: the map MUST be centred on Budva (config.LOCATION) ---
+    # geo report: the map must be centred on Budva
     mm = prod.get("map_meta", {})
     bl = mm.get("budva_latlon")
     print(f"GEO: config.LOCATION = [{config.LOCATION['lat']}, {config.LOCATION['lon']}] (Budva)")
@@ -537,10 +498,8 @@ def main(argv):
         print("GEO: map centre is Budva. If the BROWSER still shows the old spot, hard-refresh "
               "(Ctrl+F5) — it cached compare_data.js.")
     print("DGMR enabled:", prod["dgmr_enabled"], "| Saved:", OUT_JS)
-    # Serving is via Cloudflare R2 now (instant; done in write()). Push to git ONLY
-    # when R2 isn't configured (so the data still reaches GitHub Pages) or when --push
-    # is given (refresh the slower Pages fallback + archive the run). --no-push always
-    # skips. The point: a routine R2 run no longer triggers the slow Pages rebuild.
+    # Push to git only when R2 isn't configured or --push is given, so a
+    # routine R2 run doesn't trigger the slow Pages rebuild.
     from radar import r2_publish
     if "--no-push" not in argv and ("--push" in argv or not r2_publish.available()):
         try:

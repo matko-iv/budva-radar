@@ -1,4 +1,4 @@
-"""Tests for radar/coastal.py — the coastal-arrival score (PDF Part C3).
+"""Tests for radar/coastal.py — the coastal-arrival score:
 
 Whether an inland cell actually reaches the Adriatic coast depends on (a) the
 steering flow toward the coast, (b) the VIL/echo-top growth-decay trend, and

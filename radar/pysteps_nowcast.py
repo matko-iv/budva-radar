@@ -1,38 +1,15 @@
-"""Real precipitation nowcast for Budva using pysteps (ANVIL + Lucas-Kanade).
+"""Precipitation nowcast for Budva built on pysteps.
 
-Reuses the existing radar-composite decode (radar/colormap.py RGB->dBZ) and
-geolocation (radar/calibration.py) to turn a sequence of OPERA / DHMZ composite
-frames into a rain-rate field stack, then runs a PROPER nowcast instead of the
-old single cross-correlation vector + dBZ-trend survival model:
+Composite frames (or ORD dBZ grids) become a rain-rate stack via the repo's
+decode + geolocation, then dense Lucas-Kanade optical flow feeds one of two
+growth/decay-aware models chosen per scene (method="auto"): ANVIL (Pulkkinen
+et al. 2020) for widespread/stratiform rain, LINDA (Pulkkinen et al. 2021) for
+convective scenes, where its per-cell localized ARI model tracks Budva's
+dangerous case — sudden coastal downpours — better than field-scale methods.
 
-  * dense Lucas-Kanade optical flow (pysteps.motion "LK") -> a per-pixel MOTION
-    FIELD, so differential motion / rotation is captured (PDF Part B1);
-  * an ADAPTIVE growth/decay extrapolation that picks the right pysteps model
-    for the scene (method="auto"):
-      - ANVIL (Autoregressive Nowcasting of VIL; Pulkkinen et al. 2020, IEEE
-        TGRS; pysteps "anvil") for widespread / stratiform rain -- models growth
-        and decay via a multiscale autoregressive-integrated cascade, the signal
-        the old 2-D dBZ-trend nowcast lacked and which plain extrapolation
-        (variance-preserving) cannot produce (PDF Part C2);
-      - LINDA (Lagrangian INtegro-Difference equation model with Autoregression;
-        Pulkkinen et al. 2021; pysteps "linda") for CONVECTIVE scenes -- it
-        detects individual cells (blob features) and runs a localized ARI model
-        per cell, which the literature shows tracks convective growth/decay and
-        cell motion better than ANVIL/STEPS. Budva's dangerous case (sudden
-        coastal downpours) is exactly this regime. Run deterministically
-        (add_perturbations=False) for a single-valued series.
-    The Z-R scenario already inferred from the scene intensity drives the
-    choice; an explicit method= overrides it.
-
-The nowcast is sampled at Budva (point + disc) for a per-lead-time rain rate,
-ETA to onset, peak intensity/time and a growth/decay trend, plus the storm
-motion (km/h + cardinal) derived through the real geolocation.
-
-Requires pysteps + opencv (LK); LINDA additionally needs scikit-image (blob
-feature detection). All are imported lazily so the rest of the radar package
-still imports without them; LINDA falls back to ANVIL if it errors, and both
-fall back to plain semi-Lagrangian extrapolation when there are fewer than
-ar_order+2 frames (the AR models' minimum).
+pysteps + opencv are imported lazily; LINDA additionally needs scikit-image
+and falls back to ANVIL on error. Fewer than ar_order+2 frames drops both to
+plain semi-Lagrangian extrapolation.
 """
 
 import warnings
@@ -43,15 +20,12 @@ import config
 from radar import calibration, colormap
 
 DEFAULT_AR_ORDER = 2            # ANVIL needs ar_order+2 input frames
-DEFAULT_TIMESTEP_MIN = 5.0      # OPERA composite cadence (~5 min)
-RAIN_ONSET_MMH = 0.2           # disc rate above which rain "starts" at the point
-DB_THRESHOLD_MMH = 0.1         # below this = dry, for the dB motion transform
-CROP_HALF_KM = 300.0           # nowcast domain half-width around Budva
+DEFAULT_TIMESTEP_MIN = 5.0
+RAIN_ONSET_MMH = 0.2            # disc rate above which rain "starts" at the point
+DB_THRESHOLD_MMH = 0.1          # below this = dry, for the dB motion transform
+CROP_HALF_KM = 300.0            # nowcast domain half-width around Budva
 
 
-# --------------------------------------------------------------------------
-# Composite decode + geolocation (reuses radar/colormap.py + radar/calibration.py)
-# --------------------------------------------------------------------------
 def km_per_pixel(cal, lat, lon):
     """Local km/pixel of the composite near (lat,lon) + Budva's full-image pixel."""
     px, py = cal.latlon_to_pixel(lat, lon)
@@ -107,12 +81,10 @@ def build_rainrate_stack(paths, source, lat, lon, half_km=CROP_HALF_KM,
 
 def build_rainrate_stack_from_grids(dbz_grids, cal, km_per_px, lat, lon,
                                     half_km=CROP_HALF_KM, scenario=None):
-    """Like build_rainrate_stack but from pre-decoded cartesian dBZ grids (e.g.
-    radar/ord.py load_grid on ODIM HDF5) instead of colour-composite images. The
-    radar's actual dBZ replaces colour-classified pixels -- the higher-fidelity
-    input the Skala PDF (single long-range DHMZ radar) recommends. `cal` is the
-    grid's latlon<->pixel object (ord.GridCal); km_per_px its resolution. Returns
-    (R_stack, info) with info["cal"] carried through for nowcast_product."""
+    """Like build_rainrate_stack but from pre-decoded cartesian dBZ grids
+    (radar/ord.py load_grid), so measured dBZ replaces colour-classified
+    pixels. `cal` is the grid's latlon<->pixel object; info["cal"] is carried
+    through for nowcast_product."""
     px, py = cal.latlon_to_pixel(lat, lon)
     half_px = half_km / km_per_px
     crops, cxy = [], None
@@ -132,9 +104,6 @@ def build_rainrate_stack_from_grids(dbz_grids, cal, km_per_px, lat, lon,
     return R_stack, info
 
 
-# --------------------------------------------------------------------------
-# pysteps motion + ANVIL nowcast
-# --------------------------------------------------------------------------
 def motion_field(R_stack):
     """Dense Lucas-Kanade motion (2,h,w) from the rain-rate stack, estimated on
     the dB-transformed field so the optical flow tracks precip features."""
@@ -157,36 +126,26 @@ def _resolve_method(requested, scenario, n_frames, ar_order):
     return requested
 
 
-# LINDA shape preservation. pysteps reconstructs the field as a superposition of
-# convolution kernels around detected features; with too FEW features and a WIDE
-# localization window (its default 0.2*min(shape) ~= 51 px on the 256-px tile) the
-# very first forecast frame convolves real cells into round blobs and the precip
-# shape is lost. So: detect more features (pysteps recommends 20-50) and tighten the
-# localization window to a convective-cell scale, with the anisotropic kernel (which
-# aligns with elongated structures). "Maximal detail" preset (sharper, a bit slower).
+# LINDA's default localization window (0.2*min(shape) ~ 51 px on the 256-px
+# tile) convolves real cells into round blobs from the first forecast frame;
+# more features + a convective-cell-scale window + the anisotropic kernel
+# preserve the precip shape.
 LINDA_MAX_FEATURES = 40
-LINDA_LOCAL_KM = 10.0          # localization-window std dev (km); ~51 km was the default
-# Realism (project PDF Part 2): deterministic LINDA-D converges to the smooth
-# conditional mean -- "rounded blobs". Instead run a STOCHASTIC LINDA-P ensemble and
-# collapse it to ONE field via the probability-matched ensemble mean (PMM): the mean
-# keeps the location skill, probability matching restores realistic intensity texture
-# / cores. More members = smoother mean but slower (~2 min for 20 x 16 leads on the
-# 256 tile); lower LINDA_ENS_MEMBERS if you need speed (or set add_perturbations=False
-# below for the fast deterministic LINDA-D, best pixel-CSI but blobby).
+LINDA_LOCAL_KM = 10.0
+# Deterministic LINDA-D converges to the smooth conditional mean ("rounded
+# blobs"), so run a stochastic LINDA-P ensemble and collapse it with the
+# probability-matched ensemble mean: location skill from the mean, realistic
+# intensity cores from the matching. More members = smoother but slower
+# (~2 min for 20 members x 16 leads on the 256 tile).
 LINDA_ENS_MEMBERS = 20
-LINDA_SEED = 42                # reproducible perturbations
+LINDA_SEED = 42
 
 
 def _linda_forecast(precip, velocity, n_leadtimes, ari_order, kmperpixel, timestep_min):
-    """REALISTIC LINDA: a stochastic LINDA-P ensemble (add_perturbations=True)
-    collapsed to a single field by the PROBABILITY-MATCHED ENSEMBLE MEAN (PMM).
-    precip is exactly ari_order+2 frames (oldest->newest). The ensemble mean keeps
-    LINDA-D's location skill; probability matching to the latest scan restores the
-    realistic intensity distribution / high-intensity cores that deterministic
-    LINDA-D smooths into round blobs (Pulkkinen et al. 2021 LINDA; Ebert 2001 PMM;
-    project PDF Part 2). LINDA leaves dry pixels NaN -- handled here + by the caller;
-    blob detection needs scikit-image, and on any error the caller falls back to
-    ANVIL. Returns (n_leadtimes, m, n)."""
+    """Stochastic LINDA-P ensemble collapsed to one field by the
+    probability-matched ensemble mean (Ebert 2001). precip is exactly
+    ari_order+2 frames, oldest->newest. Returns (n_leadtimes, m, n); the
+    caller falls back to ANVIL on any error."""
     import numpy as np
     from pysteps import nowcasts
     from pysteps.postprocessing import probmatching
@@ -199,12 +158,17 @@ def _linda_forecast(precip, velocity, n_leadtimes, ari_order, kmperpixel, timest
         n_ens_members=LINDA_ENS_MEMBERS, vel_pert_method="bps",
         kmperpixel=kmperpixel, timestep=timestep_min, seed=LINDA_SEED,
         num_workers=1, measure_time=False)
-    ens = np.asarray(ens, dtype="float64")                  # (members, leads, m, n)
-    ens_mean = np.nanmean(ens, axis=0)
-    obs = np.nan_to_num(precip[-1], nan=0.0)                # match intensities to the latest scan
+    # LINDA marks dry pixels NaN; they are zeros, not missing, and must be
+    # filled before averaging. nanmean averaged only over members where a
+    # pixel was wet, so a pixel raining in 1 of 20 members at 25 mm/h read
+    # ~25 mm/h instead of ~1.3 -- rain appeared to spread into speckle across
+    # the map. Zero-fill first, then plain mean.
+    ens = np.nan_to_num(np.asarray(ens, dtype="float64"), nan=0.0, copy=False)
+    ens_mean = ens.mean(axis=0)
+    obs = np.nan_to_num(precip[-1], nan=0.0)
     out = np.empty_like(ens_mean)
     for k in range(ens_mean.shape[0]):
-        fld = np.nan_to_num(ens_mean[k], nan=0.0)
+        fld = ens_mean[k]
         try:
             out[k] = probmatching.nonparam_match_empirical_cdf(fld, obs)
         except Exception:
@@ -247,10 +211,8 @@ def _disc_mask(h, w, cx, cy, radius_px):
     return (xx - cx) ** 2 + (yy - cy) ** 2 <= radius_px ** 2
 
 
-# --------------------------------------------------------------------------
-# Rain-rate -> RGBA raster (for the nowcast map). Stepped radar palette;
-# transparent below the rain threshold so frames can overlay a basemap.
-# --------------------------------------------------------------------------
+# Stepped radar palette for the nowcast map; transparent below the rain
+# threshold so frames can overlay a basemap.
 _RAIN_STOPS = [  # (mm/h floor, (r, g, b))
     (0.2, (150, 200, 255)), (1.0, (70, 130, 235)), (2.5, (40, 190, 110)),
     (5.0, (235, 225, 55)), (10.0, (245, 150, 40)), (20.0, (230, 65, 40)),
@@ -267,11 +229,6 @@ def rain_rgba(field, alpha=210):
         out[m] = (r, g, b, alpha)
     return out
 
-
-
-# --------------------------------------------------------------------------
-# End-to-end Budva nowcast product
-# --------------------------------------------------------------------------
 def budva_nowcast(paths, source, lat, lon, *, n_leadtimes=24,
                   timestep_min=DEFAULT_TIMESTEP_MIN, disc_km=8.0,
                   half_km=CROP_HALF_KM, ar_order=DEFAULT_AR_ORDER, scenario=None,

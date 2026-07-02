@@ -1,23 +1,19 @@
-"""OCA (Optimal Cloud Analysis) optical-thickness unpacking — done correctly.
+"""OCA (Optimal Cloud Analysis) optical-thickness unpacking.
 
-The PDF's COT bug: OCA does NOT store COT linearly. It stores log10(COT) in two
-variables, `cloud_optical_depth_log` (upper/only layer) and
-`cloud_optical_depth_log_lower_layer` (lower layer), and the total is
+OCA does not store COT linearly: it stores log10(COT) in two variables,
+`cloud_optical_depth_log` (upper/only layer) and
+`cloud_optical_depth_log_lower_layer`, and the total is
 
-    COT = 10^upper + 10^lower      (summed in LINEAR space, not log space)
+    COT = 10^upper + 10^lower      (summed in linear space, not log space)
 
-Rules enforced here:
-  * fill is masked to NaN BEFORE de-logging (de-logging a raw -32768 fill gives
-    nonsense). When read via xarray with mask_and_scale=True the fill is already
-    NaN; this module just never lets NaN through the de-log as a real number.
-  * the two layers are summed in LINEAR space (satpy's get_total_cot does the
-    same: "transformed to linear space before adding the values from the two
-    layers").
-  * failed retrievals (OCA scene_classification == 10) are dropped.
-  * COT ~= 257 (= 10^2.41, the documented log upper limit) is a SATURATED thick
-    cloud, NOT a fill value — it passes through unchanged.
+Rules enforced here: fill is masked to NaN before de-logging (de-logging a
+raw -32768 fill gives nonsense); the two layers are summed in linear space
+(satpy's get_total_cot does the same); failed retrievals
+(scene_classification == 10) are dropped; and COT ~= 257 (10^2.41, the
+documented log upper limit) is saturated thick cloud, not fill — it passes
+through unchanged.
 
-Pure numpy so it is unit-testable without xarray / a live netCDF file.
+Pure numpy, unit-testable without xarray or a live netCDF file.
 """
 
 import numpy as np

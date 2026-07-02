@@ -44,8 +44,8 @@
     const threat = domInRange ? {
       dbz: dom.max_dbz, km: dom.dist_km, cardinal: dom.bearing_cardinal,
       eta: dom.eta_minutes, label: dom.intensity_label,
-      // CPA classification (PDF Part E): SEVERE-approaching is gated on this
-      // being a HIT, so a distant bypassing/receding severe cell stays regional.
+      // SEVERE-approaching is gated on this being a CPA HIT, so a distant
+      // bypassing/receding severe cell stays regional.
       cpaClass: dom.classification,
     } : (app.closest_rain_km != null && app.closest_rain_km <= VICINITY_MAX_KM ? {
       dbz: app.closest_rain_intensity_dbz, km: app.closest_rain_km,

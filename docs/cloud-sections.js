@@ -41,8 +41,8 @@
     var map = { sunny: "sunce probija", dimmed: "sunce prigušeno", blocked: "sunce zaklonjeno" };
     var s = facts.sunState ? map[facts.sunState] : null;
     if (!s) return null;
-    // Show the GLOBAL-irradiance CMF (the PDF's "is it sunny" number) — not the
-    // direct-beam transmittance, which reads a few % even when the scene is sunny.
+    // Show the global-irradiance CMF, not the direct-beam transmittance,
+    // which reads a few % even when the scene is sunny.
     if (facts.cmf != null) s += " (CMF≈" + Math.round(facts.cmf * 100) + "%)";
     else if (facts.sunTransmittance != null) s += " (T≈" + Math.round(facts.sunTransmittance * 100) + "%)";
     return s;
@@ -50,10 +50,9 @@
 
   function renderFacts(node, facts) {
     facts = facts || {};
-    // Lead with the SUN answer; the raw CLM presence % is demoted to a clearly
-    // labelled "total incl. thin" line so a high number (e.g. 90% thin cirrus)
-    // never reads as the cloudiness alarm (PDF Part A3). Sun-blocking cover and
-    // presence stay separate numbers (the PDF's core two-axis point).
+    // Lead with the sun answer; the raw CLM presence % is demoted to a
+    // labelled "total incl. thin" line so 90% thin cirrus never reads as a
+    // cloudiness alarm. Sun-blocking cover and presence stay separate numbers.
     var pct = facts.cloudFracNow == null ? null : Math.round(facts.cloudFracNow * 100) + "%";
     var block = facts.skyCoverEff != null ? facts.skyCoverEff
               : (facts.opaqueFracNow != null ? facts.opaqueFracNow : null);

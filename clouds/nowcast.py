@@ -60,10 +60,10 @@ def point_nowcast(field, motion, lat, lon, cfg=None):
     now_radius = cfg.get("point_read_radius_km", config.SAMPLE_RADII_KM[0])
     frac_now = field.cloud_fraction(lat, lon, now_radius)
 
-    # A motion vector is usable only if confident, non-trivial, AND physically
-    # plausible. The same gate decides both whether to advect and whether to
-    # SHOW the vector, so an unreliable estimate (e.g. a spurious 408 km/h
-    # cross-correlation peak) is neither used nor displayed (PDF Part B).
+    # A motion vector is usable only if confident, non-trivial, and physically
+    # plausible. The same gate decides whether to advect and whether to show
+    # the vector, so a spurious 408 km/h cross-correlation peak is neither
+    # used nor displayed.
     max_speed = float(cfg.get("motion_max_speed_kmh", 250.0))
     usable = bool(motion and motion.get("direction_deg") is not None
                   and (motion.get("confidence") or 0) >= _MIN_CONF

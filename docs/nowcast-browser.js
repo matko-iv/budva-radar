@@ -47,7 +47,7 @@
 
   // nowcast.closest_point_of_approach — time + miss distance of the closest
   // approach of a cell (relative position rx,ry; velocity vx,vy) to a fixed
-  // point. tCpa <= 0 => closest approach in the PAST (receding). (PDF Part E)
+  // point. tCpa <= 0 means the closest approach is past (receding).
   function closestPointOfApproach(rx, ry, vx, vy) {
     var vv = vx * vx + vy * vy;
     if (vv <= 1e-12) return [0.0, Math.hypot(rx, ry)];
@@ -78,8 +78,8 @@
   }
 
   // nowcast._lifetime_min — survival timescale (min); null = survives the window.
-  // Prefers the 3-D VIL trend (PDF C2/B2) when the cell carries a volume column,
-  // else falls back to the 2-D dBZ trend.
+  // Prefers the VIL trend when the cell carries a volume column, else the
+  // 2-D dBZ trend.
   function lifetimeMin(cell) {
     var vilSlope = cell.vil_trend_per_min;
     var vilNow = cell.vil_kg_m2;
@@ -271,8 +271,8 @@
     var pLead = agg[String(C.APPROACH_LEAD_MIN)];
     if (pLead === undefined) pLead = pRain;
 
-    // CPA classification of the dominant cell (PDF Part E): HIT / BYPASS /
-    // RECEDING from its deterministic velocity vector, relative to the point.
+    // CPA classification of the dominant cell: HIT / BYPASS / RECEDING from
+    // its deterministic velocity vector, relative to the point.
     var kx2 = 111.32 * Math.cos(rad(latP));
     var dxe = (domCell.lon - lonP) * kx2;
     var dyn = (domCell.lat - latP) * 110.57;

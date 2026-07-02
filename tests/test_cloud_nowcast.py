@@ -78,7 +78,7 @@ def test_low_confidence_is_stationary():
 
 def test_unphysical_speed_not_shown_or_used():
     # A high-confidence but physically impossible vector (the "ka SW @ 408 km/h"
-    # cross-correlation artifact, PDF Part B) must be neither displayed nor used.
+    # cross-correlation artifact) must be neither displayed nor used.
     lon2d = _lon2d()
     field = _field(lon2d < 19.0)
     bogus = {"direction_deg": 225.0, "direction_cardinal": "SW", "speed_kmh": 500.0,

@@ -1,6 +1,6 @@
 """Tests for clouds/oca.py — correct OCA optical-thickness unpacking.
 
-The PDF: OCA stores COT as log10 in TWO layers; the total must be summed in
+OCA stores COT as log10 in TWO layers; the total must be summed in
 LINEAR space (10^upper + 10^lower), fill must be masked BEFORE de-logging, and
 failed retrievals (scene_classification == 10) dropped. COT ~= 257 (10^2.41) is
 SATURATION of a thick cloud, not a fill value or a bug.

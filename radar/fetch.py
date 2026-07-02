@@ -40,16 +40,9 @@ def _prune_old_frames(source_id: str, keep: int) -> None:
                 pass
 
 
-# --------------------------------------------------------------------------
-# DHMZ Uljenje (single static PNG, overwritten on update)
-# --------------------------------------------------------------------------
 def fetch_dhmz() -> dict:
-    """Download the DHMZ Uljenje radar image. Returns metadata dict or raises.
-
-    Since the URL is "static" (always the same URL), we use a content hash to
-    detect whether the image has changed. We save each new one as
-    YYYYMMDD_HHMMSS_<hash>.png so we have motion history.
-    """
+    """Download the DHMZ Uljenje image; the URL never changes, so new frames
+    are detected by content hash and saved as YYYYMMDD_HHMMSS_<hash>.png."""
     src = config.SOURCES["dhmz"]
     r = requests.get(src["url"], timeout=30, headers=_HEADERS)
     r.raise_for_status()
@@ -57,12 +50,10 @@ def fetch_dhmz() -> dict:
     sha = _hash_bytes(img_bytes)
 
     d = _frame_dir("dhmz")
-    # Check whether we already have the same hash
     existing_hashes = {p.stem.split("_")[-1] for p in d.glob("*.png")}
     if sha in existing_hashes:
         return {"source": "dhmz", "fetched": False, "reason": "no_change", "hash": sha}
 
-    # Validate that it's a parseable image
     img = Image.open(io.BytesIO(img_bytes))
     img.load()
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -77,15 +68,8 @@ def fetch_dhmz() -> dict:
     }
 
 
-# --------------------------------------------------------------------------
-# OPERA Odyssey (FMI CDN, JSON listing -> GIF files)
-# --------------------------------------------------------------------------
 def fetch_opera() -> dict:
-    """Download the latest OPERA Odyssey composite image.
-
-    The listing is in JSON with epoch+url per frame, ~5 min step,
-    keeping ~36 frames (3 hours of history).
-    """
+    """Download the newest OPERA Odyssey composite from the FMI JSON listing."""
     src = config.SOURCES["opera"]
     r = requests.get(src["list_url"], timeout=30, headers=_HEADERS)
     r.raise_for_status()
@@ -94,13 +78,11 @@ def fetch_opera() -> dict:
     if not images:
         return {"source": "opera", "fetched": False, "reason": "empty_list"}
 
-    # Download the most recent (last in the list).
     latest = images[-1]
     url, epoch = latest["url"], latest["epoch"]
     ts = datetime.datetime.fromtimestamp(epoch / 1000).strftime("%Y%m%d_%H%M%S")
     d = _frame_dir("opera")
 
-    # Skip if we already have this timestamp
     if any(ts in p.stem for p in d.glob("*.gif")):
         return {"source": "opera", "fetched": False, "reason": "no_change",
                 "epoch": epoch, "ts": ts}

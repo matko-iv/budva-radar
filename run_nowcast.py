@@ -5,10 +5,10 @@
     python run_nowcast.py --live     # fetch the latest OPERA frames now
     python run_nowcast.py --demo     # synthetic cell (no files) for a page preview
     python run_nowcast.py --frames a.png b.png c.png d.png --source opera
-                                     # YOUR OWN case: 2-4 composite frames, oldest
-                                     # first. Must be the real colour composite of a
-                                     # known source (opera|dhmz) so the colour->dBZ
-                                     # legend + Budva geolocation line up.
+                                     # your own case: 2-4 composite frames,
+                                     # oldest first, from a known source
+                                     # (opera|dhmz) so the colour->dBZ legend
+                                     # and geolocation line up
 
 Needs pysteps + opencv (see requirements.txt). On failure it still writes a
 {ok:false,error} payload so the page can say so instead of breaking.
@@ -29,7 +29,7 @@ OUT_JSON = BASE / "output" / "nowcast.json"
 
 N_FRAMES = 4            # ANVIL needs ar_order+2 = 4
 N_LEAD = 12             # 12 x 5 min = 60 min
-HORIZON_CAP_MIN = 45    # extrapolation skill ceiling (PDF Part C4)
+HORIZON_CAP_MIN = 45    # extrapolation skill ceiling
 DISP_SCALE = 3          # upscale (nearest) the small crop for a legible map
 FRAMES_DIR = "nowcast_frames"   # under docs/
 
@@ -109,9 +109,8 @@ def _render_map(R_stack, fc, info, source, timestep_min):
 
 
 def build(live=False, paths=None, source="opera"):
-    """Build the nowcast product. With paths=None it uses cached/live OPERA frames;
-    pass an explicit list of composite-frame paths (oldest->newest) + source to run
-    YOUR OWN case through the same pipeline (run_nowcast.py --frames ...)."""
+    """Build the nowcast product from cached/live OPERA frames, or from an
+    explicit oldest-first list of composite-frame paths (--frames)."""
     if paths is None:
         paths = _live_frames(N_FRAMES) if live else _cached_frames(N_FRAMES)
         if len(paths) < 2 and not live:
@@ -137,9 +136,8 @@ def build(live=False, paths=None, source="opera"):
 
 
 def _demo_product():
-    """Synthetic rain cell approaching Budva from the SW + intensifying — run
-    through the REAL ANVIL + map pipeline so the page/map can be previewed without
-    waiting for actual rain. Marked demo=True."""
+    """Synthetic intensifying cell approaching from the SW, run through the
+    real pipeline so the page can be previewed without waiting for rain."""
     import numpy as np
     from radar import pysteps_nowcast as pn, calibration
     h = w = 160

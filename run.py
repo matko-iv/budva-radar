@@ -120,9 +120,8 @@ def main():
     from radar import r2_publish
     r2_publish.publish(["data.js", "radar_status.json", "latest_dhmz.png", "latest_opera.gif"])
 
-    # Self-verification + feature log (PDF Stage 3): append one slim row per
-    # run, then re-score the accumulated history. Both are best-effort and must
-    # never break the main output.
+    # Verification log: append one slim row per run, then re-score the
+    # history. Best-effort; must never break the main output.
     row = verification.append_log(status, DOCS_DIR)
     if row is not None:
         print(f"  Log: appended scan to docs/skala_log_{str(row['generated'])[:4]}.csv")

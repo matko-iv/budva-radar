@@ -68,10 +68,9 @@ def compute_motion(prev_frame, curr_frame, lat_c, lon_c, dt_min,
             lat_c, lon_c, lat_c + dlat_per_frame, lon_c + dlon_per_frame))
         speed_kmh = km_per_frame * (60.0 / dt_min)
 
-    # Physical sanity (PDF Part B): one global cross-correlation vector can lock
-    # onto a spurious far peak. If the implied speed is unphysical for cloud
-    # advection, flag the estimate unreliable (confidence 0) so every downstream
-    # gate ignores it instead of reporting e.g. "ka SW @ 408 km/h".
+    # One global cross-correlation vector can lock onto a spurious far peak.
+    # An unphysical implied speed gets confidence 0 so every downstream gate
+    # ignores it instead of reporting "ka SW @ 408 km/h".
     max_speed = float((config.CLOUDS or {}).get("motion_max_speed_kmh", 250.0))
     if speed_kmh > max_speed:
         confidence = 0.0

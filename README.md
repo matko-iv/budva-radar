@@ -1,122 +1,115 @@
-# budva-radar
+# budva-radar (SKALA)
 
-A program that **reads radar so you don't have to** — for Budva (or any
-configurable location).
+Radar and satellite monitoring for Budva, Montenegro. The pipeline answers
+three questions and publishes them as static pages: is it raining here now
+(SKALA RAIN), will it rain within the next two hours (SKALA NOWCAST), and is
+the sky clear or clouded (SKALA CLOUD). Change `LOCATION` in `config.py` to
+point it at another town.
 
-Pulls from two sources:
+## Data sources
 
-| Source | Coverage | Update | Format |
-|---|---|---|---|
-| **DHMZ Uljenje** (`https://vrijeme.hr/uljenje-stat.png`) | Adriatic / Croatia / Montenegro | ~5-10 min | PNG 720×751 |
-| **OPERA Odyssey** (FMI CDN) | All of Europe | 5 min | GIF 950×1100, JSON listing |
+| Source | Used for | Cadence |
+|---|---|---|
+| MeteoGate ORD — hrulj (Uljenje) ODIM HDF5 polar volumes | primary radar data: measured dBZ, RHOHV clutter filter, Doppler, ZDR | 5 min |
+| DHMZ Uljenje PNG (`vrijeme.hr/uljenje-stat.png`) | display layer + fallback when ORD is down | 5-10 min |
+| OPERA Odyssey composite (FMI CDN) | Europe-wide context | 5 min |
+| HighSight visible tiles | cloud verdict + cloud map | 10 min |
+| EUMETSAT MTG L2 (CLM / CTTH / OCA) | cloud retrievals; kept behind config flags while the OCA over-read is being fixed | ~10 min |
 
-## What it does
+## How it works
 
-1. Downloads radar images every 5-10 min, caches them under `data/frames/`.
-2. Maps pixels to lat/lon coordinates (affine calibration anchored on Budva).
-3. Maps colors to precipitation intensity (RGB → dBZ → mm/h).
-4. Samples **concentric rings** (10, 25, 50, 100, 150 km) around the location.
-5. Detects **motion** by cross-correlating two consecutive frames.
-6. Extrapolates: if rain is moving toward us at X km/h from Y km away,
-   **ETA = Y / X**.
-7. Writes output:
-   - `output/status.json` (for machines)
-   - `docs/data.js` (inline for the local HTML preview)
-   - `c:/Users/Matija/weather-forecast/docs/radar_status.json` (consumed by the
-     main XGBoost forecast page in the "Trenutno stanje" card)
+The radar path decodes each frame to dBZ (raw values from ORD, colour
+classification for the PNGs), samples concentric rings around the location,
+extracts and tracks storm cells, and runs a probabilistic arrival nowcast:
+each cell is advected over a deterministic speed x direction grid, weighted
+by a survival model, and combined into P(rain) per lead bucket. Full-volume
+products (VIL, echo top, ZDR columns) sharpen the growth/decay signal, and a
+CPA classification separates cells that will hit from those that bypass.
 
-## Quickstart
+SKALA NOWCAST runs DeepMind DGMR on a Budva-centred 256 x 256 / 1 km tile of
+ORD frames; `verify_nowcast.py` scores it against LINDA and plain
+extrapolation on archived cases (FSS / CSI vs lead time).
+
+The cloud path reads the HighSight visible picture (cloud = bright, neutral
+pixels), advects successive frames for a two-hour outlook, and derives a
+sun/shade verdict. The EUMETSAT L2 path — CLM presence, OCA optical
+thickness, CMF-based sun state — stays in the codebase behind config flags.
+
+Each pipeline computes its verdict once, in Python, and every page renders
+that same result; parity tests replay the JS interpreters against the Python
+ports so wording can't drift.
+
+## Running it
 
 ```powershell
-# One-time setup
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 
-# Single run (fetch + interpret + write outputs)
-python run.py
+python run.py            # radar: fetch + interpret + write outputs
+python run_clouds.py     # clouds (needs HIGHSIGHT_KEY)
+python compare_nowcast.py --ord-latest   # DGMR nowcast (needs the plugin)
 
-# Background loop (every 5 min)
-python loop.py
+python loop.py           # keep everything updated; each module waits for its
+                         # own source to publish a new frame
 ```
 
-Open `docs/index.html` in a browser to see the status.
+Open `docs/index.html` for the radar status, `docs/radar-map.html` for the
+map, `docs/cloud-map.html` for clouds, `docs/nowcast-compare.html` for the
+DGMR nowcast.
+
+Tests are standalone scripts (no pytest):
+
+```powershell
+.venv\Scripts\python.exe tests\test_volume.py
+node tests\test_cloud_js.js
+```
 
 ## Layout
 
 ```
-budva-radar/
-├── config.py                  # Location, source URLs, valid-area masks
-├── radar/
-│   ├── fetch.py               # Download + cache
-│   ├── calibration.py         # Pixel <-> lat/lon (affine + anchor)
-│   ├── colormap.py            # RGB -> dBZ -> mm/h (Marshall-Palmer)
-│   ├── sampling.py            # Concentric ring sampling
-│   ├── motion.py              # Frame-to-frame motion vector
-│   └── interpret.py           # High-level summary
-├── run.py                     # One full cycle
-├── loop.py                    # Background loop
-├── data/frames/{dhmz,opera}/  # Cached image frames
-├── output/status.json         # Current interpretation
-└── docs/                      # Static HTML / CSS preview
+config.py            location, sources, thresholds, cloud + R2 settings
+radar/               fetch, calibration, colormap, sampling, motion, ord,
+                     volume, interpret, verdict, pysteps/dgmr adapters
+clouds/              highsight, fetch (EUMETSAT), clm, oca, solar, interpret,
+                     nowcast, verdict
+nowcast.py           probabilistic arrival nowcast + storm-mode classifier
+tracking.py          cell extraction + frame-to-frame tracking
+run.py / run_clouds.py / compare_nowcast.py / loop.py
+verify_nowcast.py    model skill scoring on archived ORD cases
+fetch_ord.py         pull ODIM volumes for a chosen time window
+docs/                static pages + generated data files (GitHub Pages)
+tests/               standalone test scripts (python / node)
 ```
+
+## Publishing
+
+Outputs go to Cloudflare R2 (`radar/r2_publish.py`; credentials via
+`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`), which the pages
+fetch cache-busted, so updates appear in seconds. Without R2 credentials the
+pipeline falls back to committing `docs/` and letting GitHub Pages serve it;
+`.github/workflows/update.yml` runs the radar pipeline on a cron for that
+mode.
 
 ## Calibration
 
-If the radar source changes layout (e.g. DHMZ redesigns the map), the
-hardcoded pixel landmarks in `radar/calibration.py` need to be updated.
-Budva is treated as the "anchor" — its user-verified pixel position is
-preserved exactly, while the affine fit handles local geometry around it.
+The PNG sources have no published projection. `radar/calibration.py` fits an
+affine transform through hand-measured city landmarks, with Budva as the
+anchor: its verified pixel is exact and the fit supplies the geometry around
+it. If DHMZ or FMI redesign their images, re-measure the landmarks. The ORD
+grid needs none of this — its geometry comes from the ODIM metadata.
 
-## GitHub Actions (automatic updates)
+## Verification
 
-A workflow in `.github/workflows/update.yml` runs `run.py` every ~15 minutes
-on GitHub's free-tier runner. It commits these outputs back to the repo:
-- `docs/radar_status.json` (served via GitHub Pages, consumed by the main
-  weather-forecast page)
-- `docs/data.js` (used by `docs/index.html` for the local preview)
-- `docs/latest_dhmz.png` and `docs/latest_opera.gif` (latest frames for the preview)
-- `data/frames/{dhmz,opera}/...` (full motion history, kept up to KEEP_FRAMES)
+Every radar run appends one row to `docs/skala_log_<year>.csv`. `radar/
+verification.py` replays the log against what the radar later observed and
+writes POD / FAR / CSI / HSS and Brier scores to
+`docs/skala_verification.json`. Threshold changes (for example the
+"approaching" gates in `config.py`) are tuned against this log, not by eye.
 
-### One-time setup
+## Terms of use
 
-1. **Create the GitHub repo (public)**
-   ```powershell
-   cd c:\Users\Matija\budva-radar
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git branch -M main
-   git remote add origin https://github.com/matko-iv/budva-radar.git
-   git push -u origin main
-   ```
-
-2. **Enable GitHub Pages**
-   - Repo → Settings → Pages
-   - Source: **Deploy from a branch**
-   - Branch: **main**, Folder: **/docs**
-   - Save. URL becomes `https://matko-iv.github.io/budva-radar/`
-
-3. **The workflow runs automatically** every ~15 minutes (cron) once the repo
-   is pushed. First run can be triggered manually under Actions tab.
-
-### Integration with weather-forecast
-
-The main XGBoost forecast page (`weather-forecast/docs/forecast.html`) fetches
-radar status from this repo's GitHub Pages URL with a local-file fallback:
-
-```javascript
-const RADAR_STATUS_URLS = [
-    'radar_status.json',                                    // local fallback
-    'https://matko-iv.github.io/budva-radar/radar_status.json',  // GH Pages
-];
-```
-
-GH Pages serves with `Access-Control-Allow-Origin: *`, so cross-origin fetch
-works without any extra configuration.
-
-## Disclaimer
-
-DHMZ images are public radar imagery. Polite fetching (every 5+ min) follows
-best practice. Don't use this for commercial / mass-distribution purposes
-without permission from DHMZ (vrijeme.hr) or EUMETNET (OPERA).
+DHMZ imagery, OPERA composites, EUMETSAT products, and HighSight tiles all
+have their own terms. This project fetches politely (5+ min intervals,
+quota-throttled tiles) for personal, non-commercial use; get permission from
+the providers before redistributing.

@@ -1,5 +1,5 @@
 """Tests for nowcast.closest_point_of_approach — the geometric closest-point-of-
-approach (CPA) test the PDF's Part E asks for: classify a moving cell relative to
+approach (CPA) test needed to kill the tangential-pass false alarm: classify a moving cell relative to
 a fixed point as HIT / BYPASS / RECEDING from the relative position + velocity,
 instead of the cruder instantaneous range-rate sign.
 

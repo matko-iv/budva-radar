@@ -1,5 +1,5 @@
 """Integration tests for clouds/interpret.cloud_facts + clouds/verdict — the
-PDF's core outcomes end to end:
+core outcomes end to end:
 
   * thin cirrus is PRESENT (counts as cloud) yet the sun GETS THROUGH -> CLEAR,
     not OVERCAST (the original bug);

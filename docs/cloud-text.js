@@ -47,8 +47,8 @@
   }
 
   // By day, the sun genuinely getting through at the point (high CMF ->
-  // sunState "sunny") makes broken cloud read as a sunny headline, not "partly
-  // cloudy" (mirror clouds/verdict.py _sun_through; PDF Part A3).
+  // sunState "sunny") makes broken cloud read as a sunny headline, not
+  // "partly cloudy" (mirrors clouds/verdict.py _sun_through).
   function sunThrough(facts) { return !facts.isNight && facts.sunState === "sunny"; }
 
   function interpret(facts, params) {

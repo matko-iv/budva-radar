@@ -1,27 +1,21 @@
-"""THE canonical Budva radar verdict, computed ONCE in the pipeline.
+"""Canonical Budva radar verdict, computed once in the pipeline.
 
-Every surface (budva-radar index.html, radar-map.html, and the forecast page
-in the matko repo) used to re-derive the conclusion in its own JS — and they
-drifted. This module is the single source of truth: a faithful port of
-skala-sections.js:factsFromSource + skala-text.js:SKALA.interpret, plus the
-Serbian one-liner wording from forecast.html. The pipeline ships the result in
-summary.budva_verdict (and a per-source verdict on each source), and the pages
-just RENDER it — same conclusion everywhere, only the amount of detail differs.
-
+The pages used to re-derive the conclusion in their own JS and drifted apart.
+This is a faithful port of skala-sections.js:factsFromSource +
+skala-text.js:SKALA.interpret plus the Serbian one-liner from forecast.html;
+the pipeline ships it as summary.budva_verdict and the pages only render it.
 tests/test_verdict_parity.py replays the JS interpreter via node against this
-port, so wording/state drift between Python and the JS fallback is caught.
+port, so keep wording and state logic in lockstep with the JS.
 """
 
 import math
 
 
-# --- mirrors skala-text.js ---------------------------------------------------
 SKALA_VICINITY_KM = 20
 SEVERE_DBZ = 50
-VICINITY_MAX_KM = 150  # mirrors skala-sections.js bound (max SAMPLE_RADII_KM)
-# Honest expectations (PDF Part C4/E): deterministic cell-arrival skill is only
-# ~30-60 min, so an ETA beyond this is flagged probabilistic, never shown as a
-# single hard number. Mirrored in docs/skala-text.js.
+VICINITY_MAX_KM = 150  # max SAMPLE_RADII_KM, mirrors skala-sections.js
+# Deterministic cell-arrival skill is ~30-60 min; ETAs beyond this are
+# flagged probabilistic. Mirrored in docs/skala-text.js.
 DETERMINISTIC_ETA_MAX_MIN = 30
 
 STATE_META = {
@@ -34,8 +28,7 @@ STATE_META = {
 
 
 def _round(x):
-    """Half-up rounding — mirrors JS Math.round (Python's round() is banker's:
-    round(32.5)=32 but Math.round(32.5)=33, which broke wording parity)."""
+    """Half-up like JS Math.round; Python's banker's round broke parity."""
     return int(math.floor(x + 0.5))
 
 
@@ -72,8 +65,7 @@ def _smjer_sr(cardinal):
 
 
 def _eta_text(eta, prob=" (probabilistic)"):
-    """ETA clause, flagging anything beyond the deterministic skill horizon as
-    probabilistic (PDF Part C4/E). Empty string when there is no ETA."""
+    """ETA clause; beyond the deterministic horizon it is flagged probabilistic."""
     if eta is None:
         return ""
     r = _round(eta)
@@ -92,8 +84,7 @@ def _fmt_km(km):
 
 
 def _closest_wet(src):
-    """Closest actual WET pixel near the location, from the rings — the LOCAL
-    intensity (mirrors skala-sections.js closestWet)."""
+    """Closest wet pixel from the rings (mirrors skala-sections.js closestWet)."""
     best = None
     for r in (src.get("rings") or []):
         km = r.get("closest_wet_km")
@@ -104,8 +95,7 @@ def _closest_wet(src):
 
 
 def facts_from_source(src, loc_name):
-    """Mirror of skala-sections.js factsFromSource: normalized facts for one
-    source's precomputed ring/approach data."""
+    """Normalized facts for one source (mirrors skala-sections.js factsFromSource)."""
     src = src or {}
     app = src.get("approaching") or {}
     rings = src.get("rings") or []
@@ -118,9 +108,8 @@ def facts_from_source(src, loc_name):
         threat = {"dbz": dom.get("max_dbz"), "km": dom.get("dist_km"),
                   "cardinal": dom.get("bearing_cardinal"),
                   "eta": dom.get("eta_minutes"), "label": dom.get("intensity_label"),
-                  # CPA classification of the dominant cell (PDF Part E): SEVERE at
-                  # the point is gated on this being a HIT, so a distant cell that
-                  # BYPASSes or is RECEDING never raises a point severe alert.
+                  # SEVERE is gated on this being a HIT; a bypassing or
+                  # receding cell never raises a point severe alert.
                   "cpaClass": dom.get("classification")}
     elif app.get("closest_rain_km") is not None and app["closest_rain_km"] <= VICINITY_MAX_KM:
         threat = {"dbz": app.get("closest_rain_intensity_dbz"), "km": app.get("closest_rain_km"),
@@ -150,10 +139,9 @@ def facts_from_source(src, loc_name):
 
 
 def interpret(facts):
-    """BINARY SKALA RAIN verdict: is it RAINING at the location RIGHT NOW, or not.
-    The forecast (approaching / ETA / severe-incoming) is SKALA NOWCAST's job now —
-    this reports only the current state. Must stay identical to skala-text.js
-    skalaInterpret (state + headline + narrative); the parity test enforces it."""
+    """Binary verdict: raining at the location right now or not. Forecasting
+    (approaching / ETA / severe-incoming) belongs to SKALA NOWCAST. Must stay
+    identical to skala-text.js skalaInterpret; the parity test enforces it."""
     facts = facts or {}
     loc = facts.get("locationName") or "this location"
     dbz = facts.get("dbz")
@@ -184,10 +172,9 @@ def interpret(facts):
 
 
 def serbian_line(facts, res):
-    """One-sentence Serbian status line for the BINARY verdict (current state only):
-    pada / ne pada u Budvi. Returns {text, bold, color, weight} — the page adds its
-    own prefix + data-age suffix. (Only state/headline/narrative are parity-checked,
-    so this wording is free to differ from the JS.)"""
+    """One-sentence Serbian status line (pada / ne pada u Budvi). Returns
+    {text, bold, color, weight}; the page adds its own prefix and data-age
+    suffix. Not parity-checked, so wording may differ from the JS."""
     dbz = facts.get("dbz")
     km = facts.get("km")
     if res["state"] == "RAINING":
@@ -205,10 +192,8 @@ def serbian_line(facts, res):
 
 
 def budva_verdict(status):
-    """Compute the canonical verdict from the DHMZ source (the high-res local
-    radar's probabilistic nowcast — the documented single source of truth).
-    Returns the dict shipped as summary.budva_verdict, or None when no source
-    is usable."""
+    """Canonical verdict from the DHMZ source (falling back to any usable
+    source). Returns the summary.budva_verdict dict, or None."""
     sources = status.get("sources") or {}
     loc = ((status.get("location") or {}).get("name")) or "Budva"
     src_id = "dhmz" if (sources.get("dhmz") or {}).get("ok") else next(

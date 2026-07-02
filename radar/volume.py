@@ -1,11 +1,11 @@
-"""Full-volume radar products (PDF Part C2): Vertically Integrated Liquid (VIL),
-18-dBZ echo-top height, and VIL density, from the full ODIM polar volume the
-DHMZ Uljenje radar publishes (9 elevations; see radar/ord.py).
+"""Full-volume radar products: Vertically Integrated Liquid (VIL), 18-dBZ
+echo-top height, and VIL density, from the ODIM polar volume the DHMZ Uljenje
+radar publishes (9 elevations; see radar/ord.py).
 
-The PDF's key upgrade for mountainous Montenegro: the 0.5-deg beam is ~2.5 km up
-over Budva at 130 km, so the lowest sweep overshoots shallow convection. Using
-the FULL column (VIL / echo-top / VIL-density) and, above all, their TIME TRENDS
-is the realistic growth/decay signal the 2-D dBZ-trend model approximates.
+The point for mountainous Montenegro: the 0.5-deg beam is ~2.5 km up over
+Budva at 130 km, so the lowest sweep overshoots shallow convection. The full
+column — and above all its time trends — carries the growth/decay signal the
+2-D dBZ-trend model only approximates.
 
 This module is split in two:
   * pure column math (beam_height_m, vil_from_profile, echo_top_m,
@@ -56,7 +56,7 @@ def _eff_z(dbz, floor=DBZ_FLOOR, cap=DBZ_CAP):
 
 def vil_from_profile(heights_m, dbz, floor=DBZ_FLOOR, cap=DBZ_CAP):
     """Vertically Integrated Liquid (kg/m^2) from a vertical (height, dBZ)
-    column, trapezoidal over layers (PDF Part C2):
+    column, trapezoidal over layers:
 
         VIL = sum 3.44e-6 * ((Z_i + Z_{i+1})/2)^(4/7) * dh
     """
@@ -125,16 +125,16 @@ def column_products(heights_m, dbz, floor=DBZ_FLOOR, cap=DBZ_CAP,
 
 ZDR_COLUMN_MIN_DB = 1.0       # ZDR >= this marks lofted liquid (updraft proxy)
 ZDR_COLUMN_DBZ_MIN = 20.0     # ...within real echo, not noise
-# Lowest beam above this height (m) over a point -> a radar echo aloft does NOT
-# guarantee surface rain (overshoot / virga risk); flag low confidence (PDF C1).
+# Lowest beam above this height (m): echo aloft no longer guarantees surface
+# rain (overshoot / virga risk), so confidence drops.
 SURFACE_RAIN_BEAM_MAX_M = 2000.0
 
 
 def zdr_column(heights_m, zdr, dbz, freezing_level_m,
                zdr_min=ZDR_COLUMN_MIN_DB, dbz_min=ZDR_COLUMN_DBZ_MIN):
-    """ZDR column: depth of ZDR >= `zdr_min` (in real echo) extending ABOVE the
-    environmental 0 C level (PDF Part C2) — a documented updraft/intensification
-    proxy whose depth changes can precede low-level reflectivity by 5-15 min.
+    """ZDR column: depth of ZDR >= `zdr_min` (in real echo) extending above the
+    environmental 0 C level — an updraft/intensification proxy whose depth
+    changes can precede low-level reflectivity by 5-15 min.
 
     The caller supplies the freezing level (NWP/seasonal); at 130 km the 0.5deg
     beam is already ~2.5 km up, so only DEEP cells' columns are visible here.
@@ -155,9 +155,9 @@ def zdr_column(heights_m, zdr, dbz, freezing_level_m,
 
 
 def surface_rain_confidence(lowest_beam_m, beam_max_m=SURFACE_RAIN_BEAM_MAX_M):
-    """Whether an echo over the point can be trusted as SURFACE rain (PDF C1).
-    With the lowest beam high above ground (overshoot), an aloft echo may be
-    virga that evaporates before reaching the surface -> low confidence."""
+    """Whether an echo over the point can be trusted as surface rain. With the
+    lowest beam high above ground, an aloft echo may be virga that evaporates
+    before reaching the surface."""
     if lowest_beam_m is None or lowest_beam_m > beam_max_m:
         return {"confidence": "low",
                 "reason": ("radar beam overshoots the low levels here "
@@ -167,9 +167,6 @@ def surface_rain_confidence(lowest_beam_m, beam_max_m=SURFACE_RAIN_BEAM_MAX_M):
             "reason": f"lowest beam {round(lowest_beam_m)} m AGL — near the surface"}
 
 
-# ---------------------------------------------------------------------------
-# Polar-volume I/O (h5py) — sample the vertical column over a point
-# ---------------------------------------------------------------------------
 def read_volume(path):
     """Read every sweep of an ODIM PVOL into memory (h5py): DBZH + ZDR, RHOHV-
     filtered (non-meteorological gates -> NaN). Returns

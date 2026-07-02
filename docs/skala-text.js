@@ -37,8 +37,8 @@
     return Math.round(km).toString();
   }
 
-  // Honest expectations (PDF Part C4/E): flag an ETA beyond the deterministic
-  // skill horizon as probabilistic. Mirrors radar/verdict.py DETERMINISTIC_ETA.
+  // Flag an ETA beyond the deterministic skill horizon as probabilistic.
+  // Mirrors radar/verdict.py DETERMINISTIC_ETA_MAX_MIN.
   var DETERMINISTIC_ETA_MAX_MIN = 30;
   function etaText(eta) {
     if (eta == null || isNaN(eta)) return '';

@@ -1,11 +1,9 @@
-"""Detect cloud motion between two frames via cross-correlation.
+"""Frame-to-frame precipitation motion via cross-correlation.
 
-Take a region of interest around Budva from 2 frames and find the (dx, dy)
-shift that maximizes cross-correlation. That's the motion vector in
-pixels/frame, converted to km/h via the calibration.
-
-Simpler than Lucas-Kanade optical flow but good enough for synoptic rain
-band motion.
+A global vector comes from correlating a window around Budva between two
+frames; trec_field() adds per-tile local vectors for scenes with
+differential motion. Coarser than optical flow, sufficient for synoptic
+rain-band movement.
 """
 
 import datetime
@@ -54,27 +52,13 @@ def _crop_around_pixel(grid, px, py, half_size):
 
 def compute_motion_vector(rgb_prev, rgb_curr, source, lat_c, lon_c,
                           window_km=200, max_shift_px=40):
-    """Compute the average motion (vx, vy) in pixels/frame.
-
-    rgb_prev/curr: (H, W, 3) numpy arrays (older and newer frame)
-    source: 'dhmz' or 'opera'
-    lat_c, lon_c: center of the area of interest (e.g., Budva)
-    window_km: how large the ROI is around the center
-    max_shift_px: maximum expected shift in pixels (limits search space)
-
-    Returns: dict {
-      dx_px, dy_px,        # shift in pixels from frame_prev -> frame_curr
-      confidence,          # max correlation (0..1)
-      direction_deg,       # 0=N, direction the precipitation is moving toward
-      direction_cardinal,
-      speed_px_per_frame
-    }
-    Or None if no reliable detection.
-    """
+    """Global motion of the window_km ROI around (lat_c, lon_c) between two
+    frames. Returns {dx_px, dy_px, speed_px_per_frame, confidence,
+    direction_deg (toward, 0=N), direction_cardinal, px_per_km}; None when
+    either crop lacks signal."""
     cal = calibration.get_calibration(source)
     cx, cy = cal.latlon_to_pixel(lat_c, lon_c)
 
-    # Estimate pixel scale: distance for 1° latitude at lat_c
     px_n, py_n = cal.latlon_to_pixel(lat_c + 1.0, lon_c)
     pixels_per_deg_lat = np.hypot(px_n - cx, py_n - cy)
     km_per_deg_lat = 111.32
@@ -88,11 +72,9 @@ def compute_motion_vector(rgb_prev, rgb_curr, source, lat_c, lon_c,
     crop_prev = _crop_around_pixel(g_prev, cx, cy, half_window_px)
     crop_curr = _crop_around_pixel(g_curr, cx, cy, half_window_px)
 
-    # Need some signal in both crops to get a meaningful motion estimate
     if crop_prev.sum() < 0.5 or crop_curr.sum() < 0.5:
         return None
 
-    # Cross-correlation. We want corr[shift_y, shift_x] = sum_{r,c} curr[r,c] * prev[r-dy, c-dx]
     corr = correlate2d(crop_curr, crop_prev, mode="full", boundary="fill", fillvalue=0)
     cy_c, cx_c = corr.shape[0] // 2, corr.shape[1] // 2
     y0, y1 = cy_c - max_shift_px, cy_c + max_shift_px + 1
@@ -109,9 +91,7 @@ def compute_motion_vector(rgb_prev, rgb_curr, source, lat_c, lon_c,
     if dx == 0 and dy == 0:
         direction_deg = None
     else:
-        # Convention: direction the precipitation is moving toward.
-        # In image coordinates, dx>0 = east, dy>0 = south (y axis points down).
-        # Convert to compass: 0 = N, 90 = E.
+        # direction moved toward; image dx>0 = east, dy>0 = south
         direction_deg = (np.degrees(np.arctan2(dx, -dy)) + 360) % 360
 
     speed_px = float(np.hypot(dx, dy))
@@ -127,19 +107,8 @@ def compute_motion_vector(rgb_prev, rgb_curr, source, lat_c, lon_c,
     }
 
 
-# ---------------------------------------------------------------------------
-# Block / TREC dense motion field (PDF Part B1)
-# ---------------------------------------------------------------------------
-# A single global cross-correlation vector assumes the whole scene moves as one
-# rigid block — false whenever there is differential motion, growth, or rotation.
-# TREC (Tracking Radar Echoes by Correlation) tiles the field and correlates each
-# block independently, yielding a LOCAL motion vector per tile. `field_median`
-# gives a robust scene motion (outlier-resistant) for consumers that still want a
-# single vector. Dependency-free: scipy.correlate2d, the repo's existing tool.
-
 def _best_shift(prev, curr, max_shift_px):
-    """Best (dx, dy) pixel shift of `prev`->`curr` by cross-correlation, with the
-    peak-correlation confidence. dx>0 = east, dy>0 = south (image y points down).
+    """Best (dx, dy) shift prev->curr with peak-correlation confidence;
     None when either patch has no signal."""
     if prev.sum() < 1e-9 or curr.sum() < 1e-9:
         return None
@@ -157,9 +126,9 @@ def _best_shift(prev, curr, max_shift_px):
 
 def trec_field(prev, curr, block_px=64, max_shift_px=20, min_signal=0.5,
                min_conf=0.2):
-    """Dense/sparse TREC motion field over two intensity grids: a list of
-    ``{row, col, dx, dy, confidence}`` (block-centre pixel + local shift) for
-    every tile that has enough signal and a confident match."""
+    """TREC motion field: {row, col, dx, dy, confidence} per tile with enough
+    signal and a confident match. Handles differential motion that a single
+    global vector cannot."""
     H, W = prev.shape
     half = block_px // 2
     vectors = []
@@ -181,8 +150,7 @@ def trec_field(prev, curr, block_px=64, max_shift_px=20, min_signal=0.5,
 
 
 def field_median(vectors):
-    """Outlier-robust scene motion from a TREC field: component-wise median of
-    the block vectors. ``None`` for an empty field."""
+    """Component-wise median of the block vectors; None for an empty field."""
     if not vectors:
         return None
     dxs = [v["dx"] for v in vectors]
@@ -192,13 +160,10 @@ def field_median(vectors):
 
 
 def motion_field(rgb_prev, rgb_curr, source, block_km=80, max_shift_px=20):
-    """Geo-located TREC motion field from two RGB frames: each block vector is
-    annotated with its lat/lon and compass direction/speed, ready to advect a
-    field with DIFFERENTIAL motion (PDF Part B1). Returns
-    ``{vectors:[...], median:{dx,dy,n}, px_per_km, block_px}`` or None."""
+    """Geo-located TREC field: each block vector annotated with lat/lon and
+    compass direction/speed. Returns {vectors, median, px_per_km, block_px}
+    or None."""
     cal = calibration.get_calibration(source)
-    cx, cy = cal.latlon_to_pixel(0.0, 0.0)  # placeholder; px scale below
-    # pixel scale from 1 deg latitude at the frame centre
     H, W = rgb_prev.shape[:2]
     clat, clon = cal.pixel_to_latlon(W / 2.0, H / 2.0)
     bx, by = cal.latlon_to_pixel(clat, clon)

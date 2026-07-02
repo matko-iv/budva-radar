@@ -1,11 +1,11 @@
 """Download the latest EUMETSAT cloud products and normalize them to the
-CloudField format (clouds/grid.py). This is the ONLY module that knows about
-EUMETSAT product specifics — everything downstream is product-agnostic.
+CloudField format (clouds/grid.py). The only module that knows EUMETSAT
+product specifics; everything downstream is product-agnostic.
 
-The collection ids in config.CLOUDS["collections"] and the variable names in
-_VARMAP MUST be confirmed against the live catalogue with `clouds/discover.py`
-before the first live run. eumdac / xarray are imported lazily so the rest of
-the package (and the tests) import without them installed.
+Confirm the collection ids in config.CLOUDS["collections"] and the _VARMAP
+variable names against the live catalogue with clouds/discover.py before the
+first live run. eumdac / xarray import lazily so the rest of the package and
+the tests work without them.
 
 Cache layout mirrors the radar one: data/cloud_frames/YYYYMMDD_HHMMSS_<hash>.npz
 (normalized field) + a matching .png preview; the last KEEP_FRAMES are kept.
@@ -45,9 +45,6 @@ _VARMAP = {
 }
 
 
-# --------------------------------------------------------------------------
-# Cache helpers (no eumdac needed)
-# --------------------------------------------------------------------------
 def _frame_dir() -> Path:
     FRAMES_DIR.mkdir(parents=True, exist_ok=True)
     return FRAMES_DIR
@@ -102,9 +99,6 @@ def save_field(field: CloudField, sensing_time: str) -> dict:
             "sensing_time": sensing_time}
 
 
-# --------------------------------------------------------------------------
-# Grid + normalization
-# --------------------------------------------------------------------------
 def target_grid(cfg):
     b, step = cfg["bbox"], cfg["grid_step_deg"]
     lats = np.arange(b["lat_max"], b["lat_min"] - 1e-9, -step)   # north-up
@@ -157,9 +151,9 @@ def _geos_indices(ds, lats, lons):
     i = np.round((Y - y[0]) / dy)
     valid = (np.isfinite(X) & np.isfinite(Y)
              & (i >= 0) & (i < ny) & (j >= 0) & (j < nx))
-    # *** Row order: the data array rows are stored N->S, OPPOSITE to the
-    # ascending y coordinate (verified 8/8 against EUMETView via debug_flip).
-    # So flip the row index into the data array. Columns (x) are already aligned. ***
+    # Data rows are stored N->S, opposite the ascending y coordinate (verified
+    # 8/8 against EUMETView via debug_flip), so flip the row index. Columns
+    # are already aligned.
     i = (ny - 1) - i
     return np.where(valid, i, 0).astype(int), np.where(valid, j, 0).astype(int), valid
 
@@ -227,8 +221,8 @@ def _pressure_to_height_m(p_pa):
 
 def _read_clm_enum(nc_path):
     """Read the authoritative cloud_state {name: value} enum straight from the
-    netCDF file (the PDF says: never assume the integers). xarray does not always
-    surface the enum, so we read it via netCDF4. Returns {} on any problem."""
+    netCDF file — never assume the integers. xarray does not always surface
+    the enum, so netCDF4 reads it. Returns {} on any problem."""
     try:
         import netCDF4
         with netCDF4.Dataset(nc_path) as nc:
@@ -258,13 +252,13 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time, clm_enum=None):
     idx_clm = _geos_indices(ds_clm, lats, lons)
     cs = np.round(_sample(clm_da, idx_clm))     # CLM cloud_state codes
 
-    # Classify cloud_state by MEANING, reading the enum from the FILE (PDF 2.1):
-    # the integer<->category map is a netCDF enum, not a public constant; dust/ash
-    # are separate flags. contaminated (thin/partial) and filled (opaque) are BOTH
-    # cloud. Falls back to the documented heritage integers if no enum is present.
+    # Classify cloud_state by meaning, from the enum in the file: the
+    # integer<->category map is a netCDF enum, not a public constant.
+    # Contaminated (thin/partial) and filled (opaque) are both cloud. Falls
+    # back to the documented heritage integers when no enum is present.
     enum = clm_enum or clmcat.enum_from_attrs(dict(clm_da.attrs))
-    # N-adjacent spatial coherence de-speckles isolated coastline false cloud so
-    # the presence number is not inflated at the Budva coastal pixel (PDF A1).
+    # Spatial coherence de-speckles isolated coastline false cloud so presence
+    # isn't inflated at the Budva coastal pixel.
     _coh = int((config.CLOUDS or {}).get("coherence_min_neighbors", 0))
     cats = clmcat.categorize(cs, enum or None, coherence_min_neighbors=_coh)
     nodata = cats["nodata"]
@@ -273,7 +267,6 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time, clm_enum=None):
 
     ctt = cth = cot = phase = nan
 
-    # --- OCA optical thickness (COT, total/linear) + phase -----------------
     if ds_oca is not None:
         idx_oca = _geos_indices(ds_oca, lats, lons)
         c = _oca_total_cot(ds_oca, idx_oca)
@@ -300,17 +293,15 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time, clm_enum=None):
     else:
         amt = default_amt
 
-    # ---- TWO SEPARATE AXES (the PDF's core fix) ----------------------------
-    # PRESENCE (frac / mask): "is there cloud" — from the CLM ONLY, NEVER gated on
-    # COT, so optically thin cirrus (which IS cloud) is always kept.
+    # Presence (frac / mask) comes from the CLM only, never gated on COT, so
+    # optically thin cirrus is always kept.
     frac = np.where(nodata, np.nan, np.where(cloud_any, amt, 0.0))
     mask = np.where(nodata, np.nan, cloud_any.astype(float))
 
-    # SUN-BLOCKING (opaque): "is the sun blocked" — optical thickness AND sun
-    # geometry. A pixel blocks the sun when its SLANT optical depth (COT/cos SZA)
-    # crosses cot_block_min, so the same cloud blocks more when the sun is low
-    # (COT >= cot_block*cos SZA). At night, or with no OCA, COT is unreliable, so
-    # fall back to the CLM opaque ("filled") flag.
+    # Sun-blocking (opaque) is slant optical depth: a pixel blocks the sun
+    # when COT / cos(SZA) crosses cot_block_min, so the same cloud blocks
+    # more when the sun is low. At night or without OCA, COT is unreliable
+    # and the CLM opaque ("filled") flag is used instead.
     center_lat, center_lon = 0.5 * (lats[0] + lats[-1]), 0.5 * (lons[0] + lons[-1])
     sza = solar.solar_zenith_deg(sensing_time, center_lat, center_lon)
     night = solar.is_night(sza, float(cfg.get("sun_night_sza", solar.NIGHT_SZA_DEG)))
@@ -346,14 +337,11 @@ def normalize(ds_clm, ds_ctth, ds_oca, cfg, sensing_time, clm_enum=None):
                         "cth": cth, "cot": cot, "phase": phase},
                        meta={"sensing_time": sensing_time, "source": "EUMETSAT",
                              "sza_deg": round(float(sza), 2), "night": bool(night)})
-    # Drop sun-glint / coastal false-cloud (PDF Part A1) before anything samples
-    # the field, so presence and opaque cover aren't inflated at the Budva coast.
+    # Drop sun-glint / coastal false-cloud before anything samples the field,
+    # so presence and opaque cover aren't inflated at the Budva coast.
     return contamination.clean_field(field, cfg)
 
 
-# --------------------------------------------------------------------------
-# Live fetch (needs eumdac + xarray + credentials)
-# --------------------------------------------------------------------------
 def latest_product(col, hours=6):
     """Newest product in a collection, searching only a recent time window so we
     don't enumerate the whole (huge) catalogue. Widens the window if empty."""

@@ -1,18 +1,10 @@
-"""Self-verification + feature log for SKALA (PDF Stage 3).
+"""Self-verification and feature log for SKALA.
 
-Two jobs:
-  1) append_log(): append ONE slim scalar row per run to a year-partitioned CSV.
-     This is the empirical record that lets us (a) score SKALA's own skill over
-     time and (b) feed the weather-forecast onset model with a live radar
-     feature archive. It is tiny — ~120 bytes/row, a few MB/year — so it is
-     GitHub-safe (NEVER log the full status.json or the images).
-  2) score_log(): read the accumulated log, compare each prediction to what the
-     radar actually observed at Budva in the following window, and write
-     POD/FAR/CSI/HSS + Brier to docs/skala_verification.json. This is the
-     "deliverable that makes high confidence defensible" — it empirically tells
-     us whether the thresholds are any good.
-
-No third-party deps (csv/json/datetime only).
+append_log() writes one slim scalar row per run to a year-partitioned CSV
+(~120 bytes/row, so GitHub-safe; never log the full status.json or images).
+score_log() replays the accumulated log against what the radar later observed
+at Budva and writes POD/FAR/CSI/HSS + Brier to docs/skala_verification.json —
+the empirical check on whether the thresholds are any good.
 """
 
 import csv

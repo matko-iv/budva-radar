@@ -103,7 +103,7 @@ def compare(py, js, label, fails, check_geometry=True, dist_rel_tol=0.01):
         bad(f"eta {py['eta_minutes']} vs {js['eta_minutes']}")
     if bool(py["approaching"]) != bool(js["approaching"]):
         bad(f"approaching {py['approaching']} vs {js['approaching']}")
-    # CPA classification (PDF Part E) — decision-relevant, no rounding ambiguity.
+    # CPA classification — decision-relevant, no rounding ambiguity.
     if bool(py.get("bypassing")) != bool(js.get("bypassing")):
         bad(f"bypassing {py.get('bypassing')} vs {js.get('bypassing')}")
     if py["n_cells_considered"] != js["n_cells_considered"]:
@@ -126,8 +126,11 @@ def compare(py, js, label, fails, check_geometry=True, dist_rel_tol=0.01):
         if dpy.get(key) != djs.get(key):
             bad(f"dom.{key} {dpy.get(key)!r} vs {djs.get(key)!r}")
     if check_geometry:
+        # The calibration-vs-equirectangular gap is an absolute offset (tens of
+        # metres), so a relative bound alone false-fails on near-overhead cells;
+        # the 0.15 km floor covers those.
         a, b2 = dpy["dist_km"], djs["dist_km"]
-        if abs(a - b2) > dist_rel_tol * max(abs(a), abs(b2), 1.0):
+        if abs(a - b2) > max(dist_rel_tol * max(abs(a), abs(b2), 1.0), 0.15):
             bad(f"dom.dist_km {a} vs {b2} (rel>{dist_rel_tol})")
         if dpy.get("bearing_cardinal") != djs.get("bearing_cardinal"):
             bad(f"dom.bearing_cardinal {dpy.get('bearing_cardinal')!r} vs {djs.get('bearing_cardinal')!r}")
@@ -214,7 +217,7 @@ def main():
         s, c = synth(cid, clat, clon, eq, dbz, ct, sp, di, tr, trend, LAT, LON)
         summ.append(s)
         cat.append(c)
-    # VIL-trend cell (PDF C2/B2): carries a volume column, so the survival model
+    # VIL-trend cell: carries a volume column, so the survival model
     # uses the FALLING VIL (not the flat dBZ) -> exercises the 3-D path in parity.
     sv, cv = synth("vil00001", LAT + 0.50, LON, 14.0, 44.0, "convective", 50.0,
                    180.0, 0.0, "steady", LAT, LON, vil_kg_m2=6.0, vil_trend_per_min=-0.6)

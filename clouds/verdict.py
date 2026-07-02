@@ -1,8 +1,8 @@
-"""THE canonical Budva CLOUD verdict, computed ONCE in the cloud pipeline.
+"""Canonical Budva cloud verdict, computed once in the cloud pipeline.
 
-Mirrors radar/verdict.py in shape and intent: a single source of truth for the
-cloud conclusion that every surface RENDERS (cloud-map.html and its JS port in
-docs/cloud-text.js), so wording/state never drift between Python and JS.
+Mirrors radar/verdict.py in shape and intent: one source of truth that every
+surface renders (cloud-map.html and its JS port in docs/cloud-text.js), so
+wording and state never drift between Python and JS.
 
 States:
   CLEAR              little/no cloud over the location and none incoming
@@ -19,7 +19,6 @@ import math
 import config
 
 
-# --- styling, mirrors radar/verdict.py STATE_META ---------------------------
 STATE_META = {
     "OVERCAST":           {"cls": "warn", "bg": "#455a64", "fg": "#fff",    "head": "OVERCAST"},
     "CLOUDS_APPROACHING": {"cls": "warn", "bg": "#1565c0", "fg": "#fff",    "head": "CLOUDS APPROACHING"},
@@ -56,9 +55,9 @@ def _pct(frac):
 
 
 def _sky_cover(facts):
-    """The cover the verdict line shows as % = the SUN-BLOCKING cover, so the
-    number never contradicts the state (no 'CLEAR — 90%'). Cloud PRESENCE is a
-    separate number, reported in the facts table, not on the verdict line."""
+    """The % on the verdict line is the sun-blocking cover, so the number
+    never contradicts the state (no "CLEAR — 90%"). Cloud presence is a
+    separate number in the facts table."""
     sky = facts.get("skyCoverEff")
     return facts.get("cloudFracNow") if sky is None else sky
 
@@ -91,16 +90,15 @@ def _now_level(frac):
 
 
 def _sun_through(facts):
-    """True when, by day, the sun genuinely gets through at the point (high CMF
-    -> sunState 'sunny'). Then broken/scattered cloud reads as a sunny headline,
-    not 'partly cloudy' — the PDF (A3) wants the headline to be the sun-state
-    word, with cover % kept only as secondary context."""
+    """True when, by day, the sun genuinely gets through at the point (high
+    CMF -> sunState 'sunny'). Broken cloud then reads as a sunny headline
+    rather than 'partly cloudy', with cover % as secondary context."""
     return (not facts.get("isNight")) and facts.get("sunState") == "sunny"
 
 
-# Sun/shade descriptor — the second axis the PDF asks us to report alongside the
-# cloud-cover state. By day it comes from OCA COT + the solar zenith; at night
-# OCA COT is unusable so we report cloud as IR-detected and make NO sun claim.
+# Sun/shade descriptor, the second axis alongside cloud cover. By day it comes
+# from OCA COT + solar zenith; at night OCA COT is unusable, so cloud is
+# reported as IR-detected with no sun claim.
 _SUN_EN = {"sunny": "sun gets through", "dimmed": "sun dimmed by cloud",
            "blocked": "sun blocked"}
 _SUN_SR = {"sunny": "sunce probija", "dimmed": "sunce prigušeno",
@@ -125,13 +123,9 @@ def interpret(facts):
     facts = facts or {}
     loc = facts.get("locationName") or "this location"
     frac = facts.get("cloudFracNow")
-    # Level (clear/partly/overcast) is judged on the OPTICAL-DEPTH-weighted sky
-    # cover, so thin high cirrus does not read as overcast. Coverage % is still
-    # shown for context.
+    # Level is judged on the optical-depth-weighted sky cover, so thin high
+    # cirrus does not read as overcast; the shown % is the same number.
     sky = _sky_cover(facts)
-    # Show the SUN-BLOCKING cover as the percentage, not the raw CLM presence —
-    # that is what the state (clear/partly/overcast) is judged on, so the number
-    # and the verdict stay consistent (no "CLEAR — 90%").
     pct = _pct(sky)
     pct_txt = f" ({pct}%)" if pct is not None else ""
     level = _now_level(sky)
@@ -145,8 +139,8 @@ def interpret(facts):
             if facts.get("cloudTopHeightM") is not None else "")
     outlook = facts.get("sunOutlook") or ""
     night = bool(facts.get("isNight"))
-    # At night we never claim the sun "gets through" — OCA COT (the sun/shade
-    # input) needs solar channels, so cloud is IR-detected only (PDF Korak C).
+    # Never claim the sun "gets through" at night — OCA COT needs solar
+    # channels, so night cloud is IR-detected only.
     veil_tail = " (thin high cloud, IR)" if night else ", sun gets through"
 
     if level == "clear":
@@ -173,9 +167,8 @@ def interpret(facts):
             ir = " (IR)" if night else ""
             narrative = f"Overcast over {loc}{pct_txt} — {typ}{tops}{ir}."
         elif _sun_through(facts):
-            # Broken/scattered cloud, but the sun gets through at the point (high
-            # CMF) -> a sunny headline, not "partly cloudy". The cover % stays as
-            # context; the cloud type is still named (PDF Part A3).
+            # Broken cloud but the sun gets through: sunny headline, cover %
+            # as context, cloud type still named.
             state = "CLEAR"
             narrative = f"Mostly sunny over {loc}{pct_txt} — {typ}, sun gets through."
         elif thin:
@@ -258,7 +251,6 @@ def cloud_verdict(status):
         "color_sr": sr["color"],
         "weight_sr": sr["weight"],
         "sun_outlook": facts.get("sunOutlook") or "",
-        # Sun/shade axis, reported alongside the cloud-cover state (PDF Section 3).
         "sun": sun_descriptor(facts),
         "facts": {k: facts.get(k) for k in
                   ("cloudFracNow", "opaqueFracNow", "skyCoverEff", "thinVeil",

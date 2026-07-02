@@ -1,35 +1,19 @@
-"""Probabilistic arrival nowcast + storm-mode classification (PDF Stage 2).
+"""Probabilistic arrival nowcast and storm-mode classification.
 
-arrival_nowcast() replaces the hard 15 km "approaching" cap and the +-10 deg
-alignment gate with a lead-time-dependent confidence CONE plus a growth/decay
-SURVIVAL model:
+arrival_nowcast() advects each tracked cell over a deterministic speed x
+direction perturbation grid (no RNG, so status.json stays byte-reproducible
+and doesn't churn git). The directional spread widens with lead time and is
+wider for convective cells; a member hits when the advected centre passes
+within cell radius + buffer of the point, weighted by the cell's survival
+probability at that time. Cell probabilities combine as 1 - prod(1 - p_i),
+reported per lead bucket (15/30/60/120 min). The `approaching` verdict keys
+off the 60-min bucket plus a dominant-cell distance gate, both tuned on the
+verification log (see config.py); the 120-min p_rain remains a softer watch
+tier.
 
-  * Each tracked cell's centre is advected forward over a deterministic
-    perturbation grid (speed x direction = an "unscented" mini-ensemble). It is
-    deterministic on purpose — no RNG — so status.json stays byte-reproducible
-    and doesn't churn git (the repo's stated constraint).
-  * The directional spread WIDENS with lead time and is wider for convective
-    cells (erratic) than stratiform (steady) — the cone.
-  * A member "hits" the location if the advected centre passes within
-    (cell radius + buffer) of the point before NOWCAST_LEAD_MAX_MIN, weighted
-    by the cell's SURVIVAL probability at the hit time (a decaying core that
-    needs 90 min to arrive probably dies first).
-  * P(rain) = weighted hit fraction per cell, combined across cells as
-    1 - prod(1 - p_i). Reported per lead bucket (15/30/60/120 min) so the UI
-    can show a confidence curve and the 60-min number lines up with
-    verification.py's horizon.
-  * The `approaching` verdict keys off the APPROACH_LEAD_MIN (60-min) bucket —
-    NOT the 120-min cumulative p_rain — and additionally requires the dominant
-    cell to be within APPROACH_MAX_DIST_KM of the assessed point. Both gates
-    were tuned empirically on the verification log (see config.py). p_rain
-    (120 min) is still reported for a softer "watch" tier.
-
-classify_storm_mode() names the scene morphology from REFLECTIVITY ALONE.
-Severe-convective modes (squall line/QLCS, bow echo, supercell) are flagged as
-SUSPECTED only — confirming rotation needs Doppler velocity, which these image
-composites do not carry.
-
-numpy / math only.
+classify_storm_mode() names scene morphology from reflectivity alone; severe
+modes are flagged as suspected only, since confirming rotation needs Doppler
+velocity these composites do not carry.
 """
 
 import math
@@ -42,26 +26,15 @@ from radar import calibration, colormap
 LEAD_BUCKETS = (15, 30, 60, 120)
 
 
-# ---------------------------------------------------------------------------
-# Closest point of approach (PDF Part E)
-# ---------------------------------------------------------------------------
 def closest_point_of_approach(rx, ry, vx, vy):
-    """Time and miss distance of the closest approach of a cell to a fixed point.
-
-    `rx, ry` is the cell position RELATIVE to the point (km, east/north) and
-    `vx, vy` is the cell velocity (km/min, east/north); the point is stationary.
-
-      t_cpa = -(r0 . v) / (v . v)      (set 0 when the cell is ~stationary)
-      d_min = | r0 + v * t_cpa |       (the miss distance at closest approach)
-
-    Returns ``(t_cpa, d_min)``. ``t_cpa <= 0`` means the closest approach is in
-    the PAST — the cell is already receding (TCAS tau / storm-track projection).
-    This is the exact, sign-correct replacement for the instantaneous range-rate
-    test, so a tangential pass (near-zero range rate, large miss) is no longer
-    mistaken for an on-location hit.
-    """
+    """Time and miss distance of a cell's closest approach to a fixed point.
+    (rx, ry) is the cell position relative to the point (km, east/north),
+    (vx, vy) its velocity in km/min. t_cpa <= 0 means the closest approach is
+    already past — the cell is receding. Sign-correct replacement for the
+    instantaneous range-rate test, so a tangential pass is not mistaken for a
+    hit."""
     vv = vx * vx + vy * vy
-    if vv <= 1e-12:                       # stationary -> closest approach is now
+    if vv <= 1e-12:
         return 0.0, math.hypot(rx, ry)
     t_cpa = -(rx * vx + ry * vy) / vv
     mx = rx + vx * t_cpa
@@ -69,17 +42,12 @@ def closest_point_of_approach(rx, ry, vx, vy):
     return t_cpa, math.hypot(mx, my)
 
 
-# ---------------------------------------------------------------------------
-# Arrival probability
-# ---------------------------------------------------------------------------
 def _lifetime_min(summary, latest):
-    """Survival timescale (min). None means 'steady/growing -> survives the
-    lead window'. For a decaying core: time to fall to a rain-bearing floor at
-    the observed decay rate (floored at NOWCAST_MIN_LIFETIME_MIN).
-
-    PREFERS the 3-D VIL trend (PDF Part C2/B2) — VIL tracks the mixed-phase
-    updraft far better than peak reflectivity — and falls back to the 2-D dBZ
-    trend when no full-volume column is available (PNG path / overshot cells)."""
+    """Survival timescale (min); None means steady/growing, i.e. survives the
+    lead window. For a decaying core: time to fall to the rain floor at the
+    observed rate. Prefers the VIL trend (tracks the mixed-phase updraft far
+    better than peak reflectivity), falling back to the dBZ trend when no
+    full-volume column is available."""
     vil_slope = summary.get("vil_trend_per_min")
     vil_now = (latest or {}).get("vil_kg_m2")
     if vil_slope is not None and vil_now is not None:
@@ -99,9 +67,8 @@ def _cell_arrival(summary, lat_c, lon_c):
     None if the cell has no usable velocity."""
     latest = summary["latest"]
 
-    # Geometry relative to the ASSESSED point, up front — the on-location and
-    # receding tests need it, not just the advection loop. (Per-point math,
-    # like the JS port: latest["edge_km"] is extraction-relative.)
+    # Geometry relative to the assessed point; latest["edge_km"] is
+    # extraction-relative and differs for non-Budva points.
     kx = 111.32 * math.cos(math.radians(lat_c))
     ky = 110.57
     px = (latest["lon"] - lon_c) * kx
@@ -109,17 +76,15 @@ def _cell_arrival(summary, lat_c, lon_c):
     dist_c = math.hypot(px, py)
     edge_pt = max(0.0, dist_c - latest["equiv_diam_km"] / 2.0)
 
-    # Cell body covers the point -> it is raining there NOW.
+    # Cell body covers the point: raining there now.
     if edge_pt <= 0.0:
         return {"p": 1.0, "eta_min": 0.0,
                 "p_by_lead": {b: 1.0 for b in LEAD_BUCKETS},
                 "tau_min": None, "stationary": False, "on_location": True}
 
-    # Receding test: positive range rate = the centre is moving AWAY from the
-    # point. A cell whose trailing edge is still within the buffer but which is
-    # departing has already PASSED — it must NOT read as "approaching, ETA 0"
-    # (the bug: rain crosses Budva west->east, and for the next ~20 min the
-    # trailing edge sits 0-5 km E while the page still screams APPROACHING).
+    # A departing cell whose trailing edge still sits within the buffer has
+    # already passed; without this test the page kept saying "approaching,
+    # ETA 0" for ~20 min after rain crossed Budva west to east.
     receding = False
     if "speed_kmh" in summary and summary.get("direction_deg") is not None:
         spd0 = min(float(summary["speed_kmh"] or 0.0), config.NOWCAST_MAX_SPEED_KMH)
@@ -127,8 +92,7 @@ def _cell_arrival(summary, lat_c, lon_c):
             ang0 = math.radians(summary["direction_deg"])
             receding = (px * math.sin(ang0) + py * math.cos(ang0)) > 0.0
 
-    # Nearest edge essentially on top of us (within the buffer): imminent if
-    # inbound/stationary/unknown motion; already-passed if receding.
+    # Nearest edge within the buffer: imminent unless receding.
     if edge_pt <= config.NOWCAST_REACH_BUFFER_KM:
         if receding:
             return {"p": 0.0, "eta_min": None,
@@ -141,26 +105,21 @@ def _cell_arrival(summary, lat_c, lon_c):
 
     if "speed_kmh" not in summary or summary.get("direction_deg") is None:
         return None
-    # Cap absurd speeds (e.g. a far cell that inherited a bad Europe-wide
-    # composite motion vector) to a physical storm maximum.
+    # Cap speeds inherited from a bad Europe-wide composite motion vector.
     speed = min(float(summary["speed_kmh"] or 0.0), config.NOWCAST_MAX_SPEED_KMH)
     direction = summary["direction_deg"]
-    if speed < 1.0:                       # near-stationary and not on us -> won't arrive
+    if speed < 1.0:
         return {"p": 0.0, "eta_min": None,
                 "p_by_lead": {b: 0.0 for b in LEAD_BUCKETS},
                 "tau_min": None, "stationary": True, "on_location": False}
 
-    # Physical reach gate: at the capped max speed a cell can travel at most
-    # (NOWCAST_MAX_SPEED_KMH * lead window) km. If its nearest edge is farther
-    # than that it CANNOT arrive in time, so it is not "approaching" — this
-    # kills absurd "hail 983 km away, ETA 103 min" cases.
+    # Reach gate: farther than max speed x lead window means it cannot arrive
+    # in time (kills "hail 983 km away, ETA 103 min").
     max_reach_km = config.NOWCAST_MAX_SPEED_KMH * (config.NOWCAST_LEAD_MAX_MIN / 60.0)
     if edge_pt > max_reach_km:
         return {"p": 0.0, "eta_min": None,
                 "p_by_lead": {b: 0.0 for b in LEAD_BUCKETS},
                 "tau_min": None, "stationary": False, "on_location": False}
-    # A member "hits" when the advected CENTRE passes within the cell's
-    # equivalent radius + buffer of the point (i.e. the cell body covers it).
     reach = latest["equiv_diam_km"] / 2.0 + config.NOWCAST_REACH_BUFFER_KM
 
     convective = latest["cell_type"] == "convective"
@@ -168,8 +127,8 @@ def _cell_arrival(summary, lat_c, lon_c):
                    else config.NOWCAST_DIR_SPREAD_STRATIFORM_DEG)
     tau = _lifetime_min(summary, latest)
 
-    # deterministic 5x5 unscented grid: speed factors x direction sigmas,
-    # Gaussian weights (separable, each normalised so the product sums to 1).
+    # 5x5 grid of speed factors x direction sigmas with separable Gaussian
+    # weights normalised so the product sums to 1.
     sf = np.array(config.NOWCAST_SPEED_FACTORS, dtype=float)
     sw = np.exp(-0.5 * ((sf - 1.0) / 0.2) ** 2)
     sw /= sw.sum()
@@ -266,31 +225,28 @@ def arrival_nowcast(summaries, lat_c, lon_c):
         "intensity_label": colormap.classify_intensity(c["max_dbz"]),
         "on_location": dom_a.get("on_location", False),
     }
-    # Approaching verdict: 60-min bucket probability + dominant-distance gate.
-    # The distance is recomputed relative to the ASSESSED point (c["edge_km"]
-    # is extraction-relative, which differs for non-Budva points — the JS port
-    # gates per-point too, so this keeps parity).
+    # Approaching = 60-min bucket probability + dominant-distance gate. The
+    # distance is recomputed relative to the assessed point, matching the JS
+    # port's per-point gating.
     p_lead = agg.get(str(config.APPROACH_LEAD_MIN), p_rain)
     kx = 111.32 * math.cos(math.radians(lat_c))
     dxe = (c["lon"] - lon_c) * kx
     dyn = (c["lat"] - lat_c) * 110.57
     dom_edge_pt = max(0.0, math.hypot(dxe, dyn) - c["equiv_diam_km"] / 2.0)
 
-    # Closest-point-of-approach classification of the dominant cell (PDF Part E):
-    # HIT / BYPASS / RECEDING from its DETERMINISTIC velocity vector, relative to
-    # the assessed point. This is the deterministic central trajectory — the
-    # probabilistic cone (p_rain) can still clip the point at the cone edges even
-    # when the central track BYPASSes, so the two are reported independently and
-    # the verdict reconciles them (BYPASS shown only when not approaching).
+    # CPA classification of the dominant cell: HIT / BYPASS / RECEDING from
+    # its deterministic velocity. The probabilistic cone can still clip the
+    # point when the central track bypasses, so both are reported and the
+    # verdict reconciles them (BYPASS shown only when not approaching).
     reach = c["equiv_diam_km"] / 2.0 + config.NOWCAST_REACH_BUFFER_KM
     spd = dom_s.get("speed_kmh")
     ddir = dom_s.get("direction_deg")
     classification = None
     t_cpa = miss = None
     if dom_edge_pt <= 0.0:
-        classification = "HIT"                       # cell body over the point now
+        classification = "HIT"
     elif spd is not None and ddir is not None and float(spd or 0.0) >= 1.0:
-        v = min(float(spd), config.NOWCAST_MAX_SPEED_KMH) / 60.0   # km/min
+        v = min(float(spd), config.NOWCAST_MAX_SPEED_KMH) / 60.0
         vx = v * math.sin(math.radians(ddir))
         vy = v * math.cos(math.radians(ddir))
         t_cpa, miss = closest_point_of_approach(dxe, dyn, vx, vy)
@@ -316,9 +272,6 @@ def arrival_nowcast(summaries, lat_c, lon_c):
     }
 
 
-# ---------------------------------------------------------------------------
-# Storm-mode classification (reflectivity only)
-# ---------------------------------------------------------------------------
 def _signed_angle(ref_deg, test_deg):
     """test - ref wrapped to (-180, 180]. Positive = clockwise of ref."""
     return ((test_deg - ref_deg + 180.0) % 360.0) - 180.0
@@ -336,9 +289,9 @@ def _summary_for_cell(summaries, cell):
 
 
 def _training_suspected(summaries):
-    """Training/back-building proxy: several DISTINCT, fast-moving cells whose
-    tracks repeatedly pass close to the location -> cells cross the same axis
-    while the system stays put. Conservative (>=3) to avoid false alarms."""
+    """Training/back-building proxy: several distinct fast-moving cells whose
+    tracks repeatedly pass close to the location. Conservative (>= 3) to
+    avoid false alarms."""
     near = sum(1 for s in summaries
                if s.get("n_frames", 0) >= 2
                and s.get("speed_kmh", 0) >= 25.0
@@ -347,9 +300,8 @@ def _training_suspected(summaries):
 
 
 def classify_storm_mode(cells, summaries, scene_mot):
-    """Scene-level morphology from reflectivity alone. Returns
-    {mode, confidence, flags, n_cells, n_convective, max_dbz, largest_area_km2}.
-    `flags` lists SUSPECTED severe signatures (each notes it needs velocity)."""
+    """Scene-level morphology from reflectivity alone. `flags` lists suspected
+    severe signatures, each noting it needs Doppler velocity to confirm."""
     if not cells:
         return {"mode": "none", "confidence": "n/a", "flags": [],
                 "n_cells": 0, "n_convective": 0, "max_dbz": None,

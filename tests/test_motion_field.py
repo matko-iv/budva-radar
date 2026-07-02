@@ -1,4 +1,4 @@
-"""Tests for the block/TREC dense motion field (PDF Part B1): instead of ONE
+"""Tests for the block/TREC dense motion field: instead of ONE
 global cross-correlation vector (which assumes the whole scene moves as a rigid
 block), tile the field and cross-correlate each block -> a local motion vector
 per tile, so differential motion / growth / rotation is captured.
