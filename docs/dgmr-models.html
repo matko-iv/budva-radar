@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SKALA NOWCAST — DGMR checkpointi</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<style>
+  #map { height: 70vh; min-height: 360px; width: 100%;
+         border: 1px solid #ddd; border-radius: 4px; background: #eef1f4; }
+  .radar-ovl { image-rendering: pixelated; }
+  .budva-lbl { background: transparent; border: 0; box-shadow: none; padding: 0;
+               color: #b00; font: 600 12px/1 inter, system-ui, sans-serif;
+               text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+  .budva-lbl::before { display: none; }
+  #controls, #modelpick { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+              margin: 0 0 10px; font-size: 13px; }
+  #controls button, #modelpick button { font: inherit; padding: 3px 10px;
+                     border: 1px solid #ccc; border-radius: 4px; background: #fff;
+                     cursor: pointer; }
+  #controls button:hover, #modelpick button:hover { background: #f0f0f0; }
+  #modelpick button.on { background: #dbe7f6; border-color: #4a76b8; font-weight: 600; }
+  .legend i { display:inline-block; width:11px; height:11px; margin: 0 2px 0 6px;
+              vertical-align: middle; }
+  #stats { font-size: 13px; color: #333; margin: 4px 0 10px; }
+  table.metrics td, table.metrics th { padding: 2px 10px; text-align: right; }
+  table.metrics td:first-child, table.metrics th:first-child { text-align: left; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>matkov-SKALA-sistem</h1>
+  <p style="font-size:13px; margin:0 0 6px;">
+    <a href="index.html">home</a> · <a href="radar-map.html">SKALA RAIN</a> ·
+    <a href="cloud-map.html">SKALA CLOUD</a> ·
+    <a href="nowcast-compare.html">SKALA NOWCAST</a> ·
+    <span style="color:#888;">DGMR checkpointi</span>
+  </p>
+  <p id="generated"></p>
+</header>
+
+<main>
+  <section>
+    <h2>DGMR checkpointi — najbolji modeli iz treninga, na mapi</h2>
+    <p style="font-size:13px; max-width:70em;">
+      Tri najbolja checkpointa iz fine-tuninga DGMR generativnog modela na arhivi
+      radara Uljenje (2023–2026), svaki najbolji po drugom kriterijumu, prikazana na
+      istom kišnom slučaju iz izdvojenog evaluacionog skupa. Prognoze su izračunate
+      unaprijed (ansambl od 8 uzoraka po modelu, prosjek), pa stranica ne zahtijeva
+      ni PyTorch ni GPU: umjesto ~108 MB po modelu, ovdje je po modelu samo ~19
+      malih PNG kadrova. Sloj „Osmatranje" je stvarni radar za isti period.
+    </p>
+    <div id="modelpick"></div>
+    <div id="stats"></div>
+    <div id="controls" style="display:none">
+      <button id="play" type="button">▶</button>
+      <input id="slider" type="range" min="0" max="0" value="0" step="1">
+      <b><span id="lead">sada</span></b>
+      <span class="legend" id="legend"></span>
+    </div>
+    <div id="map"></div>
+  </section>
+
+  <section>
+    <h2>Padavine nad Budvom (mm/h) po vremenu — izabrani model</h2>
+    <table id="seriestab"></table>
+  </section>
+
+  <section>
+    <h2>Tehnički izvještaj: šta je urađeno</h2>
+
+    <h3>Podaci</h3>
+    <p style="font-size:13px; max-width:70em;">
+      Arhiva radara Uljenje, maj 2023 – jun 2026: 285.193 kompozitna .MAX. proizvoda
+      (korak 5 min). Svaki kadar se kalibriše na Budvu: nativna mreža od ~558 m
+      resempluje se na 256×256 piksela / 1 km, Budva u centru; refleksivnost se
+      pretvara u mm/h Marshall-Palmer relacijom Z = 200·R<sup>1.6</sup> uz ograničenje
+      na [0, 128]. Trening sekvenca = 22 uzastopna kadra bez prekida (4 ulaza + 18
+      izlaza). Sa polupreklapanjem (pomak 11) i filterom kiše: 10.612 sekvenci
+      (~30 GB float16). Posljednjih 112, vremenski najnovijih, izdvojeno je za
+      evaluaciju i model ih nikad ne vidi u treningu.
+    </p>
+
+    <h3>Model i funkcija gubitka</h3>
+    <p style="font-size:13px; max-width:70em;">
+      DGMR (Ravuri et al., Nature 2021) je GAN: generator od 98M parametara prima 4
+      protekle slike i latentni šum, vraća 18 budućih. Originalni trening ima tri
+      člana gubitka: prostorni i vremenski diskriminator (realizam slike i kretanja)
+      i grid-cell L1 regularizator (tačnost lokacije). Po samom radu, diskriminatori
+      bez L1 člana daju tačnost na nivou perzistencije — pozicijsku tačnost nosi
+      isključivo L1. Fine-tuning je zato rađen u grid-cell-only režimu (maks. FSS
+      konfiguracija), na Colab A100, batch 16, uz Monte-Carlo prosjek od 8 uzoraka.
+    </p>
+
+    <h3>Tri ispravke bez kojih ništa nije radilo</h3>
+    <ol style="font-size:13px; max-width:70em;">
+      <li><b>Skala izlaza.</b> Generator bez izlazne aktivacije daje vrijednosti reda
+        10⁹; softplus na izlazu ograničava na nenegativno i problem nestaje.</li>
+      <li><b>Bug u biblioteci (dgmr 1.4.3).</b> GridCellLoss sabira L1 normom umjesto
+        prosjeka pa, zbog greške u prioritetu operacija, množi sa 256×256/18 umjesto
+        da dijeli (gubitak reda 10¹¹); ponder koristi max(y+1, 24) umjesto min, pa
+        suvi pikseli nose istu težinu kao pljusak — model uči da briše kišu. Gubitak
+        je zamijenjen ispravnom uprosječenom verzijom sa min ponderom.</li>
+      <li><b>Frekvencijski bias.</b> Ponder kiše w = 1 + k·min(y, 24) sa koeficijentom
+        k regulisanim prema izmjerenom odnosu prognozirane i stvarne kišne površine
+        (cilj bias ≈ 1). Najbolji checkpoint se priznaje samo u opsegu bias
+        [0.7, 1.4], jer FSS nagrađuje precjenjivanje površine.</li>
+    </ol>
+
+    <h3>Evaluacija</h3>
+    <p style="font-size:13px; max-width:70em;">
+      Metrike na centralnih 128×128 km oko Budve, na zamrznutom skupu od 96 najnovijih
+      sekvenci, sa fiksiranim latentnim vektorima: FSS (prag 1 mm/h, agregiran po
+      komponentama, skale 1–20 km) izražen kao odnos prema perzistenciji, i Brier skor
+      za događaj „bar jedan piksel ≥ 1 mm/h unutar ±8 km od Budve" (perzistencija:
+      0.167). Rezultati na +60 min:
+    </p>
+    <table class="metrics" style="font-size:13px;">
+      <tr><th>model</th><th>FSS odnos</th><th>Brier</th><th>bias</th></tr>
+      <tr><td>perzistencija</td><td>1.00</td><td>0.167</td><td>1.01</td></tr>
+      <tr><td>DGMR @15100 (najbolji FSS)</td><td><b>1.22</b></td><td>0.167</td><td>0.88</td></tr>
+      <tr><td>DGMR @12100 (svestrani)</td><td>1.06</td><td>0.140</td><td>0.90</td></tr>
+      <tr><td>DGMR @11350 (detekcija)</td><td>1.02</td><td><b>0.125</b></td><td>1.27</td></tr>
+      <tr><td>pysteps ekstrapolacija</td><td>1.22</td><td>0.125</td><td>1.01</td></tr>
+      <tr><td>pysteps ANVIL</td><td><b>1.25</b></td><td><b>0.104</b></td><td>0.97</td></tr>
+    </table>
+    <p style="font-size:13px; max-width:70em;">
+      DGMR premašuje perzistenciju po obje metrike — netrivijalan rezultat za jedan
+      radar i 10 hiljada sekvenci — ali nijedan checkpoint ne spaja obje prednosti u
+      isto vrijeme, a pysteps ANVIL ih postiže obje, stabilno i bez treniranja. Zato
+      je u produkciji (SKALA RAIN / SKALA NOWCAST) i dalje pysteps; DGMR ostaje
+      dokumentovan eksperiment. Strukturni razlog: na horizontu do sat vremena
+      najveći dio ostvarive vještine je transport postojećih padavina, koji advekcija
+      dobija besplatno, dok bi generativnom modelu za učenje nastanka i slabljenja
+      ćelija trebalo dva reda veličine više podataka (DeepMind: 1,48M sekvenci).
+    </p>
+
+    <h3>Zašto baš ova tri checkpointa</h3>
+    <p style="font-size:13px; max-width:70em;">
+      Iz arhive od 18 sačuvanih checkpointa (po ~108 MB) izabrana su tri, svaki
+      najbolji po jednom kriterijumu unutar kalibracionog opsega: @15100 ima najviši
+      FSS ikad izmjeren u ovom projektu (1.22 uz bias 0.88), @12100 je jedini koji
+      obje metrike drži iznad perzistencije istovremeno, a @11350 ima najbolju
+      vjerovatnoću „kiša u Budvi" među kalibrisanima. Sami .pt fajlovi nisu na sajtu
+      — prognoze su izračunate jednom, offline, i ovdje stoje samo rendered kadrovi.
+    </p>
+  </section>
+</main>
+
+<footer>
+  <p id="meta"></p>
+  <p>SKALA NOWCAST · <a href="nowcast-compare.html">glavna DGMR stranica</a></p>
+</footer>
+
+<script src="vendor/leaflet.js"></script>
+<script src="models_data.js"></script>
+<script>
+(function () {
+  var D = window.MODELS_DATA || {};
+  function el(id){ return document.getElementById(id); }
+  function f1(x){ return x == null ? "?" : Number(x).toFixed(1); }
+  var STOPS = [[0.2,"#96c8ff"],[1,"#4682eb"],[2.5,"#28be6e"],[5,"#ebe137"],
+               [10,"#f5962a"],[20,"#e64128"],[50,"#af28b4"]];
+
+  if (!D.ok) {
+    el("generated").textContent = "Nedostupno: pokreni run_models.py";
+    return;
+  }
+  el("generated").textContent = "generisano " + (D.generated || "?");
+  el("meta").textContent = "Slučaj: " + (D.case || "?") + " · korak " +
+    D.timestep_min + " min · " + D.n_frames + " ulazna kadra · ansambl 8 uzoraka";
+
+  var M = D.map_meta, models = D.models || [];
+  var nw = M.corner_nw, se = M.corner_se;
+  var bounds = [[se[0], nw[1]], [nw[0], se[1]]];
+  var view = bounds;
+  if (M.budva_latlon) {
+    var bLa = M.budva_latlon[0], bLo = M.budva_latlon[1];
+    view = [[bLa - 0.45, bLo - 0.60], [bLa + 0.45, bLo + 0.60]];
+  }
+  var map = L.map("map", { attributionControl: true }).fitBounds(view);
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
+    { maxNativeZoom: 13, maxZoom: 18, attribution: "Relief: Esri" }).addTo(map);
+  var overlay = null;
+  if (M.budva_latlon) {
+    L.circleMarker(M.budva_latlon, { radius: 5, color: "#fff", weight: 2,
+      fillColor: "#d00", fillOpacity: 1 }).addTo(map)
+      .bindTooltip("Budva", { permanent: true, direction: "right", className: "budva-lbl" });
+  }
+  setTimeout(function () { map.invalidateSize(); map.fitBounds(view); }, 60);
+
+  var cur = 0, timer = null;
+  var sl = el("slider");
+
+  function stats(m) {
+    if (!m.stats) { el("stats").textContent =
+      "Stvarni radar za isti period — referenca za poređenje."; return; }
+    var s = m.stats;
+    el("stats").innerHTML = "batch " + s.batches + " · FSS odnos <b>" +
+      s.fss.toFixed(2) + "</b> · Brier <b>" + s.brier.toFixed(3) +
+      "</b> (perzistencija 0.167) · bias " + s.bias.toFixed(2);
+  }
+  function draw(i) {
+    var m = models[cur], fr = m.frames[i];
+    overlay.setUrl(fr.image);
+    el("lead").textContent = fr.is_now ? "sada" : ("+" + fr.lead_min + " min");
+  }
+  function setPlay(on) {
+    var b = el("play");
+    if (on) { b.textContent = "⏸"; timer = setInterval(function () {
+      var m = models[cur];
+      var i = (+sl.value + 1) % m.frames.length; sl.value = i; draw(i); }, 700); }
+    else { b.textContent = "▶"; if (timer) { clearInterval(timer); timer = null; } }
+  }
+  function pick(idx) {
+    cur = idx;
+    var m = models[idx];
+    var btns = el("modelpick").children;
+    for (var k = 0; k < btns.length; k++) btns[k].className = k === idx ? "on" : "";
+    if (overlay) map.removeLayer(overlay);
+    overlay = L.imageOverlay(m.frames[0].image, bounds,
+      { opacity: 0.8, className: "radar-ovl" }).addTo(map);
+    sl.max = m.frames.length - 1; sl.value = 0;
+    setPlay(false); draw(0); stats(m);
+    var rows = (m.series || []).map(function (s) {
+      return "<tr><td>+" + s.lead_min + "</td><td>" + f1(s.disc_max_mmh) +
+             "</td><td>" + f1(s.point_mmh) + "</td></tr>";
+    }).join("");
+    el("seriestab").innerHTML =
+      "<tr><th>+min</th><th>disk-max mm/h (≤8 km)</th><th>tačka mm/h</th></tr>" + rows;
+  }
+
+  models.forEach(function (m, i) {
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = m.label;
+    b.onclick = function () { pick(i); };
+    el("modelpick").appendChild(b);
+  });
+
+  el("controls").style.display = "";
+  el("legend").innerHTML = " mm/h: " + STOPS.map(function (s) {
+    return "<i style='background:" + s[1] + "'></i>" + s[0]; }).join(" ");
+  sl.addEventListener("input", function () { setPlay(false); draw(+sl.value); });
+  el("play").onclick = function () { setPlay(!timer); };
+  pick(0);
+})();
+</script>
+</body>
+</html>

@@ -584,6 +584,10 @@ def stage_window_and_shard(frames, cache_dir, args):
         else:
             seq, q = None, None
             keep = n_wet >= args.min_wet_frames
+            if not keep and args.dry_keep > 0:
+                # admit a controlled share of non-rainy windows (calibration
+                # negatives); deterministic per-window draw, resume-exact
+                keep = random.Random(f"{args.seed}-dry-{win_ts[0]}").random() < args.dry_keep
         if not keep:
             continue
         idx = kept
@@ -637,6 +641,9 @@ def main(argv=None):
     ap.add_argument("--keep-frac", type=float, default=KEEP_FRAC, help="min wet fraction for a 'rainy' frame")
     ap.add_argument("--min-wet-frames", type=int, default=1,
                     help="simple filter: min rainy frames per window to keep it")
+    ap.add_argument("--dry-keep", type=float, default=0.0,
+                    help="simple filter: also keep this fraction of non-rainy "
+                         "windows (calibration negatives, e.g. 0.05)")
     ap.add_argument("--zr-a", type=float, default=ZR_A, help="Z-R 'a' (Marshall-Palmer 200)")
     ap.add_argument("--zr-b", type=float, default=ZR_B, help="Z-R 'b' (Marshall-Palmer 1.6)")
     ap.add_argument("--clip", type=float, default=RAIN_RATE_CLIP_MMH, help="rain-rate clip (mm/h)")
@@ -706,6 +713,7 @@ def main(argv=None):
         "zr": {"a": args.zr_a, "b": args.zr_b, "clip_mmh": args.clip,
                "relation": "Z = a R^b (Marshall-Palmer)"},
         "rain_thr_mmh": args.rain_thr, "keep_frac": args.keep_frac,
+        "dry_keep": args.dry_keep,
         "window": {"frames": args.win, "stride": (args.stride or args.win),
                    "cadence_s": args.dt, "tol_s": args.tol,
                    "context": 4, "lead": args.win - 4},
