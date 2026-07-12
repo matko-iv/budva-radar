@@ -5,6 +5,7 @@ a temp dir, so it needs no network and no real radar archive.
 
     psenv/bin/python tests/test_compare_nowcast.py      (exit 0 = pass)
 """
+import datetime
 import math
 import sys
 import tempfile
@@ -24,6 +25,7 @@ except Exception as e:                                   # pragma: no cover
     print(f"SKIP — deps missing ({e})")
     sys.exit(0)
 
+import compare_nowcast as cn  # noqa: E402
 import config  # noqa: E402
 from radar import ord as ordmod, pysteps_nowcast as pn, dgmr_adapter as dg  # noqa: E402
 
@@ -132,6 +134,70 @@ def test_dgmr_plumbing_with_mock_model():
     fc, meta = dg.forecast(stack, info, 12, _forecast_fn=mock)
     assert fc is not None and fc.shape == (12, 256, 256)
     assert meta["native_leads"] == 18 and meta["budva_tile_xy"] == [128, 128]
+
+
+# --- _hourly_mm bucketing ------------------------------------------------------
+def _base_ms(y, mo, d, h, mi):
+    return int(datetime.datetime(y, mo, d, h, mi, tzinfo=datetime.timezone.utc).timestamp() * 1000)
+
+
+def test_hourly_mm_mid_hour_base_splits_into_two_hours():
+    # base at 13:40Z, dt=5, leads 5..80 -> each step's midpoint (lead - dt/2) falls
+    # in 13:00Z for leads 5..20 and in 14:00Z for leads 25..80.
+    base_ms = _base_ms(2026, 7, 12, 13, 40)
+    point = {5: 1.0, 10: 2.0, 15: 3.0, 20: 2.0,
+             25: 10.0, 30: 9.0, 35: 8.0, 40: 7.0, 45: 6.0, 50: 5.0,
+             55: 4.0, 60: 3.0, 65: 2.0, 70: 1.0, 75: 0.5, 80: 0.5}
+    series = [{"lead_min": lead, "point_mmh": p, "disc_max_mmh": p + 1.0}
+              for lead, p in point.items()]
+    out = cn._hourly_mm(base_ms, series, 5.0)
+    assert [b["hour"] for b in out] == ["2026-07-12T13:00:00Z", "2026-07-12T14:00:00Z"]
+    h13, h14 = out
+    assert h13["covered_min"] == 20 and h14["covered_min"] == 60
+    assert h13["mm"] == 0.67 and h14["mm"] == 4.67
+    assert h13["peak_point_mmh"] == 3.0 and h13["peak_disc_mmh"] == 4.0
+    assert h14["peak_point_mmh"] == 10.0 and h14["peak_disc_mmh"] == 11.0
+
+
+def test_hourly_mm_peak_is_max_not_sum():
+    # base on-the-hour, 12 steps all inside 13:00Z; point_mmh rises then falls.
+    base_ms = _base_ms(2026, 7, 12, 13, 0)
+    vals = [1.0, 3.0, 5.0, 8.0, 10.0, 7.0, 4.0, 2.0, 1.0, 0.5, 0.2, 0.1]
+    series = [{"lead_min": 5 * (i + 1), "point_mmh": v, "disc_max_mmh": 0.0}
+              for i, v in enumerate(vals)]
+    out = cn._hourly_mm(base_ms, series, 5.0)
+    assert len(out) == 1
+    assert out[0]["hour"] == "2026-07-12T13:00:00Z"
+    assert out[0]["mm"] == 3.48                  # sum(v * 5/60), not the peak
+    assert out[0]["peak_point_mmh"] == 10.0       # the max, not the sum
+
+
+def test_hourly_mm_peak_disc_independent_of_point():
+    # dry at Budva all hour (point_mmh == 0) while a cell sits ~8 km away
+    # (disc_max_mmh large) -> peak_point_mmh stays 0, peak_disc_mmh reports the cell.
+    base_ms = _base_ms(2026, 7, 12, 13, 0)
+    disc = [0.0, 0.0, 0.0, 5.0, 12.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    series = [{"lead_min": 5 * (i + 1), "point_mmh": 0.0, "disc_max_mmh": d}
+              for i, d in enumerate(disc)]
+    out = cn._hourly_mm(base_ms, series, 5.0)
+    assert len(out) == 1
+    assert out[0]["mm"] == 0.0
+    assert out[0]["peak_point_mmh"] == 0.0
+    assert out[0]["peak_disc_mmh"] == 12.0
+
+
+def test_hourly_mm_backward_compatible_on_the_hour():
+    base_ms = _base_ms(2026, 7, 12, 13, 0)
+    series = [{"lead_min": lead, "point_mmh": 2.0, "disc_max_mmh": 3.0}
+              for lead in (5, 10, 15, 20)]
+    out = cn._hourly_mm(base_ms, series, 5.0)
+    assert len(out) == 1
+    bucket = out[0]
+    assert bucket["hour"] == "2026-07-12T13:00:00Z"
+    assert bucket["mm"] == 0.67
+    assert bucket["covered_min"] == 20
+    assert set(bucket.keys()) == {"hour", "mm", "covered_min",
+                                  "peak_point_mmh", "peak_disc_mmh"}
 
 
 # --- verification harness -----------------------------------------------------

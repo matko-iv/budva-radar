@@ -292,19 +292,24 @@ def _intensity_sr(mmh):
 def _hourly_mm(base_ms, series, dt):
     """Integrate the POINT rate into per-clock-hour mm over the forecast window, so
     the matko page can override its NWP precipitation for the first ~80 min. Each
-    step (mm/h) covers dt minutes, credited to the hour of its midpoint. Returns
-    [{hour: 'YYYY-MM-DDTHH:00:00Z', mm, covered_min}] ascending in time (UTC)."""
+    step (mm/h) covers dt minutes, credited to the hour of its midpoint. Also
+    tracks each hour's peak point/disc rate, for the page's icon choice. Returns
+    [{hour: 'YYYY-MM-DDTHH:00:00Z', mm, covered_min, peak_point_mmh, peak_disc_mmh}]
+    ascending in time (UTC)."""
     base = datetime.datetime.utcfromtimestamp(base_ms / 1000.0)
     buckets = {}
     for s in series:
         mid = base + datetime.timedelta(minutes=s["lead_min"] - dt / 2.0)
         hour = mid.replace(minute=0, second=0, microsecond=0)
-        slot = buckets.setdefault(hour, [0.0, 0.0])
+        slot = buckets.setdefault(hour, [0.0, 0.0, 0.0, 0.0])
         slot[0] += s["point_mmh"] * dt / 60.0
         slot[1] += dt
+        slot[2] = max(slot[2], s["point_mmh"])
+        slot[3] = max(slot[3], s["disc_max_mmh"])
     return [{"hour": h.strftime("%Y-%m-%dT%H:00:00Z"),
-             "mm": round(mm, 2), "covered_min": round(cov)}
-            for h, (mm, cov) in sorted(buckets.items())]
+             "mm": round(mm, 2), "covered_min": round(cov),
+             "peak_point_mmh": round(peak_point, 2), "peak_disc_mmh": round(peak_disc, 2)}
+            for h, (mm, cov, peak_point, peak_disc) in sorted(buckets.items())]
 
 
 def nowcast_status(prod):
